@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-midnight: #0d1b3d;
+  --color-royal: #1e3a8a;
+  --color-sky: #2563eb;
+  --color-saffron: #f2a93b;
+  --color-paper: #faf7f2;
+  --color-soft: #e6f0ff;
+  --font-heading: var(--font-manrope);
+  --font-sans: var(--font-inter);
+}
+
+/* Sticky header height (border included). The hero reads it to fit one screen. */
+:root {
+  --header-h: 4rem;
+}
+@media (min-width: 1024px) {
+  :root {
+    --header-h: 5rem;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-midnight);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-royal);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  /* infinite blob animations would flicker at 0.01ms, so hold them on their first frame */
+  .gradients-container > div {
+    animation-duration: 30s !important;
+    animation-play-state: paused !important;
+  }
+}
+
+/* Background gradient animation (Aceternity): the animate-first..fifth utilities.
+   Tailwind v4 reads these from CSS instead of tailwind.config. */
+@theme {
+  --animate-first: moveVertical 30s ease infinite;
+  --animate-second: moveInCircle 20s reverse infinite;
+  --animate-third: moveInCircle 40s linear infinite;
+  --animate-fourth: moveHorizontal 40s ease infinite;
+  --animate-fifth: moveInCircle 20s ease infinite;
+
+  @keyframes moveHorizontal {
+    0% {
+      transform: translateX(-50%) translateY(-10%);
+    }
+    50% {
+      transform: translateX(50%) translateY(10%);
+    }
+    100% {
+      transform: translateX(-50%) translateY(-10%);
+    }
+  }
+  @keyframes moveInCircle {
+    0% {
+      transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(180deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes moveVertical {
+    0% {
+      transform: translateY(-50%);
+    }
+    50% {
+      transform: translateY(50%);
+    }
+    100% {
+      transform: translateY(-50%);
+    }
+  }
+}

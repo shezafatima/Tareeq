@@ -1,0 +1,13 @@
+import { chromium } from "@playwright/test";
+const b = await chromium.launch({ executablePath: process.env.CHROME });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const logs = [];
+p.on("console", (m) => { if (["error", "warning"].includes(m.type())) logs.push(m.text()); });
+p.on("pageerror", (e) => logs.push(e.message));
+await p.goto("http://localhost:3100/gradient-demo", { waitUntil: "load" });
+await p.waitForTimeout(1500);
+await p.mouse.move(900, 300);
+await p.waitForTimeout(500);
+await p.screenshot({ path: "shots/gradient.png" });
+console.log("console:", logs.length ? logs.join("\n") : "none");
+await b.close();
