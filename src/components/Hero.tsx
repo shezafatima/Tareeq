@@ -399,7 +399,7 @@ function HeroVisual({ reduce }: { reduce: boolean }) {
               className="h-full w-full rounded-full opacity-90"
               style={{
                 background:
-                  "radial-gradient(circle, #E6F0FF 0%, rgba(191,219,254,0.75) 50%, rgba(230,240,255,0) 72%)",
+                  "radial-gradient(circle, var(--color-soft) 0%, rgba(191,219,254,0.75) 50%, rgba(230,240,255,0) 72%)",
               }}
               animate={reduce ? undefined : { scale: [1, GLOW_SCALE, 1] }}
               transition={{ duration: GLOW_DURATION, ease: "easeInOut", repeat: Infinity }}
@@ -423,7 +423,7 @@ function HeroVisual({ reduce }: { reduce: boolean }) {
         >
           <motion.path
             d={ORBIT_PATH}
-            stroke="#F2A93B"
+            className="stroke-saffron"
             strokeWidth={1.6}
             strokeLinecap="round"
             initial={reduce ? false : { pathLength: 0 }}
@@ -433,7 +433,7 @@ function HeroVisual({ reduce }: { reduce: boolean }) {
           {!reduce && (
             <motion.circle
               r={4.5}
-              fill="#F2A93B"
+              className="fill-saffron"
               initial={{ opacity: 0, x: ORBIT_SAMPLES[0][0], y: ORBIT_SAMPLES[0][1] }}
               animate={{
                 x: ORBIT_SAMPLES.map((p) => p[0]),
@@ -529,8 +529,8 @@ export default function Hero() {
       <div aria-hidden="true" className="absolute inset-0 -z-10 hidden sm:block">
         <BackgroundGradientAnimation
           containerClassName="absolute inset-0 h-full w-full"
-          gradientBackgroundStart="rgb(250, 247, 242)"
-          gradientBackgroundEnd="rgb(230, 240, 255)"
+          gradientBackgroundStart="var(--color-paper)"
+          gradientBackgroundEnd="var(--color-soft)"
           firstColor="30, 58, 138"
           secondColor="37, 99, 235"
           thirdColor="230, 240, 255"
@@ -558,16 +558,16 @@ export default function Hero() {
           <motion.h1
             id="hero-title"
             {...item(0.08, false)}
-            className="mt-5 font-heading text-[2.75rem] font-extrabold leading-[1.02] tracking-tight text-midnight sm:text-6xl lg:text-[clamp(2.5rem,min(6vw,10.5svh),5.5rem)]"
+            className="mt-5 font-heading text-[2.75rem] font-extrabold leading-[1.02] tracking-[-0.015em] text-midnight sm:text-6xl lg:text-[clamp(2.5rem,min(5.6vw,10.5svh),5.1rem)]"
           >
-            <span className="block">AI, the</span>{" "}
+            <span className="block">Every idea</span>{" "}
             <span className="block">
-              practical way<span className="text-saffron">.</span>
+              needs a path<span className="text-saffron">.</span>
             </span>
           </motion.h1>
           <motion.p {...item(0.18)} className="mt-6 max-w-[30rem] text-lg leading-relaxed text-midnight/80 sm:text-xl">
-            Hands-on AI training for teachers, students and professionals. Learn to use AI thoughtfully, build real
-            projects, and solve real problems.
+            Tareeq helps schools, teachers and online learners use AI to solve real problems. You don’t just learn the
+            tools. You leave with something you built.
           </motion.p>
           <motion.div {...item(0.28)} className="mt-9 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <a
