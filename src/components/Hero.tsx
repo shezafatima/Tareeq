@@ -525,8 +525,8 @@ export default function Hero() {
 
   return (
     <div className="relative isolate overflow-hidden">
-      {/* Soft Tareeq-colour glow behind the hero. Skipped under 640px (heavy SVG blur filter on phones). */}
-      <div aria-hidden="true" className="absolute inset-0 -z-10 hidden sm:block">
+      {/* Soft Tareeq-colour glow behind the hero, shown at every width. */}
+      <div aria-hidden="true" className="absolute inset-0 -z-10">
         <BackgroundGradientAnimation
           containerClassName="absolute inset-0 h-full w-full"
           gradientBackgroundStart="var(--color-paper)"
