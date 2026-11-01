@@ -9,6 +9,19 @@ import {
   useSpring,
   type MotionValue,
 } from "framer-motion";
+import {
+  ARC_STROKE,
+  ARC_W,
+  CLIP_INSET,
+  EYE_COLOR,
+  EYE_CY,
+  EYE_GAP,
+  EYE_H,
+  EYE_W,
+  GLOW_BLUR,
+  MORPH_DURATION,
+  VISOR_RADIUS,
+} from "./eyeConstants"; // shared with the brand preloader
 
 /* ------------------------------------------------------------------ */
 /* Visor, measured from public/robot-noeyes.png with image moments.    */
@@ -22,18 +35,8 @@ const VISOR_CY = 16.96; // % of image height
 const VISOR_ANGLE = 9.87; // deg, clockwise on screen
 const VISOR_W = 34.76; // % of image width, size along the visor's own (rotated) x axis
 const VISOR_H = 16.9; // % of image height, size along the visor's own (rotated) y axis
-const VISOR_RADIUS = 44.4; // % of visor height, corner radius
-const CLIP_INSET = 4; // % of visor size, clip sits this far inside the real edge
 
 // Eyes (% of visor width unless noted)
-const EYE_COLOR = "#5CC8FF";
-const EYE_W = 9.5;
-const EYE_H = 22;
-const EYE_GAP = 22; // between the two eyes
-const EYE_CY = 50; // % of visor height, vertical centre of the pair
-const ARC_W = 17; // happy arc width
-const ARC_STROKE = 3.8;
-const GLOW_BLUR = 1.2; // static glow blur (std deviation)
 
 // Gaze: the offset is clamped to the ellipse with these semi-axes
 const MAX_TRAVEL_X = 18; // % of visor width
@@ -61,7 +64,6 @@ const DOUBLE_BLINK_CHANCE = 0.2;
 const DOUBLE_BLINK_GAP = 0.12; // s between the two blinks
 
 // Pill <-> happy arc
-const MORPH_DURATION = 0.2; // s
 
 /* ------------------------------------------------------------------ */
 

@@ -7,8 +7,17 @@
   --color-saffron: #f2a93b;
   --color-paper: #faf7f2;
   --color-soft: #e6f0ff;
-  --font-heading: var(--font-manrope);
+  --color-danger: #b42318; /* form errors only; 6.5:1 on white */
+  --font-heading: var(--font-sora);
   --font-sans: var(--font-inter);
+
+  /* Shell tokens. New names only, so existing utilities (rounded-xl, numeric spacing) are untouched. */
+  --spacing-gutter: 1.25rem;
+  --spacing-section: 4rem;
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-pill: 9999px;
+  --shadow-float: 0 8px 24px rgb(13 27 61 / 0.25);
 }
 
 /* Sticky header height (border included). The hero reads it to fit one screen. */
