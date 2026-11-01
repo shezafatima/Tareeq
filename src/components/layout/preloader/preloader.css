@@ -1,0 +1,326 @@
+/* Preloader state and timeline. Tokens only; animate only transform and opacity.
+   State lives on <html data-preloader>: absent (hidden), run, leave, done. See specs/002-brand-preloader. */
+
+/* Sequence length: 6 s (owner's decision: the preloader stays on screen at least 6 s). The preview mode
+   (?preloader-preview) can stretch it further. The fade starts 0.1 s before the sequence ends. */
+html {
+  --pl-seq: 6000ms;
+}
+
+#preloader {
+  display: none; /* hidden by default: no JavaScript, skipped visits and routes without the shell never show it */
+}
+
+html[data-preloader="run"] #preloader,
+html[data-preloader="leave"] #preloader {
+  display: flex;
+}
+
+html[data-preloader="done"] #preloader {
+  display: none;
+}
+
+/* Reduced motion: never shown, whatever the script decided. The review preview (?preloader-preview) is the one
+   exception: it is asked for explicitly and exists so the animation can be looked at. */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-preloader-preview]) #preloader,
+  html:not([data-preloader-preview])[data-preloader] #preloader {
+    display: none;
+  }
+
+  /* globals.css shortens every animation to 0.01 ms under reduced motion; keep the preview's real durations */
+  html[data-preloader-preview] #preloader {
+    animation-duration: 300ms !important;
+  }
+
+  html[data-preloader-preview] #preloader .pl-eye-open,
+  html[data-preloader-preview] #preloader .pl-eye-happy,
+  html[data-preloader-preview] #preloader .pl-gaze,
+  html[data-preloader-preview] #preloader .pl-reveal,
+  html[data-preloader-preview] #preloader .pl-reveal-inner,
+  html[data-preloader-preview] #preloader .pl-row.pl-last {
+    animation-duration: var(--pl-seq) !important;
+  }
+}
+
+/* Fade out, independent of JavaScript: it starts 0.1 s before the sequence ends and takes 0.3 s, so it is over
+   0.2 s after the sequence (6.2 s in all). The 0.1 s of margin absorbs the animation starting a little after the
+   overlay is first drawn on a busy page. */
+@keyframes preloader-out {
+  to {
+    opacity: 0;
+  }
+}
+
+html[data-preloader="run"] #preloader {
+  animation: preloader-out 300ms ease-in calc(var(--pl-seq) - 100ms) forwards;
+}
+
+/* The page has loaded early: a fresh 300 ms fade starting now (a different name, so it starts from full opacity) */
+@keyframes preloader-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+html[data-preloader="leave"] #preloader {
+  animation: preloader-leave 300ms ease-in forwards;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sequence: 1.2 s, all animations share one duration so they stay in step.
+   Percentages of the sequence (6 s): 25 % = 1.5 s, 28.4 % = 1.7 s (the swap takes about 0.2 s), 63 % = 3.8 s,
+   66.4 % = 4.0 s, 83.33 % = 5.0 s.
+   Eyes: normal (to 1.5 s), clean swap to happy (1.5 to 1.7 s), happy (to 3.8 s), clean swap back (3.8 to 4.0 s), normal.
+   Bar: fills from 0 to 100 % over 0 to 1.00 s. Last chevron brightens at 1.00 to 1.20 s.
+   Only transform and opacity are animated. */
+/* ------------------------------------------------------------------ */
+
+.pl-progress {
+  --pl-bar-w: clamp(104px, 30vw, 144px);
+  --pl-fade: 16px; /* soft edge on the saffron fill */
+  position: relative;
+  width: var(--pl-bar-w);
+  height: calc(var(--pl-bar-w) / 6);
+}
+
+.pl-row {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--pl-bar-w);
+  height: 100%;
+}
+
+.pl-reveal,
+.pl-reveal-inner {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(var(--pl-bar-w) + var(--pl-fade));
+}
+
+.pl-reveal {
+  overflow: hidden;
+  transform: translateX(-100%);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--pl-fade)), transparent);
+  mask-image: linear-gradient(to right, black calc(100% - var(--pl-fade)), transparent);
+}
+
+.pl-reveal-inner {
+  transform: translateX(100%);
+}
+
+.pl-last {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.pl-eye-open,
+.pl-eye-happy {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.pl-eye-happy {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+/* Applies in both run and leave, so the animations carry on (not restart) when the state changes */
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-eye-l .pl-eye-open {
+  animation: pl-open-l var(--pl-seq) ease-out both;
+}
+
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-eye-l .pl-eye-happy {
+  animation: pl-happy-l var(--pl-seq) ease-out both;
+}
+
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-eye-r .pl-eye-open {
+  animation: pl-open-r var(--pl-seq) ease-out both;
+}
+
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-eye-r .pl-eye-happy {
+  animation: pl-happy-r var(--pl-seq) ease-out both;
+}
+
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-gaze {
+  animation: pl-gaze var(--pl-seq) ease-in-out both;
+}
+
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-reveal {
+  animation: pl-reveal var(--pl-seq) ease-in-out both;
+}
+
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-reveal-inner {
+  animation: pl-reveal-inner var(--pl-seq) ease-in-out both;
+}
+
+html:is([data-preloader="run"], [data-preloader="leave"]) #preloader .pl-row.pl-last {
+  animation: pl-last var(--pl-seq) ease-in-out both;
+}
+
+/* Seven steps over the 6 s sequence (percentages of the sequence):
+     Normal       0 to 12      (0 to 0.7 s)
+     Happy       12 to 32      swap in 12 to 15.4, hold, swap out 29 to 32.4
+     Normal      32.4 to 40
+     Curious     40 to 60      the eyes glance left, then right, then back to the middle (both eyes, sideways)
+     Normal      60 to 68
+     Wink        68 to 83      the right eye swaps to an arc 68 to 71.4, hold, swaps back 79.5 to 82.9
+     Normal      82.9 to 100
+   Every change of shape is a quick, clean swap (about 0.2 s at 6 s): the old shape fades out first (about 0.1 s)
+   and the new one fades in after it (about 0.1 s), so the two never sit half-faded on top of each other. It reads
+   as a blink. A stretched cross-fade would show both at once. Only transform and opacity are animated. */
+
+/* Left eye: open pill, and the happy arc (the left eye only takes part in the happy step) */
+@keyframes pl-open-l {
+  0%,
+  12% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  13.7%,
+  30.7% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  32.4%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pl-happy-l {
+  0%,
+  13.7% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  15.4%,
+  29% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  30.7%,
+  100% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+/* Right eye: the happy step, then the wink (the right eye alone closes into an arc) */
+@keyframes pl-open-r {
+  0%,
+  12% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  13.7%,
+  30.7% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  32.4%,
+  68% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  69.7%,
+  81.2% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  82.9%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pl-happy-r {
+  0%,
+  13.7% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  15.4%,
+  29% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  30.7%,
+  69.7% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  71.4%,
+  79.5% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  81.2%,
+  100% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+/* Curious: both eyes slide sideways (left, right, middle); --pl-look is set on the SVG from the visor width */
+@keyframes pl-gaze {
+  0%,
+  40% {
+    transform: translateX(0);
+  }
+  44%,
+  48% {
+    transform: translateX(calc(var(--pl-look) * -1));
+  }
+  52%,
+  56% {
+    transform: translateX(var(--pl-look));
+  }
+  60%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* The window slides in and the saffron row slides the other way by the same amount, so it stays in place */
+@keyframes pl-reveal {
+  0% {
+    transform: translateX(-100%);
+  }
+  83.33%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pl-reveal-inner {
+  0% {
+    transform: translateX(100%);
+  }
+  83.33%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pl-last {
+  0%,
+  83.33% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  91.67% {
+    opacity: 0.85;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
