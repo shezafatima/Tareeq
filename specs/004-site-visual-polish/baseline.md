@@ -56,3 +56,13 @@ Change: `MobileNav` now uses plain CSS animations for the slide and fade (`menu-
 Accessibility, Best Practices and SEO stay at 100; CLS stays 0.000.
 
 Reading: less script and a little less blocking time on the inner pages, but the scores are inside run-to-run noise (runs vary by about 5 points). The limiter on the inner pages is Speed Index (about 5 s), which comes from the 6-second preloader; the earlier diagnostic run without the preloader scored 91 to 93 on Contact. The performance target of 90 is still missed on all four pages. The home page is limited by the hero and the code only it loads.
+
+## Correction: the preloader is not what holds Performance below 90 (2026-11-02)
+
+The earlier diagnosis above said the 6-second preloader pulls the inner pages below 90, based on a run with Chrome forced to prefer reduced motion (Contact 91, 91, 93). That run also switched off every other animation and was only 3 runs, so it did not isolate the preloader. A cleaner test followed:
+
+- Throwaway build (never committed, branch deleted) with the preloader never shown and all other motion on, same Lighthouse setup, 5 runs on home and Contact, 3 on the others. Medians: `/` 75 (was 75), `/our-way` 86 (87), `/programs` 91 (86), `/contact` 87 (87). Contact's own runs ranged from 77 to 93.
+- Preview parameter runs (`?preloader-preview=N`, no code change): Contact with a 2 s sequence 82, 3.5 s sequence 89; home with 2 s 74. Also inside the noise.
+- Speed Index does improve without the preloader on two pages (`/our-way` and `/programs` about 5.0 s to 3.0 s), but the Performance score does not move reliably, because the run-to-run spread is about 10 points on the same page and blocking time is the larger term.
+
+Conclusion: removing the preloader entirely is the best case for any preloader change, and it does not reach 90 reliably. Shortening it, ending it early or showing it once per session would help real visitors' first impression of speed, but should not be expected to fix the Lighthouse score. What does hold the score down is blocking time: React's hydration runtime on every page, and on the home page the hero, its animation library and the card-travel code. The 6-second decision from feature 002 was left unchanged.
