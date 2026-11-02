@@ -27,8 +27,8 @@
 
 - [X] T001 Confirm the branch is `004-site-visual-polish`, note that feature 003's work is still uncommitted in the working tree (not committed: the owner has not asked for a commit), and confirm port 3100 is free
 - [X] T002 Record the baseline on the current build before any change: run `npm run build` and `npm run lint`; start `next start -p 3100`; run `node scripts/hero-snapshot.mjs shots/004/hero-before`; run `home-check.mjs`, `pages-check.mjs`, `transition-check.mjs` and record that all pass
-- [ ] T003 Ask the owner for approval to run Lighthouse (it downloads the tool through `npx`). If approved, run mobile Lighthouse 5 times on `/` using `shots/003/lh-run.sh` and `shots/003/lh-sum.mjs` (fix the script first if it produced no output: run once with visible output to find the error), and write the median score and CLS to `specs/004-site-visual-polish/baseline.md`. If declined, write in `baseline.md` that performance will be judged by CLS, long-frame counts and bundle size, and compare `.next` JS sizes before and after
-  - NOT DONE: Lighthouse approval/run still pending (see baseline.md). The JS-size part of T004 is recorded.
+- [X] T003 Ask the owner for approval to run Lighthouse (it downloads the tool through `npx`). If approved, run mobile Lighthouse 5 times on `/` using `shots/003/lh-run.sh` and `shots/003/lh-sum.mjs` (fix the script first if it produced no output: run once with visible output to find the error), and write the median score and CLS to `specs/004-site-visual-polish/baseline.md`. If declined, write in `baseline.md` that performance will be judged by CLS, long-frame counts and bundle size, and compare `.next` JS sizes before and after
+  - Done after the feature: the owner approved on 2026-11-02; Lighthouse ran on the final build only (no pre-004 baseline could be taken). Results and diagnosis are in `baseline.md`.
 - [X] T004 [P] Create `shots/004/` and record the baseline JS size of the home route from the `npm run build` output in `specs/004-site-visual-polish/baseline.md`
 
 **Checkpoint**: baseline recorded; build, lint and all three existing check scripts pass.
@@ -154,7 +154,7 @@
 - [X] T062 [P] Final screenshots at 1440x900 and 390x844 of `/`, `/our-way`, `/programs`, `/contact` into `shots/004/final/`, plus the scroll sequence for `/` and `/programs` (start, mid-reveal, settled); open and look at each
 - [X] T063 Final run of everything: `npm run build`, `npm run lint`, `polish-reveal-check`, `polish-token-check`, `home-check`, `pages-check`, `transition-check`, `menu-check`, `desktop-check`, `footer-check`, `whatsapp-check`, `preloader-check`; record the results
 - [X] T064 Performance: if Lighthouse was approved in T003 run it 5 times on `/` again and compare the median and CLS to the baseline (no worse within noise) and once each on `/our-way`, `/programs`, `/contact`; otherwise compare JS sizes from the build and the long-task counts from T045 and report plainly that Lighthouse was not run
-  - Lighthouse was NOT run (the owner has not approved it); the fallback was used and recorded in `baseline.md`: JS size +1.3 KB, layout shift within the limit, long tasks at 4x CPU slowdown within the limit.
+  - Lighthouse was run afterwards (2026-11-02): Performance 74/85/89/87 (target 90 missed), Accessibility 100, Best Practices 100, SEO 100, CLS 0; see `baseline.md`.
 - [X] T065 Final hero and preloader proof: hero compare against `shots/004/hero-before`, `git diff --stat` showing no change to `Hero.tsx`, `preloader/` or `how-it-works/` in this feature's changes
 - [X] T066 Update `specs/004-site-visual-polish/quickstart.md` if any command changed; list the owner inputs still needed (confirm the trust-strip facts, Lighthouse approval) and any follow-ups (hero `href="#"` buttons from feature 003 still untouched)
 - [X] T067 Create the PHR for the implementation work in `history/prompts/004-site-visual-polish/` and confirm `git status` shows only intended files
