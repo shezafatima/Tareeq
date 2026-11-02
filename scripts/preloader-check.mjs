@@ -465,7 +465,7 @@ if (want("skip")) {
     await v.page.waitForTimeout(settle);
     const reloaded = await v.page.evaluate(() => ({ shown: getComputedStyle(document.getElementById("preloader")).display !== "none", state: document.documentElement.getAttribute("data-preloader") }));
     check("[skip] a reload shows the preloader again (every load and refresh)", reloaded.shown && reloaded.state === "run", JSON.stringify(reloaded));
-    await v.page.goto(base + "/about", { waitUntil: "load" });
+    await v.page.goto(base + "/our-way", { waitUntil: "load" });
     await v.page.waitForTimeout(settle);
     const other = await v.page.evaluate(() => ({ shown: getComputedStyle(document.getElementById("preloader")).display !== "none", state: document.documentElement.getAttribute("data-preloader") }));
     check("[skip] another page loaded in the same tab shows it too", other.shown && other.state === "run", JSON.stringify(other));
@@ -491,7 +491,7 @@ if (want("skip")) {
   await visit("session storage blocked (no longer needed, so it still shows)", { expectVisible: true, init: () => { Object.defineProperty(window, "sessionStorage", { get() { throw new DOMException("blocked", "SecurityError"); }, configurable: true }); } }).then((x) => x.ctx.close());
 
   // 5. A first visit that lands on a deep link shows it too
-  await visit("first visit on a deep link (/about)", { path: "/about", expectVisible: true }).then((x) => x.ctx.close());
+  await visit("first visit on a deep link (/our-way)", { path: "/our-way", expectVisible: true }).then((x) => x.ctx.close());
 
   // 6. Scripting disabled: the page must be fully visible with no white cover
   {
@@ -585,7 +585,7 @@ if (want("a11y")) {
   const walk = await tabOrder(page, 40);
   const distinct = new Set(walk.filter((x) => x !== "(body)"));
   check("[a11y] Tab moves through the whole page without getting stuck (at least 10 different stops)", distinct.size >= 10, `${distinct.size} distinct stops; ${walk.slice(0, 6).join(" > ")} ...`);
-  check("[a11y] Tab reaches the footer links", [...distinct].some((x) => /Programs|Courses|About|Contact/.test(x)) && walk.some((x) => /Chat with Tareeq/.test(x)), walk.slice(-6).join(" > "));
+  check("[a11y] Tab reaches the footer links", [...distinct].some((x) => /Programs|Courses|Our Way|Contact/.test(x)) && walk.some((x) => /Chat with Tareeq/.test(x)), walk.slice(-6).join(" > "));
   await ctx.close();
 
   // The same page in a second session where the overlay is skipped: the Tab order must be identical

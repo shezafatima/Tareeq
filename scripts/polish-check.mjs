@@ -20,7 +20,7 @@ const describe = () => {
 
 // ---- T041: keyboard pass
 for (const [w, h] of [[1440, 900], [390, 844]]) {
-  for (const route of ["/", "/about"]) {
+  for (const route of ["/", "/our-way"]) {
     const ctx = await b.newContext({ viewport: { width: w, height: h } });
     const p = await ctx.newPage();
     await p.goto(base + route, { waitUntil: "load" });
@@ -64,12 +64,12 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
 {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" });
   const p = await ctx.newPage();
-  await p.goto(base + "/about", { waitUntil: "load" });
+  await p.goto(base + "/our-way", { waitUntil: "load" });
   await p.waitForTimeout(1200);
   const anims = await p.evaluate(() => document.getAnimations().filter((a) => {
     const t = a.effect?.target; return t && (t.closest("header, footer, main") ) && a.playState === "running" && (a.effect.getComputedTiming().duration > 1);
   }).map((a) => a.effect.target.tagName + "." + (a.effect.target.className || "").toString().slice(0, 30)));
-  check("[reduced motion] no running animations in header, main or footer on /about", anims.length === 0, anims.join(", "));
+  check("[reduced motion] no running animations in header, main or footer on /our-way", anims.length === 0, anims.join(", "));
 
   await p.getByRole("button", { name: "Open menu" }).click();
   const dialog = p.getByRole("dialog", { name: "Main menu" });

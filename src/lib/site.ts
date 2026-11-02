@@ -1,11 +1,10 @@
 export type NavItem = { label: string; href: string };
-export type ContactDetail = { label: string; value: string; href?: string };
 export type SocialLink = { label: string; href: string };
 
 export const navItems: NavItem[] = [
   { label: "Programs", href: "/programs" },
   { label: "Courses", href: "/courses" },
-  { label: "About", href: "/about" },
+  { label: "Our Way", href: "/our-way" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -16,8 +15,7 @@ export const tagline = "AI, the practical way.";
 
 export const whatsappMessage = "Hi Tareeq, I'd like to ask about your workshops.";
 
-// Add entries here. The footer shows only what exists.
-export const contactDetails: ContactDetail[] = [];
+// Contact details live in src/content (read through getContactDetails). Add social links here; the footer shows only what exists.
 export const socialLinks: SocialLink[] = [];
 
 /** Returns the WhatsApp chat link, or null when the number is missing or invalid. */

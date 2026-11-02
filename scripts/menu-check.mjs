@@ -65,12 +65,12 @@ for (const [w, h] of [[360, 740], [390, 844], [767, 900]]) {
 
   await btn.click();
   await dialog.waitFor({ state: "visible" });
-  await dialog.getByRole("link", { name: "About" }).click();
-  await p.waitForURL("**/about");
+  await dialog.getByRole("link", { name: "Our Way" }).click();
+  await p.waitForURL("**/our-way");
   await dialog.waitFor({ state: "hidden" });
   check(`${tag} link click navigates and closes the menu`, true);
 
-  // Until the placeholder pages exist (Phase 6) /about is a 404 without the shell, so just come back.
+  // Until the placeholder pages exist (Phase 6) /our-way is a 404 without the shell, so just come back.
   await p.goBack();
   await p.waitForURL(base + "/");
   await p.waitForTimeout(300);

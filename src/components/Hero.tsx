@@ -196,7 +196,7 @@ const iconBase = {
   className: "h-full w-full",
 } as const;
 
-function SparkleIcon({ on }: { on: boolean }) {
+export function SparkleIcon({ on }: { on: boolean }) {
   return (
     <motion.svg
       {...iconBase}
@@ -209,7 +209,7 @@ function SparkleIcon({ on }: { on: boolean }) {
   );
 }
 
-function CodeIcon({ on }: { on: boolean }) {
+export function CodeIcon({ on }: { on: boolean }) {
   const t = { type: "spring", stiffness: 260, damping: 18 } as const;
   return (
     <svg {...iconBase}>
@@ -220,7 +220,7 @@ function CodeIcon({ on }: { on: boolean }) {
   );
 }
 
-function BulbIcon({ on }: { on: boolean }) {
+export function BulbIcon({ on }: { on: boolean }) {
   return (
     <motion.svg
       {...iconBase}

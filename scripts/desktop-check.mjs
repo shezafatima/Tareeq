@@ -19,7 +19,7 @@ for (const [w, h, headerH] of [[1024, 768, 80], [1280, 720, 80], [1440, 900, 80]
   check(`${tag} menu button hidden`, !(await p.getByRole("button", { name: "Open menu" }).isVisible()));
 
   const nav = p.getByRole("navigation", { name: "Main" });
-  for (const name of ["Programs", "Courses", "About", "Contact"]) {
+  for (const name of ["Programs", "Courses", "Our Way", "Contact"]) {
     const link = nav.getByRole("link", { name });
     const box = await link.boundingBox();
     check(`${tag} "${name}" link visible, hit area >= 44px`, (await link.isVisible()) && box.height >= 44, `${Math.round(box.height)}px`);
@@ -34,7 +34,7 @@ for (const [w, h, headerH] of [[1024, 768, 80], [1280, 720, 80], [1440, 900, 80]
     await p.keyboard.press("Tab");
     order.push(await p.evaluate(() => (document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent || "").trim()));
   }
-  const expected = ["Skip to content", "tareeq, home", "Programs", "Courses", "About", "Contact", "Book a workshop"];
+  const expected = ["Skip to content", "tareeq, home", "Programs", "Courses", "Our Way", "Contact", "Book a workshop"];
   check(`${tag} tab order`, JSON.stringify(order) === JSON.stringify(expected), order.join(" > "));
 
   // Focus ring visible on the last focused control (join button)

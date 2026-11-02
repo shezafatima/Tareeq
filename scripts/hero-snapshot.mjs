@@ -11,7 +11,7 @@ const b = await chromium.launch({ executablePath: process.env.CHROME });
 
 const PROPS = ["color", "backgroundColor", "backgroundImage", "fill", "stroke", "borderTopColor", "boxShadow", "filter", "outlineColor", "opacity"];
 const snapshot = () => {
-  const root = document.querySelector("main");
+  const root = document.querySelector("main").firstElementChild; // the hero only (first block in main)
   const props = ["color", "backgroundColor", "backgroundImage", "fill", "stroke", "borderTopColor", "boxShadow", "filter", "outlineColor"];
   const rows = [];
   let i = 0;
@@ -45,7 +45,7 @@ for (const [w, h] of [[1440, 900], [390, 844]]) {
     writeFileSync(`${out}/styles-idle-${w}.json`, JSON.stringify(await p.evaluate(snapshot), null, 1));
     await p.screenshot({ path: `${out}/idle-${w}.png` });
     if (w >= 1024) {
-      const box = await p.getByText("Learn", { exact: true }).boundingBox(); // cards float, so move the mouse to where it is
+      const box = await p.locator('[data-hero-card="learn"]').boundingBox(); // cards float, so move the mouse to where it is
       await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
       await p.waitForTimeout(900);
       writeFileSync(`${out}/styles-hover-learn-${w}.json`, JSON.stringify(await p.evaluate(snapshot), null, 1));
