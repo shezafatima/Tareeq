@@ -32,6 +32,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* keyboard focus and in-page links stop below the sticky header, never under it (WCAG 2.2 focus not obscured) */
+  scroll-padding-top: calc(var(--header-h) + 1rem);
 }
 
 body {
@@ -105,5 +107,212 @@ body {
     100% {
       transform: translateY(-50%);
     }
+  }
+}
+/* ---- "How it works" motion (src/components/sections/how-it-works). Kept here, not in a component CSS file,
+   because Next otherwise splits it into a chunk that every other page preloads and never uses. ---- */
+/*
+  "How it works" motion. The default (no data-stage, or data-stage="none") is the final, complete state.
+  Only opacity and transform change. Layout is identical in every mode.
+*/
+
+.hiw-glow {
+  opacity: 0;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-saffron) 65%, transparent),
+    transparent
+  );
+}
+
+/* fade: below 1024px, once, on entering view */
+[data-stage="fade"] {
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+[data-stage="fade"]:not([data-revealed]) {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* travel: text, line and glow follow the cards' arrival; leaving runs them back */
+[data-stage="travel"] .hiw-text {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+[data-stage="travel"][data-arrived] .hiw-text {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.4s ease calc(0.16s + var(--i) * 0.08s),
+    transform 0.4s ease calc(0.16s + var(--i) * 0.08s);
+}
+
+[data-stage="travel"] .hiw-line {
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+}
+[data-stage="travel"][data-arrived] .hiw-line {
+  transform: scaleX(1);
+  transition: transform 0.5s ease-out 0.5s;
+}
+
+[data-stage="travel"][data-arrived]:not([data-instant]) .hiw-glow {
+  animation: hiw-glow 0.9s ease-out both;
+  animation-delay: calc(var(--i) * 0.08s);
+}
+
+@keyframes hiw-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  35% {
+    opacity: 0.35;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+/* =====================================================================================================
+   Feature 004: motion and depth tokens, scroll reveal, card lift, page-header entrance, scroll cue.
+   One set of values for the whole site (specs/004-site-visual-polish/contracts). Only transform and
+   opacity animate. Under reduced motion everything is simply shown in its final state.
+   ===================================================================================================== */
+
+:root {
+  --dur-fast: 150ms;
+  --dur-base: 300ms;
+  --dur-reveal: 600ms;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --rise: 16px;
+  --lift: 4px;
+  --stagger: 70ms;
+  --stagger-cap: 5;
+}
+
+/* Elevation levels: Midnight-tinted, low alpha */
+@theme static {
+  --shadow-card-rest: 0 1px 2px rgb(13 27 61 / 0.05), 0 4px 14px rgb(13 27 61 / 0.06);
+  --shadow-card-raised: 0 2px 4px rgb(13 27 61 / 0.06), 0 16px 34px rgb(13 27 61 / 0.14);
+  --shadow-card-float: 0 24px 56px rgb(13 27 61 / 0.22);
+}
+
+/* Scroll reveal. Visible by default (server HTML, no JavaScript, reduced motion). The hidden state exists
+   only after RevealController has marked what is already in view and set data-reveal-ready on <html>. */
+[data-reveal] {
+  transition:
+    opacity var(--dur-reveal) var(--ease-soft) calc(min(var(--i, 0), var(--stagger-cap)) * var(--stagger)),
+    transform var(--dur-reveal) var(--ease-soft) calc(min(var(--i, 0), var(--stagger-cap)) * var(--stagger));
+}
+html[data-reveal-ready] [data-reveal]:not([data-revealed]) {
+  opacity: 0;
+  transform: translateY(var(--rise));
+}
+/* content that was already in view (or focused) is shown at once, never faded in */
+[data-reveal][data-revealed="instant"],
+[data-reveal][data-revealed="instant"] .draw-in {
+  transition: none;
+}
+
+/* Card lift: transform and shadow only; on hover-capable devices and always on keyboard focus within */
+.lift {
+  box-shadow: var(--shadow-card-rest);
+  transition:
+    transform var(--dur-base) var(--ease-soft),
+    box-shadow var(--dur-base) var(--ease-soft);
+}
+.lift:focus-within {
+  transform: translateY(calc(var(--lift) * -1));
+  box-shadow: var(--shadow-card-raised);
+}
+@media (hover: hover) {
+  .lift:hover {
+    transform: translateY(calc(var(--lift) * -1));
+    box-shadow: var(--shadow-card-raised);
+  }
+}
+
+/* Page header entrance (inner pages). The h1 only rises, so the main heading is visible straight away.
+   Held while the preloader is covering the page, so the entrance is seen. */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes page-enter-rise {
+  from {
+    transform: translateY(var(--rise));
+  }
+  to {
+    transform: none;
+  }
+}
+.page-enter {
+  animation: page-enter var(--dur-reveal) var(--ease-soft) both;
+  animation-delay: calc(var(--d, 0) * var(--stagger));
+}
+.page-enter-h1 {
+  animation: page-enter-rise var(--dur-reveal) var(--ease-soft) both;
+}
+html[data-preloader="run"] .page-enter,
+html[data-preloader="run"] .page-enter-h1 {
+  animation-play-state: paused;
+}
+
+/* Scroll cue: a small chevron bob (transform only) */
+@keyframes cue-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+.cue {
+  animation: cue-bob 1.8s ease-in-out infinite;
+}
+
+/* Line that draws in under a revealed feature (for example the Urdu word) */
+.draw-in {
+  transform-origin: right center;
+  transform: scaleX(1);
+  transition: transform var(--dur-reveal) var(--ease-soft) 200ms;
+}
+html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
+  transform: scaleX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .lift:hover,
+  .lift:focus-within {
+    transform: none;
+  }
+  .page-enter,
+  .page-enter-h1,
+  .cue {
+    animation: none;
+  }
+  .draw-in {
+    transform: none !important;
+    transition: none !important;
   }
 }

@@ -3,6 +3,7 @@ import Header from "@/components/layout/Header";
 import Preloader from "@/components/layout/preloader/Preloader";
 import PreloaderScript from "@/components/layout/preloader/PreloaderScript";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
+import RevealController from "@/components/ui/RevealController";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       </main>
       <Footer />
       <WhatsAppButton />
+      <RevealController />
     </div>
   );
 }

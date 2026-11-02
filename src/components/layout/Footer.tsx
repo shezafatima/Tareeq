@@ -1,16 +1,20 @@
 import Link from "next/link";
 import Container from "@/components/ui/Container";
-import { contactDetails, navItems, socialLinks, tagline } from "@/lib/site";
+import Reveal from "@/components/ui/Reveal";
+import { getContactDetails } from "@/content";
+import { navItems, socialLinks, tagline } from "@/lib/site";
 import Logo from "./Logo";
 
 const link =
-  "inline-flex min-h-11 items-center text-white/80 transition-colors hover:text-white hover:underline hover:underline-offset-4";
+  "inline-flex min-h-11 items-center text-white/80 transition-colors duration-[var(--dur-fast)] hover:text-white hover:underline hover:underline-offset-4";
 const heading = "text-sm font-semibold uppercase tracking-[0.18em] text-white/70";
 
-// Contact and social blocks render only when site.ts has entries; nothing is invented.
-export default function Footer() {
+// Contact and social blocks render only when entries exist; nothing is invented.
+export default async function Footer() {
+  const contactDetails = await getContactDetails();
   return (
-    <footer className="bg-midnight text-white [&_a:focus-visible]:outline-saffron">
+    <footer className="overflow-clip bg-midnight text-white [&_a:focus-visible]:outline-saffron">
+      <Reveal>
       <Container className="grid gap-10 pb-28 pt-12 md:grid-cols-[1.2fr_1fr_1fr] md:gap-8">
         <div>
           <Logo variant="light" className="h-6" />
@@ -78,6 +82,7 @@ export default function Footer() {
           © {new Date().getFullYear()} Tareeq. All rights reserved.
         </p>
       </Container>
+      </Reveal>
     </footer>
   );
 }

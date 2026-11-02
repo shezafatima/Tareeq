@@ -5,7 +5,7 @@ import { chromium } from "@playwright/test";
 const base = process.env.BASE ?? "http://localhost:3000";
 const absent = process.env.EXPECT === "absent";
 const number = process.env.NUMBER ?? "923001234567";
-const routes = ["/", "/programs", "/courses", "/about", "/contact"];
+const routes = ["/", "/programs", "/courses", "/our-way", "/contact"];
 const b = await chromium.launch({ executablePath: process.env.CHROME });
 const results = [];
 const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  (" + extra + ")" : ""}`);
@@ -21,7 +21,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
     const tag = `[${w}px] ${route}`;
     await p.goto(base + route, { waitUntil: "load" });
     await p.waitForTimeout(600);
-    const link = p.locator('a[href^="https://wa.me/"]');
+    const link = p.locator('a[aria-label^="Chat with Tareeq"]');
 
     if (absent) {
       check(`${tag} no WhatsApp button is rendered`, (await link.count()) === 0);

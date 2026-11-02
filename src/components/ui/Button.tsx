@@ -10,7 +10,7 @@ type ButtonProps = {
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "className">;
 
 const base =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-pill font-semibold transition-colors";
+  "group inline-flex min-h-11 items-center justify-center gap-2 rounded-pill font-semibold transition-[background-color,transform] duration-[var(--dur-fast)] ease-[var(--ease-soft)] active:scale-[0.98] motion-reduce:active:scale-100";
 const variants = {
   primary: "bg-midnight text-white hover:bg-royal",
   secondary: "border border-midnight/70 text-midnight hover:bg-midnight/5",
