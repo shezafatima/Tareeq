@@ -8,3 +8,6 @@ shots
 
 # written by next dev each time the dev server starts
 AGENTS.md
+
+# third-party design skill installed locally (not part of the app)
+.claude/skills/
