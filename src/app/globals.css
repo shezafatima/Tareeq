@@ -316,3 +316,56 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
     transition: none !important;
   }
 }
+
+/* Mobile menu: slide and fade as plain CSS animations (keeps the animation library out of every page's JavaScript).
+   MobileNav keeps the panel mounted while data-closing plays the exit. */
+@keyframes menu-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes menu-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes menu-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes menu-slide-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+.menu-scrim {
+  animation: menu-fade-in var(--dur-base) var(--ease-soft) both;
+}
+.menu-scrim[data-closing] {
+  animation-name: menu-fade-out;
+}
+.menu-panel {
+  animation: menu-slide-in var(--dur-base) var(--ease-soft) both;
+}
+.menu-panel[data-closing] {
+  animation-name: menu-slide-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-scrim,
+  .menu-panel {
+    animation: none;
+  }
+}

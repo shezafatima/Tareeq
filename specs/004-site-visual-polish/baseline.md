@@ -38,3 +38,21 @@ Against the earlier figure (home about 75, range 66 to 82): home is 74, inside t
 - Speed Index on the inner pages: every frame in the capture, from 0.7 s to 5.5 s, is the preloader (it holds the screen for 6 s, the owner's decision in feature 002). The capture ends before the preloader does. Diagnostic run (no code change, Chrome forced to prefer reduced motion so the preloader skips): Contact scores 91, 91, 93 (Speed Index 2.9 s, TBT 349 ms), so on Contact the preloader is what pulls it below 90.
 - Home with the preloader and motion off still scores 69, 77, 73 (TBT 696 ms, Speed Index 6.3 s). The home page's cost is the hero and the code only it loads (feature 001 and the hero stage), not the preloader and not the 004 reveals. This is the open home-performance problem already tracked since feature 002.
 - Feature 004's own cost: +1.3 KB JavaScript, CLS 0.000, one small client component. It cannot be isolated exactly because no pre-004 Lighthouse run exists.
+
+## After removing the animation library from the shared mobile menu (2026-11-02)
+
+Change: `MobileNav` now uses plain CSS animations for the slide and fade (`menu-scrim`, `menu-panel` in `globals.css`) instead of the animation library, so the library is no longer in the shared layout. Behaviour is unchanged: all 55 menu checks pass, and home, transition, pages, WhatsApp, footer, desktop, interaction, accessibility and stability checks pass. The hero comparison is unchanged (styles identical; only the scroll-cue pixels differ).
+
+- JavaScript per page, from the HTML: `/our-way`, `/programs`, `/contact` now load 8 script files, 582 KB raw, without the animation library (before: 794 KB raw with it). `/` still loads it (10 files, 794 KB) because the hero uses it.
+- Lighthouse, same setup, medians (5 runs home, 3 others):
+
+| Page | Performance before to after | TBT before to after | Speed Index after |
+|---|---|---|---|
+| `/` | 74 to **75** | 822 to 736 ms | 6.0 s |
+| `/our-way` | 85 to **87** | 545 to 392 ms | 5.0 s |
+| `/programs` | 89 to **86** | 401 to 418 ms | 5.5 s |
+| `/contact` | 87 to **87** | 386 to 342 ms | 4.9 s |
+
+Accessibility, Best Practices and SEO stay at 100; CLS stays 0.000.
+
+Reading: less script and a little less blocking time on the inner pages, but the scores are inside run-to-run noise (runs vary by about 5 points). The limiter on the inner pages is Speed Index (about 5 s), which comes from the 6-second preloader; the earlier diagnostic run without the preloader scored 91 to 93 on Contact. The performance target of 90 is still missed on all four pages. The home page is limited by the hero and the code only it loads.

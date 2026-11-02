@@ -13,7 +13,8 @@ const walk = (p) => {
   if (statSync(p).isFile()) return [p];
   return readdirSync(p).flatMap((f) => walk(join(p, f)));
 };
-const hash = (f) => createHash("sha256").update(readFileSync(f)).digest("hex");
+// line endings are normalised: git on Windows may rewrite LF as CRLF in the working tree, which is not a change
+const hash = (f) => createHash("sha256").update(readFileSync(f, "utf8").split(String.fromCharCode(13)).join("")).digest("hex");
 const protectedFiles = PROTECTED.flatMap(walk).map((f) => f.replace(/\\/g, "/"));
 
 if (process.argv.includes("--record")) {
