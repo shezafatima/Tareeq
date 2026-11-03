@@ -468,7 +468,8 @@ if (want("inner")) {
     const p = await ctx.newPage();
     const fs = await import("node:fs");
     // "Explore programs" is the hero's own button: its arrow icon made it a non-leaf under the old counting rule, so the "before" snapshot skipped it
-    const ALLOWED_NEW = new Set(["Hands-on learning", "Real projects", "In person or online", "Explore programs"]);
+    // feature 005: the carousel cards' compact faces repeat the step labels, and the carousel adds previous/next arrows
+    const ALLOWED_NEW = new Set(["Hands-on learning", "Real projects", "In person or online", "Explore programs", "Prompt", "Build", "Learn", "‹", "›"]);
     for (const [name, href] of [["home", "/"], ["our-way", "/our-way"], ["programs", "/programs"], ["contact", "/contact"]]) {
       await p.goto(base + href, { waitUntil: "load" });
       await p.waitForTimeout(800);
@@ -520,7 +521,7 @@ if (want("hero")) {
       await p.screenshot({ path: `shots/004/hero-extras-${w}.png` });
       await p.locator('a[aria-label="Scroll to the next section"]').click();
       await p.waitForTimeout(1500);
-      const toWho = await p.evaluate(() => Math.round(document.querySelector("#who").getBoundingClientRect().top));
+      const toWho = await p.evaluate(() => Math.round(document.querySelector("#how-it-works").getBoundingClientRect().top)); // feature 005: the cue targets How it works
       check(`${tag} the cue scrolls to the first section`, toWho >= -5 && toWho <= 120, String(toWho));
     } else {
       check(`${tag} the cue is not shown on a phone (the hero already runs past the fold)`, info.cueDisplay === "none");

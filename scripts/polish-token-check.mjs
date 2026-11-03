@@ -6,7 +6,8 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "
 import { join } from "node:path";
 
 const HASHES = "specs/004-site-visual-polish/protected.sha.json";
-const PROTECTED = ["src/components/Hero.tsx", "src/components/layout/preloader", "src/components/sections/how-it-works"];
+// feature 005: how-it-works/ is no longer protected (rewritten); RobotEyes.tsx changes only by owner approval (ADR-0001)
+const PROTECTED = ["src/components/Hero.tsx", "src/components/layout/preloader"];
 
 const walk = (p) => {
   if (!existsSync(p)) return [];
@@ -32,7 +33,7 @@ if (existsSync(HASHES)) {
   const rec = JSON.parse(readFileSync(HASHES, "utf8"));
   const changed = protectedFiles.filter((f) => rec[f] !== hash(f));
   const missing = Object.keys(rec).filter((f) => !protectedFiles.includes(f));
-  check("protected files (Hero.tsx, preloader/, how-it-works/) are unchanged since the baseline", changed.length === 0 && missing.length === 0, [...changed, ...missing].join(", "));
+  check("protected files (Hero.tsx, preloader/) are unchanged since the baseline", changed.length === 0 && missing.length === 0, [...changed, ...missing].join(", "));
 } else {
   check("protected hashes recorded", false, "run with --record first");
 }
@@ -68,7 +69,7 @@ const literalTimes = offenders(/transition[^;"`]*\b\d+(\.\d+)?m?s\b/);
 check("no literal transition times in changed component files", literalTimes.length === 0, literalTimes.join(", "));
 
 const reveal = [...protectedFiles].filter((f) => /data-reveal(?!ed)|<Reveal\b|from "@\/components\/ui\/Reveal"/.test(read(f)));
-check("no Reveal inside the hero, preloader or how-it-works", reveal.length === 0, reveal.join(", "));
+check("no Reveal inside the hero or the preloader", reveal.length === 0, reveal.join(", "));
 
 const useClient = FILES.filter((f) => /^\s*"use client"/m.test(read(f)));
 check('"use client" appears only in RevealController among this feature\'s new files', useClient.every((f) => f.endsWith("RevealController.tsx")), useClient.join(", "));
