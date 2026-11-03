@@ -11,8 +11,8 @@ export default function Home() {
     <>
       <Hero />
       <HeroExtras />
-      <WhoItsFor />
       <HowItWorks />
+      <WhoItsFor />
       <ProgramsPreview />
       <WhyTareeq />
       <FinalCta />

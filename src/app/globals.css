@@ -109,78 +109,6 @@ body {
     }
   }
 }
-/* ---- "How it works" motion (src/components/sections/how-it-works). Kept here, not in a component CSS file,
-   because Next otherwise splits it into a chunk that every other page preloads and never uses. ---- */
-/*
-  "How it works" motion. The default (no data-stage, or data-stage="none") is the final, complete state.
-  Only opacity and transform change. Layout is identical in every mode.
-*/
-
-.hiw-glow {
-  opacity: 0;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--color-saffron) 65%, transparent),
-    transparent
-  );
-}
-
-/* fade: below 1024px, once, on entering view */
-[data-stage="fade"] {
-  transition:
-    opacity 0.5s ease,
-    transform 0.5s ease;
-}
-[data-stage="fade"]:not([data-revealed]) {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-/* travel: text, line and glow follow the cards' arrival; leaving runs them back */
-[data-stage="travel"] .hiw-text {
-  opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 0.3s ease,
-    transform 0.3s ease;
-}
-[data-stage="travel"][data-arrived] .hiw-text {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 0.4s ease calc(0.16s + var(--i) * 0.08s),
-    transform 0.4s ease calc(0.16s + var(--i) * 0.08s);
-}
-
-[data-stage="travel"] .hiw-line {
-  transform: scaleX(0);
-  transition: transform 0.25s ease;
-}
-[data-stage="travel"][data-arrived] .hiw-line {
-  transform: scaleX(1);
-  transition: transform 0.5s ease-out 0.5s;
-}
-
-[data-stage="travel"][data-arrived]:not([data-instant]) .hiw-glow {
-  animation: hiw-glow 0.9s ease-out both;
-  animation-delay: calc(var(--i) * 0.08s);
-}
-
-@keyframes hiw-glow {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  35% {
-    opacity: 0.35;
-    transform: scale(1.05);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.15);
-  }
-}
-
 /* =====================================================================================================
    Feature 004: motion and depth tokens, scroll reveal, card lift, page-header entrance, scroll cue.
    One set of values for the whole site (specs/004-site-visual-polish/contracts). Only transform and
@@ -367,5 +295,183 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
   .menu-scrim,
   .menu-panel {
     animation: none;
+  }
+}
+
+/* =====================================================================================================
+   Feature 005: "How it works" layouts (specs/005-robot-travel-carousel, ADR-0001).
+   The layout is chosen by CSS before the first paint: list (default: no JavaScript or reduced motion),
+   travel (html[data-js], 1024px and up, motion allowed) and swipe (html[data-js], below 1024px, motion allowed).
+   Each layout fixes its own heights, so nothing reflows when the scripts arrive. Only transform and opacity animate.
+   ===================================================================================================== */
+
+/* ---- list (default) ---- */
+.hiw {
+  position: relative;
+  background: var(--color-soft);
+  /* travelling cards wait full-size (invisible) over the hero cards; never let them widen the page.
+     clip, not hidden: no scroll container, so the sticky stage and the vertical travel still work */
+  overflow-x: clip;
+}
+.hiw-stage {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 4rem var(--spacing-gutter);
+  display: grid;
+  gap: 2rem;
+}
+.hiw-robot-col {
+  display: flex;
+  justify-content: center;
+}
+.hiw-robot-col,
+.hiw-content-col {
+  min-width: 0; /* grid items may shrink below their content (the swipe track must not widen the page) */
+}
+.hiw-robot-static {
+  width: min(50vw, 200px);
+}
+.hiw-robot-slot,
+.hiw-controls,
+.hiw-face-compact {
+  display: none;
+}
+.hiw-track {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
+}
+.hiw-card-travel {
+  display: grid;
+  height: 100%;
+}
+.hiw-card-pose {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+.hiw-face-full {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+}
+.hiw-face-compact {
+  grid-area: 1 / 1;
+}
+@media (min-width: 640px) {
+  .hiw-stage {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+@media (min-width: 1024px) {
+  .hiw-stage {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr);
+    align-items: center;
+    gap: 3rem;
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+  .hiw-robot-static {
+    width: min(100%, 240px);
+  }
+  .hiw-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ---- travel: tall runway, sticky stage; the robot and cards arrive from the hero ---- */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  html[data-js] .hiw {
+    --stage-h: calc(100svh - var(--header-h));
+    height: calc(var(--stage-h) + 35svh); /* a short reading runway (owner: no long empty scroll) */
+    scroll-margin-top: -1rem; /* an in-page link lands exactly where the travel has arrived */
+  }
+  html[data-js] .hiw-stage {
+    position: sticky;
+    z-index: 20; /* above the hero's scroll cue and strip while the robot travels; below the header (30) */
+    top: var(--header-h);
+    height: var(--stage-h);
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  }
+  html[data-js] .hiw-robot-static {
+    display: none;
+  }
+  html[data-js] .hiw-robot-slot {
+    display: block;
+    position: relative;
+    z-index: 20;
+    width: min(100%, 290px, calc((var(--stage-h) - 3rem) / 1.5));
+    aspect-ratio: 2 / 3;
+    margin: 0 auto;
+  }
+  html[data-js] .hiw-twin {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    visibility: hidden;
+    transform-origin: center;
+  }
+  html[data-js] .hiw-track {
+    display: block;
+    position: relative;
+    z-index: 20;
+    height: 24rem;
+    margin-top: 1.75rem;
+    perspective: 1200px;
+  }
+  html[data-js] .hiw-card {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 22%;
+    width: 56%;
+  }
+  html[data-js] .hiw-card[data-pos="center"] {
+    z-index: 2;
+  }
+  html[data-js] .hiw-face-compact {
+    display: block;
+  }
+  html[data-js] .hiw-card-pose {
+    transition:
+      transform var(--dur-reveal) var(--ease-soft),
+      opacity var(--dur-reveal) var(--ease-soft);
+  }
+  html[data-js] .hiw[data-arrived] .hiw-card[data-pos="left"] .hiw-card-pose {
+    transform: translateX(-52%) scale(0.82) rotateY(28deg);
+    opacity: 0.55;
+  }
+  html[data-js] .hiw[data-arrived] .hiw-card[data-pos="right"] .hiw-card-pose {
+    transform: translateX(52%) scale(0.82) rotateY(-28deg);
+    opacity: 0.55;
+  }
+  html[data-js] .hiw-controls {
+    display: flex;
+  }
+}
+
+/* ---- swipe: one full-width card at a time, native scroll snap ---- */
+@media (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
+  html[data-js] .hiw-track {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  html[data-js] .hiw-track::-webkit-scrollbar {
+    display: none;
+  }
+  html[data-js] .hiw-card {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    padding: 0 2px 4px;
+  }
+  html[data-js] .hiw-controls {
+    display: flex;
   }
 }

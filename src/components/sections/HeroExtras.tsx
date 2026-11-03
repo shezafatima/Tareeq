@@ -13,7 +13,7 @@ export default async function HeroExtras() {
   return (
     <div className="relative">
       <a
-        href="#who"
+        href="#how-it-works"
         aria-label="Scroll to the next section"
         className="absolute left-1/2 top-0 z-10 hidden size-11 -translate-x-1/2 -translate-y-[calc(100%+1.25rem)] items-center justify-center rounded-pill bg-white/80 text-royal ring-1 ring-royal/15 backdrop-blur-sm transition-colors duration-[var(--dur-fast)] hover:bg-white lg:flex"
       >
@@ -22,7 +22,7 @@ export default async function HeroExtras() {
         </span>
       </a>
       {facts.length > 0 && (
-        <Container className="py-8">
+        <Container className="py-5 lg:py-3">
           <Reveal>
             <ul
               aria-label="At a glance"

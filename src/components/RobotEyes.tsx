@@ -120,9 +120,18 @@ type Props = {
   /** page-wide cursor position (client px), shared from the hero's single pointermove listener */
   cursorX: MotionValue<number>;
   cursorY: MotionValue<number>;
+  /** optional: where the card to look at is (default: the hero card, [data-hero-card=id]) */
+  cardElement?: (id: CardId) => Element | null;
+  /** optional: the robot is drawn mirrored (feature 005, owner-approved): aim in mirrored screen space. Default false */
+  mirrored?: boolean;
 };
 
-export default function RobotEyes({ activeCard, reduce, cursorX, cursorY }: Props) {
+/* Hand-off slot shared by every instance (feature 005): when an instance goes hidden (inside an `inert`
+   element) it publishes its eye state here and pauses; the instance that resumes next takes the state over,
+   so the robot that becomes visible looks exactly where the hidden one was looking. */
+const handoff = { at: -1, from: "", aim: [0, 0] as [number, number], gx: 0, gy: 0, idle: 0 };
+
+export default function RobotEyes({ activeCard, reduce, cursorX, cursorY, cardElement, mirrored = false }: Props) {
   const id = useId().replace(/:/g, "");
   const svgRef = useRef<SVGSVGElement>(null);
   const finePointer = useSyncExternalStore(
@@ -186,7 +195,8 @@ export default function RobotEyes({ activeCard, reduce, cursorX, cursorY }: Prop
   const eyesCentre = () => {
     const r = svgRef.current?.getBoundingClientRect();
     if (!r) return null;
-    return { x: r.left + (VISOR_CX / 100) * r.width, y: r.top + (VISOR_CY / 100) * r.height };
+    const vx = mirrored ? 100 - VISOR_CX : VISOR_CX; // a mirrored drawing puts the visor on the other side
+    return { x: r.left + (vx / 100) * r.width, y: r.top + (VISOR_CY / 100) * r.height };
   };
   // aim toward a screen point: full travel when the point is at the page edge
   const aimAt = (px: number, py: number): [number, number] => {
@@ -196,17 +206,18 @@ export default function RobotEyes({ activeCard, reduce, cursorX, cursorY }: Prop
     const dy = py - c.y;
     const ax = dx < 0 ? dx / Math.max(c.x, 1) : dx / Math.max(window.innerWidth - c.x, 1);
     const ay = dy < 0 ? dy / Math.max(c.y, 1) : dy / Math.max(window.innerHeight - c.y, 1);
-    return toVisorAim(clamp(ax, -1, 1), clamp(ay, -1, 1));
+    return toVisorAim(clamp(mirrored ? -ax : ax, -1, 1), clamp(ay, -1, 1));
   };
   // aim toward the centre of a card
   const aimAtCard = (card: CardId): [number, number] | null => {
     const c = eyesCentre();
-    const r = document.querySelector(`[data-hero-card=${card}]`)?.getBoundingClientRect();
+    const el = cardElement ? cardElement(card) : document.querySelector(`[data-hero-card=${card}]`);
+    const r = el?.getBoundingClientRect();
     if (!c || !r) return null;
     const dx = r.left + r.width / 2 - c.x;
     const dy = r.top + r.height / 2 - c.y;
     const len = Math.hypot(dx, dy) || 1;
-    return toVisorAim(dx / len, dy / len);
+    return toVisorAim(((mirrored ? -1 : 1) * dx) / len, dy / len);
   };
 
   const onCursor = () => {
@@ -217,9 +228,34 @@ export default function RobotEyes({ activeCard, reduce, cursorX, cursorY }: Prop
   useMotionValueEvent(cursorX, "change", onCursor);
   useMotionValueEvent(cursorY, "change", onCursor);
 
+  const wasHidden = useRef(false);
   useAnimationFrame((_, delta) => {
-    if (reduce || !run.current) return;
     const st = s.current;
+    // Paused while hidden inside an `inert` element (the robot that is not on screen during the feature 005
+    // hand-off), so two robots never run at once. On resuming, take over the state the other robot published.
+    if (svgRef.current?.closest("[inert]")) {
+      if (!wasHidden.current) {
+        wasHidden.current = true;
+        Object.assign(handoff, { at: performance.now(), from: id, aim: [st.aim[0], st.aim[1]], gx: gx.get(), gy: gy.get(), idle: st.t - st.moveAt });
+      }
+      return;
+    }
+    if (wasHidden.current) {
+      wasHidden.current = false;
+      if (handoff.from && handoff.from !== id && performance.now() - handoff.at < 2000) {
+        st.aim = [handoff.aim[0], handoff.aim[1]];
+        st.moveAt = st.t - handoff.idle;
+        gx.jump(handoff.gx);
+        gy.jump(handoff.gy);
+      } else {
+        gx.jump(st.aim[0] * maxX);
+        gy.jump(st.aim[1] * maxY);
+      }
+      st.blinks = [];
+      st.nextBlink = st.t + rand(BLINK_MIN, BLINK_MAX);
+      blink.set(1);
+    }
+    if (reduce || !run.current) return;
     const dt = Math.min(delta, 250) / 1000;
     st.t += dt;
 

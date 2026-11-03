@@ -19,15 +19,15 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   await p.waitForTimeout(7000); // preloader (6 s) then settle
   check(`${tag} exactly one h1`, (await p.locator("h1").count()) === 1);
   const headings = await p.locator("main section > div > div > h2, main section h2").allInnerTexts();
-  const order = ["Who it’s for", "How it works", "Programs", "Why Tareeq"];
+  const order = ["How it works", "Who it’s for", "Programs", "Why Tareeq"]; // feature 005: How it works first
   check(`${tag} section headings in order`, order.every((t, i) => headings.map((x) => x.trim())[i] === t), headings.join(" | "));
   check(`${tag} 4 audience cards (Teachers, School students, College students, Professionals and teams)`,
     JSON.stringify(await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()) === JSON.stringify(["Teachers", "School students", "College students", "Professionals and teams"]),
     (await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()).join(","));
-  const steps = await p.locator("#how-it-works ol > li h3").count();
+  const steps = await p.locator("#how-it-works .hiw-card h3").count();
   check(`${tag} 3 steps`, steps === 3);
-  check(`${tag} nothing in "How it works" can take keyboard focus (cards are decorative)`, (await p.locator("#how-it-works").evaluate((el) => el.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])").length)) === 0);
-  check(`${tag} step labels Prompt, Build, Learn`, JSON.stringify(await p.locator("#how-it-works ol > li [data-step-slot] span.font-semibold").allInnerTexts()) === JSON.stringify(["Prompt", "Build", "Learn"]));
+  check(`${tag} in "How it works" only the carousel controls take keyboard focus (cards hold no links)`, (await p.locator("#how-it-works .hiw-card").evaluateAll((els) => els.reduce((n, el) => n + el.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])").length, 0))) === 0);
+  check(`${tag} step labels Prompt, Build, Learn`, JSON.stringify(await p.locator("#how-it-works .hiw-face-full span.uppercase").allTextContents()) === JSON.stringify(["Prompt", "Build", "Learn"]));
   const progs = await p.locator("section[aria-labelledby='programs-title'] ul > li").count();
   check(`${tag} 2 to 3 programs in the preview`, progs >= 2 && progs <= 3, String(progs));
   const progText = await p.locator("section[aria-labelledby='programs-title'] ul").innerText();
