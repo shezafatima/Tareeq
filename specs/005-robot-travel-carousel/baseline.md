@@ -36,3 +36,16 @@ Why this may be machine load rather than the feature (not proven):
 - The LCP element is the same in both (the hero intro paragraph). Its observed render delay is about the same too: 1,870 ms before and 1,887 ms after, in run 3 of each. The LCP gap is in Lighthouse's simulated (throttled) figure, not the observed one.
 
 Next step: run before and after back to back on an idle machine (check out `ec0e86a`, build, run; then `main`, build, run) before deciding whether the budget is really missed.
+
+# Back-to-back comparison (settles the "after" result)
+
+Taken 2026-11-03. Both versions were built from the same lockfile and served at the same time: `ec0e86a` (before) on :3101 from a temporary worktree, `main` at `8db27fb` (after) on :3100. Same browser and settings as above. 5 pairs, alternated (before then after, then after then before, ...) so a change in machine load hits both sides equally. Results in `shots/005/lh-ab/`.
+
+| | Performance (each run) | Median | LCP | TBT | FCP | Speed Index | CLS | A11y / BP / SEO |
+|---|---|---|---|---|---|---|---|---|
+| Before (`ec0e86a`) | 78, 78, 73, 89, 87 | **78** | 3.7 s | 339 ms | 1.08 s | 4.0 s | 0.000 | 100 / 100 / 100 |
+| After (`main`) | 61, 87, 78, 87, 91 | **87** | 3.5 s | 222 ms | 1.10 s | 4.2 s | 0.000 | 100 / 100 / 100 |
+
+Result: **budget met.** After is 9 points above before under the same conditions (budget: no more than 3 below), and CLS stays at 0. The 91 in the first "before" run was a reading from an idle machine, not the old code's usual score; measured side by side, the old code scores 78 and also shows a 3.7 s LCP.
+
+The runs are noisy (after ranged from 61 to 91, before from 73 to 89; after won 3 of the 5 pairs). Read this as "no regression", not as "the feature made the page faster".
