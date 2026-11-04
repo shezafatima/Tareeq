@@ -1,17 +1,11 @@
 // DRAFT: owner to confirm before launch. Only the Prompt example is the owner's wording; the other lines,
 // the Build and Learn examples, the intro and the image description are drafts adapted from the existing step
-// and hero card wording (specs/007-how-it-works-section).
+// and hero card wording (specs/007-how-it-works-section). The robot image is shared: see ./robot-image.ts.
 import type { HowItWorksContent } from "./types";
 
 export const howItWorks: HowItWorksContent = {
   heading: "How it works",
   intro: "Every session follows the same three steps.",
-  image: {
-    src: "/how-it-works.png",
-    width: 408,
-    height: 612,
-    alt: "The Tareeq robot assistant, smiling, standing with its hands on its hips.",
-  },
   steps: [
     {
       id: "prompt",

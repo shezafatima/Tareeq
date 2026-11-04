@@ -12,10 +12,6 @@ export const homeCopy: HomeCopy = {
     intro: "Pick the one that fits you. More are on the way.",
     linkLabel: "See all programs",
   },
-  why: {
-    heading: "Why Tareeq",
-    intro: "A simple way of teaching, kept simple on purpose.",
-  },
   cta: {
     line: "Bring one real task. Leave with something you built.",
     label: "Join a workshop",

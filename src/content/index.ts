@@ -5,9 +5,9 @@ import { courseList } from "./data/courses";
 import { contactCta, contactEmpty, contactNote, readContactDetails } from "./data/contact";
 import { homeCopy } from "./data/cta";
 import { howItWorks } from "./how-it-works";
+import { whyTareeq } from "./why-tareeq";
 import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
 import { pages } from "./data/pages";
-import { principles } from "./data/principles";
 import { programs } from "./data/programs";
 import { trustFacts } from "./data/trust";
 import { story } from "./data/story";
@@ -18,10 +18,10 @@ import type {
   CourseOption,
   HomeCopy,
   HowItWorksContent,
+  WhyTareeqContent,
   LeadCopy,
   PageMeta,
   PageSlug,
-  Principle,
   Program,
   StorySection,
   TrustFact,
@@ -43,10 +43,6 @@ export async function getPrograms(): Promise<Program[]> {
 
 export async function getProgramPreview(limit = 3): Promise<Program[]> {
   return byOrder(programs).slice(0, limit);
-}
-
-export async function getPrinciples(): Promise<Principle[]> {
-  return byOrder(principles);
 }
 
 export async function getStorySections(): Promise<StorySection[]> {
@@ -107,4 +103,8 @@ export async function getCourseOptions(): Promise<CourseOption[]> {
 
 export async function getHowItWorks(): Promise<HowItWorksContent> {
   return { ...howItWorks, steps: byOrder(howItWorks.steps) };
+}
+
+export async function getWhyTareeq(): Promise<WhyTareeqContent> {
+  return { ...whyTareeq, points: byOrder(whyTareeq.points) };
 }

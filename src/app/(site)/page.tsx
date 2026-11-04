@@ -11,10 +11,10 @@ export default function Home() {
     <>
       <Hero />
       <HeroExtras />
-      <HowItWorks />
-      <WhoItsFor />
       <ProgramsPreview />
       <WhyTareeq />
+      <HowItWorks />
+      <WhoItsFor />
       <FinalCta />
     </>
   );

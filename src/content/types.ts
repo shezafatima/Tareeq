@@ -27,7 +27,6 @@ export type HowItWorksContent = {
   heading: string;
   /** one line under the heading */
   intro: string;
-  image: { src: string; width: number; height: number; alt: string };
   steps: HowStep[];
 };
 
@@ -43,13 +42,6 @@ export type Program = {
   format: string;
   bring: string[];
   status: ProgramStatus;
-  order: number;
-};
-
-export type Principle = {
-  id: string;
-  heading: string;
-  text: string;
   order: number;
 };
 
@@ -97,7 +89,6 @@ export type SectionCopy = { heading: string; intro?: string };
 export type HomeCopy = {
   whoItsFor: SectionCopy;
   programs: SectionCopy & { linkLabel: string };
-  why: SectionCopy;
   cta: { line: string; label: string; href: string };
 };
 
@@ -124,4 +115,22 @@ export type LeadCopy = {
   closeLabel: string;
   sendingLabel: string;
   formErrors: { summaryHeading: string; rateLimited: string; internal: string; whatsappLink: string };
+};
+
+/** One of the four reasons in the "Why Tareeq" section (spec 008): a number, a title and one sentence. */
+export type WhyPoint = {
+  id: "learn-by-doing" | "skills-that-matter" | "learning-for-everyone" | "create-with-confidence";
+  /** shown as text: "01" to "04" */
+  number: string;
+  title: string;
+  text: string;
+  order: number;
+};
+
+export type WhyTareeqContent = {
+  heading: string;
+  /** one line under the heading (draft) */
+  intro: string;
+  /** exactly four, in order */
+  points: WhyPoint[];
 };
