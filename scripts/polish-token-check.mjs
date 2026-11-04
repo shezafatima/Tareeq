@@ -75,7 +75,8 @@ const useClient = FILES.filter((f) => /^\s*"use client"/m.test(read(f)));
 check('"use client" appears only in RevealController among this feature\'s new files', useClient.every((f) => f.endsWith("RevealController.tsx")), useClient.join(", "));
 
 const deps = JSON.parse(readFileSync("package.json", "utf8"));
-check("no new dependencies (same list as before the feature)", JSON.stringify(Object.keys(deps.dependencies)) === JSON.stringify(["clsx", "framer-motion", "next", "react", "react-dom", "tailwind-merge"]), Object.keys(deps.dependencies).join(","));
+// feature 006 added mongoose, resend and zod (owner-approved); the list is otherwise unchanged
+check("no new dependencies (same list as the last approved set)", JSON.stringify(Object.keys(deps.dependencies)) === JSON.stringify(["clsx", "framer-motion", "mongoose", "next", "react", "react-dom", "resend", "tailwind-merge", "zod"]), Object.keys(deps.dependencies).join(","));
 
 console.log(results.join("\n"));
 console.log(results.some((r) => r.startsWith("FAIL")) ? "\nSOME CHECKS FAILED" : "\nALL CHECKS PASSED");

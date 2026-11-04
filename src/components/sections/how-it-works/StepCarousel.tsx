@@ -1,152 +1,112 @@
 "use client";
-// Client: the cards' travel out of the hero, the carousel's autoplay, keys, dots and swipe. The cards themselves are
-// server-rendered children; this component only sets transforms, positions and attributes on them.
+// Client: the carousel's controls, swipe, flip and auto-advance (contracts/carousel.md). The cards themselves are
+// server-rendered children; this component only sets attributes on them (data-pos, data-flipped, aria, inert).
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useMotionValueEvent } from "framer-motion";
-import type { CardId } from "@/components/RobotEyes";
-import { clamp01, ease, useTravel } from "./travel-context";
+import { useTravel } from "./travel-context";
 
-const INTERVAL = 4000; // ms per card while autoplaying
-const FACES_FROM = 0.65; // travel progress where the compact (hero) face starts giving way to the full face
+const INTERVAL = 5000; // ms per card while auto-advancing
+const HOVER_HOLD = 120; // ms the pointer rests on a card before it flips
+const SWIPE_DISTANCE = 50; // px
+const SWIPE_VELOCITY = 0.5; // px per ms: a quick flick counts even if short
+const TAP_SLOP = 8; // px of movement that still counts as a tap
 
 type Props = { labels: string[]; regionLabel: string; children: React.ReactNode };
+type Drag = { x0: number; y0: number; t0: number; dx: number; lock: "x" | "y" | null; pose: HTMLElement | null };
+
+const setHiddenInert = (el: Element | null, hidden: boolean) => {
+  if (!el) return;
+  if (hidden) {
+    el.setAttribute("inert", "");
+    el.setAttribute("aria-hidden", "true");
+  } else {
+    el.removeAttribute("inert");
+    el.removeAttribute("aria-hidden");
+  }
+};
 
 export default function StepCarousel({ labels, regionLabel, children }: Props) {
-  const { mode, progress, arrived, hero, active, setActive, setHoverCard } = useTravel();
-  const trackRef = useRef<HTMLDivElement>(null);
+  const { mode, arrived, active, setActive } = useTravel();
   const regionRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const n = labels.length;
   const carousel = mode !== "list";
-  const travel = mode === "travel";
 
-  const [interacted, setInteracted] = useState(false);
-  const [hover, setHover] = useState(false);
+  const [interacted, setInteracted] = useState(false); // after the visitor acts, slide changes are announced politely
+  const [stopped, setStopped] = useState(false); // a touch swipe or tap stopped auto-advance for the visit
+  const [hover, setHover] = useState(false); // the pointer is over the card in focus
   const [focusIn, setFocusIn] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
   const [offscreen, setOffscreen] = useState(false);
+  const [flipped, setFlipped] = useState<number | null>(null); // index of the card showing its back
+  const flipBy = useRef<"hover" | "other">("other");
+  const hoverTimer = useRef(0);
+  const drag = useRef<Drag | null>(null);
 
   const cards = useCallback(() => Array.from(trackRef.current?.querySelectorAll<HTMLElement>(".hiw-card") ?? []), []);
-
-  // ---- travel: each card starts exactly on its hero card and moves to the carousel centre ----
-  const placeCards = useCallback(
-    (p: number) => {
-      const hp = hero();
-      if (!hp) return;
-      const e = ease(p);
-      const faces = clamp01((p - FACES_FROM) / (1 - FACES_FROM));
-      cards().forEach((card, i) => {
-        const heroCard = hp.cards[i];
-        const travelEl = card.querySelector<HTMLElement>(".hiw-card-travel");
-        const compact = card.querySelector<HTMLElement>(".hiw-face-compact");
-        const full = card.querySelector<HTMLElement>(".hiw-face-full");
-        if (!heroCard || !travelEl || !compact || !full) return;
-        const vis = heroCard.querySelector<HTMLElement>(".backdrop-blur-md") ?? heroCard;
-        const hr = vis.getBoundingClientRect();
-        const cr = card.getBoundingClientRect(); // the card's own layout box: never transformed
-        const m = new DOMMatrixReadOnly(getComputedStyle(vis.parentElement ?? vis).transform);
-        const tilt = (Math.atan2(m.b, m.a) * 180) / Math.PI;
-        const dx = hr.left + hr.width / 2 - (cr.left + cr.width / 2);
-        const dy = hr.top + hr.height / 2 - (cr.top + cr.height / 2);
-        compact.style.width = `${hr.width}px`; // the hero card's rendered width: identical at the hand-off
-        travelEl.style.opacity = p > 0 ? "1" : "0";
-        travelEl.style.transform = `translate(${dx * (1 - e)}px, ${dy * (1 - e)}px) rotate(${tilt * (1 - e)}deg)`;
-        const s0 = cr.width > 0 ? hr.width / cr.width : 1;
-        full.style.transform = `scale(${s0 + (1 - s0) * e})`;
-        full.style.opacity = String(faces);
-        compact.style.opacity = String(1 - faces);
-      });
-    },
-    [hero, cards],
-  );
-  useMotionValueEvent(progress, "change", (p) => travel && placeCards(p));
-  useLayoutEffect(() => {
-    if (travel) {
-      placeCards(progress.get());
-      return;
-    }
-    // not travelling: no inline styles at all
-    cards().forEach((card) => {
-      card.querySelectorAll<HTMLElement>(".hiw-card-travel, .hiw-face-compact, .hiw-face-full").forEach((el) => {
-        el.style.transform = "";
-        el.style.opacity = "";
-        el.style.width = "";
-      });
-    });
-  }, [travel, placeCards, progress, cards]);
-
-  // ---- positions and slide attributes ----
-  useLayoutEffect(() => {
-    cards().forEach((card, i) => {
-      if (!carousel) {
-        ["data-pos", "role", "aria-roledescription", "aria-label", "aria-hidden", "inert"].forEach((a) => card.removeAttribute(a));
-        return;
-      }
-      const offset = (((i - active) % n) + n) % n;
-      const pos = offset === 0 ? "center" : offset === 1 ? "right" : offset === n - 1 ? "left" : "back";
-      card.setAttribute("data-pos", pos);
-      card.setAttribute("role", "group");
-      card.setAttribute("aria-roledescription", "slide");
-      card.setAttribute("aria-label", `${i + 1} of ${n}: ${labels[i]}`);
-      // in the coverflow only the centred card is content; the side cards are decorative
-      if (travel && pos !== "center") {
-        card.setAttribute("aria-hidden", "true");
-        card.setAttribute("inert", "");
-      } else {
-        card.removeAttribute("aria-hidden");
-        card.removeAttribute("inert");
-      }
-    });
-  }, [active, carousel, travel, n, labels, cards]);
-
-  // ---- swipe: the track's scroll position decides the active card ----
-  const scrollToCard = useCallback(
-    (i: number, smooth = true) => {
-      const track = trackRef.current;
-      if (!track || mode !== "swipe") return;
-      track.scrollTo({ left: i * track.clientWidth, behavior: smooth ? "smooth" : "auto" });
-    },
-    [mode],
-  );
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track || mode !== "swipe") return;
-    let t = 0;
-    const settle = () => {
-      const i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
-      setActive(Math.min(n - 1, Math.max(0, i)));
-    };
-    const onScroll = () => {
-      window.clearTimeout(t);
-      t = window.setTimeout(settle, 120);
-    };
-    const stop = () => setInteracted(true);
-    track.addEventListener("scroll", onScroll, { passive: true });
-    track.addEventListener("scrollend", settle);
-    track.addEventListener("pointerdown", stop);
-    track.addEventListener("touchstart", stop, { passive: true });
-    track.addEventListener("wheel", stop, { passive: true });
-    return () => {
-      window.clearTimeout(t);
-      track.removeEventListener("scroll", onScroll);
-      track.removeEventListener("scrollend", settle);
-      track.removeEventListener("pointerdown", stop);
-      track.removeEventListener("touchstart", stop);
-      track.removeEventListener("wheel", stop);
-    };
-  }, [mode, n, setActive]);
 
   const go = useCallback(
     (i: number, manual: boolean) => {
       const next = ((i % n) + n) % n;
       if (manual) setInteracted(true);
+      setFlipped(null);
       setActive(next);
-      scrollToCard(next);
     },
-    [n, setActive, scrollToCard],
+    [n, setActive],
   );
 
-  // ---- pause reasons ----
+  const toggleFlip = useCallback(
+    (by: "hover" | "other") => {
+      flipBy.current = by;
+      setInteracted(true);
+      setFlipped((f) => (f === active ? null : active));
+    },
+    [active],
+  );
+
+  // ---- positions, slide attributes and the flip, set on the server-rendered cards ----
+  // Whatever stops being reachable is made inert only AFTER focus has been moved off it: an element that is made
+  // inert while it has focus drops focus to the page, which would also end a keyboard visitor's flip.
+  useLayoutEffect(() => {
+    const list = cards();
+    if (!carousel) {
+      list.forEach((card) => {
+        ["data-pos", "data-flipped", "role", "aria-roledescription", "aria-label"].forEach((a) => card.removeAttribute(a));
+        setHiddenInert(card, false);
+        setHiddenInert(card.querySelector(".hiw-face-front"), false);
+        setHiddenInert(card.querySelector(".hiw-face-back"), false);
+      });
+      return;
+    }
+    const toHide: Element[] = [];
+    list.forEach((card, i) => {
+      const front = card.querySelector(".hiw-face-front");
+      const back = card.querySelector(".hiw-face-back");
+      const offset = (((i - active) % n) + n) % n;
+      const pos = offset === 0 ? "active" : offset === 1 ? "after" : "before";
+      card.setAttribute("data-pos", pos);
+      card.setAttribute("role", "group");
+      card.setAttribute("aria-roledescription", "slide");
+      card.setAttribute("aria-label", `${i + 1} of ${n}: ${labels[i]}`);
+      const showBack = pos === "active" && flipped === i;
+      if (showBack) card.setAttribute("data-flipped", "");
+      else card.removeAttribute("data-flipped");
+      // only the card in focus is content (reachable and announced); of its faces only the one showing
+      if (pos === "active") setHiddenInert(card, false);
+      else toHide.push(card);
+      setHiddenInert(showBack ? back : front, false);
+      const hidden = showBack ? front : back;
+      if (hidden) toHide.push(hidden);
+    });
+    const focused = document.activeElement;
+    if (focused && toHide.some((el) => el.contains(focused))) {
+      const face = flipped === active ? ".hiw-face-back" : ".hiw-face-front";
+      list[active]?.querySelector<HTMLElement>(`${face} .hiw-flip-btn`)?.focus();
+    }
+    toHide.forEach((el) => setHiddenInert(el, true));
+  }, [active, flipped, carousel, n, labels, cards]);
+
+  // ---- pause reasons: hidden tab, off screen ----
   useEffect(() => {
     const onVis = () => setTabHidden(document.visibilityState === "hidden");
     document.addEventListener("visibilitychange", onVis);
@@ -160,34 +120,91 @@ export default function StepCarousel({ labels, regionLabel, children }: Props) {
     return () => io.disconnect();
   }, [carousel]);
 
-  // ---- autoplay: one card every 4 s while nothing pauses it; stops for good after any manual action ----
-  const running = carousel && !interacted && !hover && !focusIn && !tabHidden && !offscreen && (!travel || arrived);
+  // ---- auto-advance: one card every 5 s unless something holds it (contracts/carousel.md) ----
+  const running =
+    carousel && mode !== "still" && !stopped && !hover && !focusIn && !tabHidden && !offscreen && flipped === null && (mode !== "travel" || arrived);
   useEffect(() => {
     if (!running) return;
     const t = window.setTimeout(() => go(active + 1, false), INTERVAL);
     return () => window.clearTimeout(t);
   }, [running, active, go]);
 
-  // the robot reacts to the card being hovered or focused (travel layout)
-  const onCardPointer = (e: React.PointerEvent) => {
-    if (!travel || e.pointerType === "touch") return;
-    const card = (e.target as Element).closest<HTMLElement>(".hiw-card[data-pos='center']");
-    setHoverCard(card ? ((card.dataset.step as CardId) ?? null) : null);
+  // ---- hover on the card in focus: pauses auto-advance, and flips the card after a short rest ----
+  const finePointer = (e: React.PointerEvent) => e.pointerType === "mouse" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const onTrackEnter = (e: React.PointerEvent) => {
+    if (!carousel || !finePointer(e)) return;
+    setHover(true);
+    window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => {
+      flipBy.current = "hover";
+      setFlipped(active);
+    }, HOVER_HOLD);
+  };
+  const onTrackLeave = (e: React.PointerEvent) => {
+    if (!finePointer(e)) return;
+    window.clearTimeout(hoverTimer.current);
+    setHover(false);
+    if (flipBy.current === "hover") setFlipped(null);
+  };
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), []);
+
+  // ---- swipe (any width) and tap-to-flip (touch): pointer events on the track ----
+  const activePose = () => trackRef.current?.querySelector<HTMLElement>(".hiw-card[data-pos='active'] .hiw-card-pose") ?? null;
+  const onDown = (e: React.PointerEvent) => {
+    if (!carousel || (e.pointerType === "mouse" && e.button !== 0)) return;
+    drag.current = { x0: e.clientX, y0: e.clientY, t0: performance.now(), dx: 0, lock: null, pose: activePose() };
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x0;
+    const dy = e.clientY - d.y0;
+    if (!d.lock && (Math.abs(dx) > TAP_SLOP || Math.abs(dy) > TAP_SLOP)) {
+      d.lock = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (d.lock === "x") trackRef.current?.setPointerCapture(e.pointerId);
+    }
+    if (d.lock === "x" && d.pose) {
+      d.dx = dx;
+      d.pose.style.transition = "none";
+      d.pose.style.transform = `translateX(${dx}px)`;
+    }
+  };
+  const finishDrag = (e: React.PointerEvent, cancelled: boolean) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    if (d.pose) {
+      d.pose.style.transition = "";
+      d.pose.style.transform = ""; // the CSS transition takes over from here
+    }
+    if (cancelled) return;
+    if (d.lock === "x") {
+      const dt = Math.max(1, performance.now() - d.t0);
+      if (Math.abs(d.dx) > SWIPE_DISTANCE || Math.abs(d.dx) / dt > SWIPE_VELOCITY) go(active + (d.dx < 0 ? 1 : -1), true);
+    } else if (!d.lock && e.pointerType !== "mouse" && !(e.target as Element).closest(".hiw-flip-btn")) {
+      // a tap on the card flips it (touch and pen)
+      if ((e.target as Element).closest(".hiw-card[data-pos='active']")) toggleFlip("other");
+    }
+  };
+  // a touch swipe or tap (anywhere in the carousel, controls included) stops auto-advance for the rest of the visit.
+  // A vertical page scroll ends in pointercancel, not pointerup, so it does not count.
+  const onRegionUp = (e: React.PointerEvent) => {
+    if (e.pointerType === "touch") setStopped(true);
   };
 
   return (
     <div
       ref={regionRef}
       {...(carousel ? { role: "region", "aria-roledescription": "carousel", "aria-label": regionLabel } : {})}
-      onPointerEnter={(e) => e.pointerType !== "touch" && setHover(true)}
-      onPointerLeave={() => {
-        setHover(false);
-        setHoverCard(null);
-      }}
-      onPointerMove={onCardPointer}
+      onPointerUp={onRegionUp}
       onFocus={() => setFocusIn(true)}
       onBlur={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocusIn(false);
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+        setFocusIn(false);
+        if (flipBy.current !== "hover") setFlipped(null); // a card flipped by tap or key returns when focus leaves
+      }}
+      onClick={(e) => {
+        if (carousel && (e.target as Element).closest(".hiw-flip-btn")) toggleFlip("other");
       }}
       onKeyDown={(e) => {
         if (!carousel) return;
@@ -200,11 +217,26 @@ export default function StepCarousel({ labels, regionLabel, children }: Props) {
         }
       }}
     >
-      <div ref={trackRef} className="hiw-track" aria-live={carousel ? (interacted ? "polite" : "off") : undefined}>
+      <div
+        ref={trackRef}
+        className="hiw-track grid"
+        aria-live={carousel ? (interacted ? "polite" : "off") : undefined}
+        onPointerEnter={onTrackEnter}
+        onPointerLeave={onTrackLeave}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={(e) => finishDrag(e, false)}
+        onPointerCancel={(e) => finishDrag(e, true)}
+      >
         {children}
       </div>
       <div className="hiw-controls mt-5 items-center justify-center gap-2">
-        <button type="button" aria-label="Previous step" onClick={() => go(active - 1, true)} className="inline-flex size-11 items-center justify-center rounded-pill text-royal ring-1 ring-royal/20 transition-colors duration-[var(--dur-fast)] hover:bg-white">
+        <button
+          type="button"
+          aria-label="Previous step"
+          onClick={() => go(active - 1, true)}
+          className="inline-flex size-11 items-center justify-center rounded-pill text-royal ring-1 ring-royal/20 transition-colors duration-[var(--dur-fast)] hover:bg-white"
+        >
           <span aria-hidden="true">‹</span>
         </button>
         {labels.map((label, i) => (
@@ -216,10 +248,18 @@ export default function StepCarousel({ labels, regionLabel, children }: Props) {
             onClick={() => go(i, true)}
             className="group inline-flex size-11 items-center justify-center rounded-pill"
           >
-            <span aria-hidden="true" className={`block h-2.5 rounded-pill transition-[transform,opacity] duration-[var(--dur-base)] ${i === active ? "w-6 bg-royal" : "w-2.5 bg-royal/30 group-hover:bg-royal/60"}`} />
+            <span
+              aria-hidden="true"
+              className={`block h-2.5 rounded-pill transition-[transform,opacity] duration-[var(--dur-base)] ${i === active ? "w-6 bg-royal" : "w-2.5 bg-royal/30 group-hover:bg-royal/60"}`}
+            />
           </button>
         ))}
-        <button type="button" aria-label="Next step" onClick={() => go(active + 1, true)} className="inline-flex size-11 items-center justify-center rounded-pill text-royal ring-1 ring-royal/20 transition-colors duration-[var(--dur-fast)] hover:bg-white">
+        <button
+          type="button"
+          aria-label="Next step"
+          onClick={() => go(active + 1, true)}
+          className="inline-flex size-11 items-center justify-center rounded-pill text-royal ring-1 ring-royal/20 transition-colors duration-[var(--dur-fast)] hover:bg-white"
+        >
           <span aria-hidden="true">›</span>
         </button>
       </div>
