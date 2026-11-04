@@ -5,6 +5,8 @@ type ButtonProps = {
   variant?: "primary" | "secondary";
   size?: "md" | "lg";
   href?: string;
+  /** with href: opens in a new tab (for example WhatsApp) */
+  external?: boolean;
   className?: string;
   children: React.ReactNode;
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "className">;
@@ -20,11 +22,19 @@ const sizes = {
   lg: "px-7 py-3.5 text-base",
 };
 
-export default function Button({ variant = "primary", size = "md", href, className, children, ...rest }: ButtonProps) {
+export default function Button({ variant = "primary", size = "md", href, external, className, children, ...rest }: ButtonProps) {
   const classes = cn(base, variants[variant], sizes[size], className);
+  if (href && external) {
+    return (
+      <a id={rest.id} href={href} target="_blank" rel="noopener noreferrer" className={classes}>
+        {children}
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>
+    );
+  }
   if (href) {
     return (
-      <Link href={href} className={classes}>
+      <Link id={rest.id} href={href} className={classes}>
         {children}
       </Link>
     );

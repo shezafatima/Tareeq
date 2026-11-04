@@ -1,8 +1,10 @@
 // The only import path for page content. Pages and components call these accessors; they never
 // import from ./data. To move content to a database, change this file and ./data only.
 import { audiences } from "./data/audiences";
+import { courseList } from "./data/courses";
 import { contactCta, contactEmpty, contactNote, readContactDetails } from "./data/contact";
 import { homeCopy } from "./data/cta";
+import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
 import { pages } from "./data/pages";
 import { principles } from "./data/principles";
 import { programs } from "./data/programs";
@@ -13,7 +15,9 @@ import type {
   Audience,
   ContactCta,
   ContactDetail,
+  CourseOption,
   HomeCopy,
+  LeadCopy,
   PageMeta,
   PageSlug,
   Principle,
@@ -24,6 +28,8 @@ import type {
 } from "./types";
 
 export type * from "./types";
+
+export { PRIVACY_NOTE_VERSION };
 
 const byOrder = <T extends { order: number }>(rows: T[]): T[] => [...rows].sort((a, b) => a.order - b.order);
 
@@ -83,4 +89,22 @@ const defaultMeta: Omit<PageMeta, "slug"> = {
 
 export async function getPageMeta(slug: PageSlug): Promise<PageMeta> {
   return pages.find((p) => p.slug === slug) ?? { slug, ...defaultMeta };
+}
+
+export async function getLeadCopy(): Promise<LeadCopy> {
+  return leadCopy;
+}
+
+/** Heading and button label for the online course form (/register), and links to it. */
+export async function getCourseFormLabel(): Promise<string> {
+  return courseFormLabel;
+}
+
+/**
+ * Courses a visitor can pick on the waitlist form, always ending with "Not sure yet".
+ * The single source for course options: callers must not depend on where the list comes from
+ * (a hardcoded list today, published courses later).
+ */
+export async function getCourseOptions(): Promise<CourseOption[]> {
+  return [...courseList, { id: "not-sure", name: "Not sure yet" }];
 }

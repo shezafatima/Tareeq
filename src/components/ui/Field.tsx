@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import FieldFrame, { controlBase, controlBorder, describedBy } from "./FieldFrame";
 
 type FieldProps = {
   label: string;
@@ -7,39 +8,20 @@ type FieldProps = {
   error?: string;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "name">;
 
-export default function Field({ label, name, help, error, id, className, ...rest }: FieldProps) {
+export default function Field({ label, name, help, error, id, className, required, ...rest }: FieldProps) {
   const inputId = id ?? `field-${name}`;
-  const helpId = `${inputId}-help`;
-  const errorId = `${inputId}-error`;
-  const describedBy = [help && helpId, error && errorId].filter(Boolean).join(" ") || undefined;
 
   return (
-    <div>
-      <label htmlFor={inputId} className="block text-sm font-semibold text-midnight">
-        {label}
-      </label>
+    <FieldFrame id={inputId} label={label} required={required} help={help} error={error}>
       <input
         id={inputId}
         name={name}
+        required={required}
         aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        className={cn(
-          "mt-1.5 block min-h-11 w-full rounded-control border bg-white px-4 text-base text-midnight placeholder:text-midnight/60",
-          error ? "border-danger" : "border-midnight/60",
-          className,
-        )}
+        aria-describedby={describedBy(inputId, help, error)}
+        className={cn(controlBase, controlBorder(error), className)}
         {...rest}
       />
-      {help && (
-        <p id={helpId} className="mt-1.5 text-sm text-midnight/70">
-          {help}
-        </p>
-      )}
-      {error && (
-        <p id={errorId} role="alert" className="mt-1.5 text-sm font-medium text-danger">
-          {error}
-        </p>
-      )}
-    </div>
+    </FieldFrame>
   );
 }

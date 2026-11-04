@@ -11,3 +11,6 @@ AGENTS.md
 
 # third-party design skill installed locally (not part of the app)
 .claude/skills/
+
+# plain .env files are never committed (.env.example is the template)
+.env

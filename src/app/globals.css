@@ -475,3 +475,15 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
     display: flex;
   }
 }
+
+/* Workshop form steps (feature 006). The step that is not showing gets .step-off, which only applies with
+   JavaScript on. Without JavaScript the Next and Back buttons cannot work, so both steps show at once and the
+   send button is always there. (The hidden attribute is not used: the base styles' [hidden] rule would win.) */
+html[data-js] .step-off {
+  display: none !important;
+}
+html:not([data-js]) .step-next,
+html:not([data-js]) .step-back,
+html:not([data-js]) .step-progress {
+  display: none !important;
+}

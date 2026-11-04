@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import Reveal from "@/components/ui/Reveal";
-import { getContactDetails } from "@/content";
+import { getContactDetails, getCourseFormLabel } from "@/content";
 import { navItems, socialLinks, tagline } from "@/lib/site";
 import Logo from "./Logo";
 
@@ -11,7 +11,7 @@ const heading = "text-sm font-semibold uppercase tracking-[0.18em] text-white/70
 
 // Contact and social blocks render only when entries exist; nothing is invented.
 export default async function Footer() {
-  const contactDetails = await getContactDetails();
+  const [contactDetails, courseFormLabel] = await Promise.all([getContactDetails(), getCourseFormLabel()]);
   return (
     <footer className="overflow-clip bg-midnight text-white [&_a:focus-visible]:outline-saffron">
       <Reveal>
@@ -31,6 +31,12 @@ export default async function Footer() {
                 </Link>
               </li>
             ))}
+            {/* the online course form: linked here and from course pages, never from the header */}
+            <li>
+              <Link href="/register" className={link}>
+                {courseFormLabel}
+              </Link>
+            </li>
           </ul>
         </nav>
 
