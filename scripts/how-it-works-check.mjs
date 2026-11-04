@@ -390,7 +390,7 @@ if (run("flip")) {
   await phone.ctx.close();
 }
 
-// ---------- Hand-off: the hero's cards travel into the carousel ----------
+// ---------- Scroll helpers (used by the reduced-motion and entrance sections) ----------
 /** Scroll position at which the cards should have arrived (the carousel slot's centre at 60% of the viewport). */
 const arrivalY = (p) =>
   p.evaluate(() => {
@@ -407,27 +407,12 @@ const startSampler = (p) =>
     const t0 = performance.now();
     const tick = () => {
       if (!window.__sampling) return;
-      const hidden = heroCards.filter((c) => c.style.visibility === "hidden").length;
-      const twins = [...document.querySelectorAll(".hiw-card-travel")];
-      const visible = twins.filter((el) => parseFloat(el.style.opacity || "0") > 0.05).length;
-      const activeTwin = document.querySelector(".hiw-card[data-pos='active'] .hiw-card-travel") ?? twins[0];
-      const m = new DOMMatrixReadOnly(getComputedStyle(activeTwin).transform);
-      const fronts = [...document.querySelectorAll(".hiw-face-front")].filter((el) => parseFloat(el.style.opacity || "0") > 0.05 && parseFloat(el.closest(".hiw-card-travel").style.opacity || "0") > 0.05).length;
-      const settled = document.querySelector(".hiw").hasAttribute("data-arrived");
-      const hr = heroCards[0].getBoundingClientRect();
-      const t0r = twins[0].querySelector(".hiw-face-compact")?.getBoundingClientRect();
+      const hidden = heroCards.filter((c) => c.style.visibility === "hidden" || c.hasAttribute("inert")).length;
       window.__samples.push({
         t: performance.now() - t0,
         y: window.scrollY,
         heroHidden: hidden,
-        visible,
-        fronts,
-        settled,
-        tx: m.e,
-        ty: m.f,
         robotRel: robot.getBoundingClientRect().top - heroRoot.getBoundingClientRect().top,
-        // distance between the hero's Prompt card and its twin's compact face (only meaningful while handed off)
-        gap: t0r && hidden === 3 ? Math.hypot(t0r.left + t0r.width / 2 - (hr.left + hr.width / 2), t0r.top + t0r.height / 2 - (hr.top + hr.height / 2)) : null,
       });
       requestAnimationFrame(tick);
     };
@@ -443,115 +428,10 @@ const scrollSteps = async (p, from, to, step = 20) => {
   await p.evaluate((v) => window.scrollTo(0, v), to);
 };
 
-if (run("handoff")) {
-  const snap = existsSync(`${shots}/hero-before.json`) ? JSON.parse(readFileSync(`${shots}/hero-before.json`, "utf8")) : null;
-  for (const [w, h] of [[1440, 900], [1024, 768], [768, 1024]]) {
-    const { ctx, p, logs } = await newPage(w, h);
-    const tag = `[${w}x${h}] hand-off`;
-    await open(p);
-    await p.waitForTimeout(1500);
-    const target = await arrivalY(p);
-    await p.screenshot({ path: `${shots}/handoff-1-top-${w}.png` });
-
-    // slow scroll down and back: one set of cards in every frame, the hero robot never moves
-    await startSampler(p);
-    await scrollSteps(p, 0, target, 12);
-    await p.waitForTimeout(1200);
-    await p.screenshot({ path: `${shots}/handoff-4-arrived-${w}.png` });
-    if (w === 1440) {
-      for (const pct of [0.2, 0.35, 0.5, 0.65, 0.8]) {
-        await p.evaluate((v) => window.scrollTo(0, v), Math.round(target * pct));
-        await p.waitForTimeout(900);
-        await p.screenshot({ path: `${shots}/handoff-path-${Math.round(pct * 100)}-${w}.png` });
-      }
-      await p.evaluate((v) => window.scrollTo(0, v), target);
-      await p.waitForTimeout(900);
-    }
-    await scrollSteps(p, target, 0, 12);
-    await p.waitForTimeout(1500);
-    const samples = await stopSampler(p);
-    const bad = samples.filter((x) => !((x.heroHidden === 3 && x.visible >= 1) || (x.heroHidden === 0 && x.visible === 0)));
-    check(`${tag} exactly one set of cards in every frame (${samples.length} frames)`, bad.length === 0, bad.length ? `${bad.length} bad, first at y=${bad[0].y}` : "");
-    const crowded = samples.filter((x) => !x.settled && x.fronts > 1);
-    check(`${tag} while travelling only one big card face is visible at a time (no overlapping text)`, crowded.length === 0, crowded.length ? `${crowded.length} frames with ${crowded[0].fronts}` : "");
-    const rel = samples.map((x) => x.robotRel);
-    check(`${tag} the hero robot never moves relative to the hero`, Math.max(...rel) - Math.min(...rel) <= 8, `${(Math.max(...rel) - Math.min(...rel)).toFixed(1)} px`);
-    const gaps = samples.map((x) => x.gap).filter((g) => g !== null);
-    check(`${tag} each twin sits on its hero card while handed off (no pop)`, gaps.length > 0 && gaps[0] <= 6, `first frame ${gaps[0]?.toFixed(1)} px`);
-    check(`${tag} the cards went through the whole path (hero hidden at some point, shown again after)`, samples.some((x) => x.heroHidden === 3) && samples.at(-1).heroHidden === 0);
-    check(`${tag} back at the top the hero's cards are exactly as they were (no inert, aria-hidden or inline hiding left)`, await heroCardsClean(p));
-    const after = await heroSnapshot(p);
-    const before = snap?.[w];
-    if (before) {
-      check(`${tag} the hero is where it was (hero, heading within 2px; floating robot and cards within 24px)`, near(after.hero, before.hero, 2) && near(after.h1, before.h1, 2) && near(after.robot, before.robot, 24) && after.cards.every((c, i) => near(c, before.cards[i], 24)));
-    } else if (w === 1440) check(`${tag} hero snapshot found (run once with SNAPSHOT=write)`, false);
-
-    // a fast jump to the arrival point: the spring overshoots a little and settles
-    await p.evaluate(() => window.scrollTo(0, 0));
-    await p.waitForTimeout(1000);
-    await startSampler(p);
-    await p.evaluate((v) => window.scrollTo(0, v), 4);
-    await p.waitForTimeout(250);
-    const d0 = (await p.evaluate(() => { const el = document.querySelector(".hiw-card[data-pos='active'] .hiw-card-travel") ?? document.querySelector(".hiw-card-travel"); const m = new DOMMatrixReadOnly(getComputedStyle(el).transform); return [m.e, m.f]; }));
-    await p.evaluate((v) => window.scrollTo(0, v), target);
-    await p.waitForTimeout(1800);
-    const jump = await stopSampler(p);
-    const tJump = jump.find((x) => x.y >= target - 1)?.t ?? 0;
-    const dist = Math.hypot(d0[0], d0[1]) || 1;
-    const proj = jump.filter((x) => x.t >= tJump).map((x) => ({ t: x.t - tJump, s: (x.tx * d0[0] + x.ty * d0[1]) / (dist * dist) }));
-    const overshoot = Math.max(0, -Math.min(...proj.map((x) => x.s)));
-    const lastMoving = [...proj].reverse().find((x) => Math.abs(x.s) * dist > 1);
-    check(`${tag} the cards overshoot the carousel slot only slightly (under 10% of the distance)`, overshoot < 0.1, `${(overshoot * 100).toFixed(1)}%`);
-    check(`${tag} the cards settle within 0.8 s of the scroll stopping`, (lastMoving?.t ?? 0) < 800, `${Math.round(lastMoving?.t ?? 0)} ms`);
-    check(`${tag} on arrival only the card in focus is left visible`, (await p.evaluate(() => [...document.querySelectorAll(".hiw-card")].filter((c) => parseFloat(c.querySelector(".hiw-card-travel").style.opacity || "0") * parseFloat(getComputedStyle(c.querySelector(".hiw-card-pose")).opacity) > 0.05).length)) === 1);
-    check(`${tag} the carousel has taken over (arrived)`, await p.evaluate(() => document.querySelector(".hiw").hasAttribute("data-arrived")));
-
-    // loading already inside the section: the cards are at arrival at once
-    await p.evaluate((v) => window.scrollTo(0, v), target);
-    await p.waitForTimeout(500);
-    await p.reload({ waitUntil: "networkidle" });
-    await p.waitForFunction(() => document.documentElement.getAttribute("data-preloader") !== "run", null, { timeout: 20000 });
-    await p.waitForTimeout(800);
-    const mid = await p.evaluate(() => {
-      const hero = ["prompt", "build", "learn"].map((id) => document.querySelector(`[data-hero-card="${id}"]`));
-      const el = document.querySelector(".hiw-card[data-pos='active'] .hiw-card-travel");
-      const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
-      return { y: window.scrollY, arrived: document.querySelector(".hiw").hasAttribute("data-arrived"), heroHidden: hero.every((c) => c.style.visibility === "hidden"), off: Math.hypot(m.e, m.f) };
-    });
-    check(`${tag} loading inside the section puts the cards at arrival (no travel, hero cards hidden)`, mid.y > 100 && mid.arrived && mid.heroHidden && mid.off < 1.5, JSON.stringify(mid));
-
-    // tabbing in the middle of the travel never lands on something hidden
-    await p.evaluate(() => window.scrollTo(0, 0));
-    await p.waitForTimeout(800);
-    await p.evaluate((v) => window.scrollTo(0, v), Math.round(target * 0.5));
-    await p.waitForTimeout(900);
-    let focusOk = true;
-    for (let i = 0; i < 16; i++) {
-      await p.keyboard.press("Tab");
-      const f = await p.evaluate(() => { const a = document.activeElement; return a && a !== document.body ? { hidden: getComputedStyle(a).visibility === "hidden", inert: !!a.closest("[inert]") } : { hidden: false, inert: false }; });
-      if (f.hidden || f.inert) focusOk = false;
-    }
-    check(`${tag} Tab in the middle of the travel never lands on a hidden element`, focusOk);
-    await p.screenshot({ path: `${shots}/handoff-3-mid-${w}.png` });
-
-    // resizing below 768px in the middle of the travel gives the hero back and ends in the phone layout
-    if (w === 1024) {
-      await p.setViewportSize({ width: 700, height: 900 });
-      await p.waitForTimeout(900);
-      check(`${tag} resizing to a phone width restores the hero and removes the travel`, (await heroCardsClean(p)) && (await p.evaluate(() => [...document.querySelectorAll(".hiw-card-travel")].every((el) => el.style.transform === "" && el.style.opacity === ""))));
-      await p.setViewportSize({ width: 1024, height: 768 });
-      await p.waitForTimeout(900);
-      check(`${tag} resizing back to 1024px resumes the travel with the hero cards handed off`, await p.evaluate(() => ["prompt", "build", "learn"].every((id) => document.querySelector(`[data-hero-card="${id}"]`).style.visibility === "hidden") || window.scrollY === 0));
-    }
-    check(`${tag} no console errors`, logs.length === 0, logs.slice(0, 2).join(" | "));
-    await ctx.close();
-  }
-}
-
 // ---------- Robot image: breathing, and the two tilted cards behind it ----------
 const breathSample = (p) =>
   p.evaluate(() => {
-    const el = document.querySelector(".hiw-breath");
+    const el = document.querySelector("#how-it-works .robot-breath");
     const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
     return { scale: m.a, y: m.f };
   });
@@ -585,7 +465,7 @@ if (run("breathing")) {
     check(`${tag} the image swells to at most 1.02 (and does swell)`, maxScale <= 1.0225 && maxScale >= 1.015, maxScale.toFixed(4));
     check(`${tag} it lifts 4 to 6 px`, lift >= 4 && lift <= 6.2, `${lift.toFixed(2)} px`);
     const anchor = await p.evaluate(() => {
-      const el = document.querySelector(".hiw-breath");
+      const el = document.querySelector("#how-it-works .robot-breath");
       const o = getComputedStyle(el).transformOrigin.split(" ").map(parseFloat);
       const r = el.getBoundingClientRect();
       return { x: o[0], y: o[1], w: el.offsetWidth, h: el.offsetHeight, r: r.height };
@@ -595,14 +475,14 @@ if (run("breathing")) {
     // the cards: a straight light blue one in front, a tilted saffron one behind and lower like a shadow; the robot
     // stands on the blue card with its head above it
     const shapes = await p.evaluate(() => {
-      const img = document.querySelector(".hiw-breath img").getBoundingClientRect();
-      const info = [...document.querySelectorAll(".hiw-shape")].map((el) => {
+      const img = document.querySelector("#how-it-works .robot-breath img").getBoundingClientRect();
+      const info = [...document.querySelectorAll("#how-it-works .robot-shape")].map((el) => {
         const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
-        const fill = el.querySelector(".hiw-shape-fill");
+        const fill = el.querySelector(".robot-shape-fill");
         const r = fill.getBoundingClientRect(); // the card itself (the wrapper is only its box)
         const wrap = el.getBoundingClientRect();
         return {
-          kind: el.classList.contains("hiw-shape-saffron") ? "saffron" : "blue",
+          kind: el.classList.contains("robot-shape-saffron") ? "saffron" : "blue",
           angle: Math.round((Math.atan2(m.b, m.a) * 180) / Math.PI),
           fill: getComputedStyle(fill).backgroundColor,
           radius: parseFloat(getComputedStyle(el).borderTopLeftRadius),
@@ -650,10 +530,10 @@ if (run("breathing")) {
   await still.p.waitForTimeout(1000);
   const quiet = await breathOver(still.p, 4000);
   check(`[1440px] breathing: with reduced motion the image is still`, spread(quiet.map((x) => x.scale)) < 0.0005 && spread(quiet.map((x) => x.y)) < 0.2);
-  check(`[1440px] breathing: with reduced motion the two cards are still there`, (await still.p.locator(".hiw-shape").count()) === 2);
+  check(`[1440px] breathing: with reduced motion the two cards are still there`, (await still.p.locator("#how-it-works .robot-shape").count()) === 2);
   const rest = await still.p.evaluate(() => {
-    const img = document.querySelector(".hiw-breath img").getBoundingClientRect();
-    const card = document.querySelector(".hiw-shape-blue").getBoundingClientRect();
+    const img = document.querySelector("#how-it-works .robot-breath img").getBoundingClientRect();
+    const card = document.querySelector("#how-it-works .robot-shape-blue").getBoundingClientRect();
     return { feet: img.top + img.height * 0.969, bottom: card.bottom };
   });
   check(`[1440px] breathing: at rest the robot's feet touch the blue card's bottom edge exactly`, Math.abs(rest.feet - rest.bottom) <= 2.5, `feet ${rest.feet.toFixed(1)}, card bottom ${rest.bottom.toFixed(1)}`);
@@ -701,11 +581,11 @@ if (run("reduced-motion")) {
   }
 }
 
-// ---------- Phones: the carousel fades and rises in; nothing travels ----------
+// ---------- Entrance: the carousel fades and rises in as it enters the screen, at every width; nothing travels ----------
 if (run("phone")) {
-  for (const [w, h] of [[360, 740], [390, 844]]) {
+  for (const [w, h] of [[360, 740], [390, 844], [1440, 900]]) {
     const { ctx, p, logs } = await newPage(w, h);
-    const tag = `[${w}px] phone`;
+    const tag = `[${w}px] entrance`;
     await open(p);
     check(`${tag} the carousel starts hidden below the fold, ready to fade in`, await p.evaluate(() => { const el = document.querySelector(".hiw-carousel"); return el.hasAttribute("data-reveal") && !el.hasAttribute("data-revealed") && getComputedStyle(el).opacity === "0"; }));
     const target = await arrivalY(p);
@@ -725,29 +605,6 @@ if (run("phone")) {
   }
 }
 
-// ---------- Tablet widths (768 to 1023): the travel in the stacked layout ----------
-if (run("tablet")) {
-  for (const [w, h] of [[768, 1024], [1000, 800]]) {
-    const { ctx, p, logs } = await newPage(w, h);
-    const tag = `[${w}x${h}] tablet`;
-    await open(p);
-    const target = await arrivalY(p);
-    await scrollSteps(p, 0, target, 25);
-    await p.waitForTimeout(1500);
-    const m = await p.evaluate(() => {
-      const r = document.querySelector(".hiw-card[data-pos='active']").getBoundingClientRect();
-      return { arrived: document.querySelector(".hiw").hasAttribute("data-arrived"), top: r.top, bottom: r.bottom, vh: window.innerHeight };
-    });
-    check(`${tag} the cards arrive in the stacked layout`, m.arrived);
-    check(`${tag} the card in focus is fully on screen once arrived`, m.top >= 70 && m.bottom <= m.vh, JSON.stringify(m));
-    check(`${tag} no horizontal scroll`, await noHScroll(p));
-    await p.screenshot({ path: `${shots}/tablet-arrived-${w}.png` });
-    check(`${tag} no console errors`, logs.length === 0, logs.slice(0, 2).join(" | "));
-    await ctx.close();
-  }
-}
-
-// Sections for the carousel, hand-off, phone, still, tablet and breathing stories are added by their tasks.
 
 await b.close();
 console.log(results.join("\n"));

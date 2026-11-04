@@ -11,7 +11,7 @@ export default async function ProgramsPreview() {
   if (programs.length === 0) return null;
 
   return (
-    <Section labelledBy="programs-title" tone="paper" divider decoration="circles">
+    <Section id="programs" labelledBy="programs-title" tone="paper" divider decoration="circles">
       <Reveal>
         <SectionHeading id="programs-title" intro={copy.programs.intro}>
           {copy.programs.heading}

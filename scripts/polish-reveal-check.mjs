@@ -521,7 +521,7 @@ if (want("hero")) {
       await p.screenshot({ path: `shots/004/hero-extras-${w}.png` });
       await p.locator('a[aria-label="Scroll to the next section"]').click();
       await p.waitForTimeout(1500);
-      const toWho = await p.evaluate(() => Math.round(document.querySelector("#how-it-works").getBoundingClientRect().top)); // feature 005: the cue targets How it works
+      const toWho = await p.evaluate(() => Math.round(document.querySelector("#programs").getBoundingClientRect().top)); // feature 008: the cue targets Programs
       check(`${tag} the cue scrolls to the first section`, toWho >= -5 && toWho <= 120, String(toWho));
     } else {
       check(`${tag} the cue is not shown on a phone (the hero already runs past the fold)`, info.cueDisplay === "none");

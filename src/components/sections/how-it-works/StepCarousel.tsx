@@ -3,7 +3,7 @@
 // server-rendered children; this component only sets attributes on them (data-pos, data-flipped, aria, inert).
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useTravel } from "./travel-context";
+import { useLayoutMode } from "@/hooks/useLayoutMode";
 
 const INTERVAL = 5000; // ms per card while auto-advancing
 const HOVER_HOLD = 120; // ms the pointer rests on a card before it flips
@@ -26,7 +26,8 @@ const setHiddenInert = (el: Element | null, hidden: boolean) => {
 };
 
 export default function StepCarousel({ labels, regionLabel, children }: Props) {
-  const { mode, arrived, active, setActive } = useTravel();
+  const mode = useLayoutMode();
+  const [active, setActive] = useState(0); // the card in focus
   const regionRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const n = labels.length;
@@ -122,7 +123,7 @@ export default function StepCarousel({ labels, regionLabel, children }: Props) {
 
   // ---- auto-advance: one card every 5 s unless something holds it (contracts/carousel.md) ----
   const running =
-    carousel && mode !== "still" && !stopped && !hover && !focusIn && !tabHidden && !offscreen && flipped === null && (mode !== "travel" || arrived);
+    carousel && mode !== "still" && !stopped && !hover && !focusIn && !tabHidden && !offscreen && flipped === null;
   useEffect(() => {
     if (!running) return;
     const t = window.setTimeout(() => go(active + 1, false), INTERVAL);

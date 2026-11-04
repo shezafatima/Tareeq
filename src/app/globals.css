@@ -366,8 +366,7 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
   margin-top: 0.75rem;
 }
 .hiw-controls,
-.hiw-flip-btn,
-.hiw-face-compact {
+.hiw-flip-btn {
   display: none;
 }
 
@@ -445,102 +444,105 @@ html[data-js] .hiw-flip-btn {
   }
 }
 
-/* ---- travel (JavaScript, 768px and up, motion allowed): the three hero cards travel into the carousel ----
-   The twin cards in the carousel wait invisible (and cannot be clicked) until the scroll hand-off shows them
-   exactly over the hero's cards (TravelStage). Before the cards arrive all three are shown wherever the scroll has
-   taken them; on arrival only the card in focus stays. The reveal entrance is off here: the cards come from the
-   hero. Only transform and opacity change. */
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  html[data-js] .hiw-card-travel {
-    opacity: 0;
-    pointer-events: none;
-    will-change: transform, opacity;
-  }
-  html[data-js] .hiw[data-arrived] .hiw-card-travel {
-    pointer-events: inherit;
-  }
-  /* the hero card's look and the carousel front share one cell; the look is on top until the card has grown */
-  html[data-js] .hiw-card-pose {
-    display: grid;
-  }
-  html[data-js] .hiw-face-compact {
-    display: block;
-    grid-area: 1 / 1;
-    justify-self: center;
-    align-self: center;
-    pointer-events: none;
-    opacity: 0;
-  }
-  html[data-js] .hiw-card-flip {
-    grid-area: 1 / 1;
-  }
-  /* before arrival every card is shown (no slide positions yet) */
-  html[data-js] .hiw:not([data-arrived]) .hiw-card .hiw-card-pose {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-  html[data-js] .hiw [data-reveal] {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* ---- the robot stands on a light blue card with a saffron card behind it ----
+/* ---- the robot stands on a light blue card with a saffron card behind it (shared: How it works, Why Tareeq) ----
    The robot is bigger than the card: its feet touch the card's bottom edge and its head rises out of the top. The
    blue card is straight and in front; the saffron one is tilted, behind it, lower and a little to the side, so it
    shows below the blue like a saffron shadow. Decoration only. The light blue is a tint of the sky token (no new
-   colour). BreathingRobot animates the scale (transform only).
+   colour). BreathingRobot animates the scale (transform only). The stage has no side of its own: each section's
+   layout puts it in a column.
    Numbers: the image is 408 x 612 with 3.1% empty space under the feet, so the figure sits 3% below the card's
    bottom edge to put the feet exactly on it. */
-.hiw-robot-stage {
+.robot-stage {
   position: relative;
   isolation: isolate;
   aspect-ratio: 10 / 14;
-}
-.hiw-robot {
   margin-bottom: 1.25rem; /* room for the saffron card that hangs below the blue one */
 }
-.hiw-robot-figure {
+.robot-figure {
   position: absolute;
   inset-inline: 0;
   bottom: -3%;
   display: flex;
   justify-content: center;
 }
-.hiw-breath {
+.robot-breath {
   width: 90%;
 }
-.hiw-shape {
+.robot-shape {
   position: absolute;
   z-index: -1;
   pointer-events: none;
   border-radius: 2rem;
 }
-.hiw-shape-fill {
+.robot-shape-fill {
   display: block;
   width: 100%;
   height: 100%;
   border-radius: inherit;
 }
-.hiw-shape-blue {
+.robot-shape-blue {
   left: 0;
   bottom: 0;
   width: 100%;
   height: 72%;
 }
-.hiw-shape-blue .hiw-shape-fill {
+.robot-shape-blue .robot-shape-fill {
   background: color-mix(in srgb, var(--color-sky) 30%, white);
 }
-.hiw-shape-saffron {
+.robot-shape-saffron {
   left: -6%;
   bottom: -8%;
   width: 100%;
   height: 72%;
   transform: rotate(-4deg);
 }
-.hiw-shape-saffron .hiw-shape-fill {
+.robot-shape-saffron .robot-shape-fill {
   background: var(--color-saffron);
+}
+
+/* ---- Why Tareeq: laid out like How it works (specs/008-why-tareeq-section) ----
+   Stacked below 1024px (heading, card, then robot); from 1024px the robot is on the
+   left and the heading and the navy card are on the right (owner decision: the robot is on the card's old side).
+   Plain CSS, so nothing reflows when scripts arrive. The saffron decorations sit just outside the card's corners;
+   the section clips them so they cannot widen the page. */
+#why {
+  overflow-x: clip;
+}
+.why-stage {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "head" "card" "robot";
+}
+.why-head,
+.why-robot,
+.why-card {
+  min-width: 0; /* grid items may shrink below their content */
+}
+.why-head {
+  grid-area: head;
+}
+.why-robot {
+  grid-area: robot;
+  position: relative;
+  justify-self: center;
+  width: min(12.5rem, 60%);
+}
+.why-card {
+  grid-area: card;
+  position: relative;
+}
+@media (min-width: 1024px) {
+  .why-stage {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas: "robot head" "robot card";
+    column-gap: 4rem;
+    align-items: start;
+  }
+  .why-robot {
+    width: min(21.25rem, 100%);
+    align-self: center;
+  }
 }
 
 /* Workshop form steps (feature 006). The step that is not showing gets .step-off, which only applies with

@@ -19,7 +19,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   await p.waitForTimeout(7000); // preloader (6 s) then settle
   check(`${tag} exactly one h1`, (await p.locator("h1").count()) === 1);
   const headings = await p.locator("main section > div > div > h2, main section h2").allInnerTexts();
-  const order = ["How it works", "Who it’s for", "Programs", "Why Tareeq"]; // features 005 and 007: How it works first
+  const order = ["Programs", "Why Tareeq", "How it works", "Who it’s for"]; // feature 008: Programs, Why Tareeq, How it works, Who it’s for
   check(`${tag} section headings in order`, order.every((t, i) => headings.map((x) => x.trim())[i] === t), headings.join(" | "));
   check(`${tag} 4 audience cards (Teachers, School students, College students, Professionals and teams)`,
     JSON.stringify(await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()) === JSON.stringify(["Teachers", "School students", "College students", "Professionals and teams"]),
@@ -34,8 +34,8 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   check(`${tag} programs show who it's for, duration and format`, /Who it’s for/.test(progText) && /Duration/.test(progText) && /Format/.test(progText));
   check(`${tag} a coming-soon program is marked`, /coming soon/i.test(progText));
   check(`${tag} link to /programs`, (await p.locator('main a[href="/programs"]').count()) >= 1);
-  const principles = await p.locator("section[aria-labelledby='why-title'] ul > li").count();
-  check(`${tag} 3 to 4 principles`, principles >= 3 && principles <= 4, String(principles));
+  const principles = await p.locator("section[aria-labelledby='why-title'] ol > li").count();
+  check(`${tag} 4 Why Tareeq points`, principles === 4, String(principles));
   const cta = p.locator('main a:has-text("Join a workshop")');
   check(`${tag} "Join a workshop" button exists and goes to /workshop?book=1 (feature 006)`, (await cta.count()) === 1 && (await cta.getAttribute("href")) === "/workshop?book=1");
   const bodyText = await p.locator("main").innerText();
