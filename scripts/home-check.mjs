@@ -19,15 +19,15 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   await p.waitForTimeout(7000); // preloader (6 s) then settle
   check(`${tag} exactly one h1`, (await p.locator("h1").count()) === 1);
   const headings = await p.locator("main section > div > div > h2, main section h2").allInnerTexts();
-  const order = ["How it works", "Who it’s for", "Programs", "Why Tareeq"]; // feature 005: How it works first
+  const order = ["How it works", "Who it’s for", "Programs", "Why Tareeq"]; // features 005 and 007: How it works first
   check(`${tag} section headings in order`, order.every((t, i) => headings.map((x) => x.trim())[i] === t), headings.join(" | "));
   check(`${tag} 4 audience cards (Teachers, School students, College students, Professionals and teams)`,
     JSON.stringify(await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()) === JSON.stringify(["Teachers", "School students", "College students", "Professionals and teams"]),
     (await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()).join(","));
   const steps = await p.locator("#how-it-works .hiw-card h3").count();
   check(`${tag} 3 steps`, steps === 3);
-  check(`${tag} in "How it works" only the carousel controls take keyboard focus (cards hold no links)`, (await p.locator("#how-it-works .hiw-card").evaluateAll((els) => els.reduce((n, el) => n + el.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])").length, 0))) === 0);
-  check(`${tag} step labels Prompt, Build, Learn`, JSON.stringify(await p.locator("#how-it-works .hiw-face-full span.uppercase").allTextContents()) === JSON.stringify(["Prompt", "Build", "Learn"]));
+  check(`${tag} in "How it works" the cards hold no links or fields (only their example buttons take focus)`, (await p.locator("#how-it-works .hiw-card").evaluateAll((els) => els.reduce((n, el) => n + [...el.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])")].filter((c) => !c.classList.contains("hiw-flip-btn")).length, 0))) === 0);
+  check(`${tag} step names Prompt, Build, Learn`, JSON.stringify(await p.locator("#how-it-works .hiw-face-front h3").allTextContents()) === JSON.stringify(["Prompt", "Build", "Learn"]));
   const progs = await p.locator("section[aria-labelledby='programs-title'] ul > li").count();
   check(`${tag} 2 to 3 programs in the preview`, progs >= 2 && progs <= 3, String(progs));
   const progText = await p.locator("section[aria-labelledby='programs-title'] ul").innerText();
@@ -37,7 +37,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   const principles = await p.locator("section[aria-labelledby='why-title'] ul > li").count();
   check(`${tag} 3 to 4 principles`, principles >= 3 && principles <= 4, String(principles));
   const cta = p.locator('main a:has-text("Join a workshop")');
-  check(`${tag} "Join a workshop" button exists and goes to /contact`, (await cta.count()) === 1 && (await cta.getAttribute("href")) === "/contact");
+  check(`${tag} "Join a workshop" button exists and goes to /workshop?book=1 (feature 006)`, (await cta.count()) === 1 && (await cta.getAttribute("href")) === "/workshop?book=1");
   const bodyText = await p.locator("main").innerText();
   check(`${tag} no hype words`, !/empower|unlock|revolutioni[sz]e/i.test(bodyText));
   check(`${tag} no horizontal scroll`, !(await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)));

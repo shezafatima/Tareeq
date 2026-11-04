@@ -4,11 +4,11 @@ import { audiences } from "./data/audiences";
 import { courseList } from "./data/courses";
 import { contactCta, contactEmpty, contactNote, readContactDetails } from "./data/contact";
 import { homeCopy } from "./data/cta";
+import { howItWorks } from "./how-it-works";
 import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
 import { pages } from "./data/pages";
 import { principles } from "./data/principles";
 import { programs } from "./data/programs";
-import { steps } from "./data/steps";
 import { trustFacts } from "./data/trust";
 import { story } from "./data/story";
 import type {
@@ -17,12 +17,12 @@ import type {
   ContactDetail,
   CourseOption,
   HomeCopy,
+  HowItWorksContent,
   LeadCopy,
   PageMeta,
   PageSlug,
   Principle,
   Program,
-  Step,
   StorySection,
   TrustFact,
 } from "./types";
@@ -35,10 +35,6 @@ const byOrder = <T extends { order: number }>(rows: T[]): T[] => [...rows].sort(
 
 export async function getAudiences(): Promise<Audience[]> {
   return byOrder(audiences);
-}
-
-export async function getSteps(): Promise<Step[]> {
-  return byOrder(steps);
 }
 
 export async function getPrograms(): Promise<Program[]> {
@@ -107,4 +103,8 @@ export async function getCourseFormLabel(): Promise<string> {
  */
 export async function getCourseOptions(): Promise<CourseOption[]> {
   return [...courseList, { id: "not-sure", name: "Not sure yet" }];
+}
+
+export async function getHowItWorks(): Promise<HowItWorksContent> {
+  return { ...howItWorks, steps: byOrder(howItWorks.steps) };
 }

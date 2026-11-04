@@ -1,83 +1,178 @@
 "use client";
-// Client: scroll position, layout measuring and attributes on the hero's elements (the hero's code is not changed).
-// The section's markup arrives as server-rendered children.
+// Client: scroll position and the card hand-off from the hero (contracts/travel-stage.md). The hero is read, never
+// edited: from the first pixel of scroll its three card wrappers are hidden and the twin cards in the carousel are
+// shown exactly over them, in the same task, then they travel to the carousel with a spring. The section's markup
+// arrives as server-rendered children.
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useMotionValue } from "framer-motion";
-import type { CardId } from "@/components/RobotEyes";
+import { useMotionValue, useMotionValueEvent, useSpring } from "framer-motion";
 import { useLayoutMode } from "@/hooks/useLayoutMode";
-import { clamp01, findHeroParts, setHidden, TravelContext, type HeroParts, type TravelValue } from "./travel-context";
+import { clamp01, ease, findHeroParts, setHidden, TravelContext, type HeroParts, type TravelValue } from "./travel-context";
 
-const LEAVE_AT = 0.99; // hysteresis: arrived at 1, left below this
-// The cards arrive (and fan out) this fraction of the stage's height before the stage starts sticking, so the
-// carousel starts sooner after the hero (owner feedback: the scroll before it started was too long).
-const ARRIVE_EARLY = 0.35;
+// The carousel slot's centre reaches this fraction of the viewport height when the cards have arrived.
+const ARRIVE_AT = 0.6;
+const ARRIVED = 0.995; // the followed value counts as arrived from here...
+const LEFT = 0.98; // ...and as left below this (hysteresis)
+// The card in focus turns from the hero card into the carousel card early in the path, while the front (scaled down
+// to the hero card's width) is still about the same size as the hero look, so the swap is a quick, quiet fade.
+const MORPH_FROM = 0.08;
+const MORPH_TO = 0.28;
+// The other two cards stay small (the hero look, never enlarged) and fade out as they converge on the slot. Their
+// big fronts are never shown while travelling, which is what made overlapping text in the first versions.
+const FADE_FROM = 0.45;
+const FADE_TO = 0.8;
+const SPRING = { stiffness: 320, damping: 24 }; // a damping ratio of about 0.67: a small overshoot, then rest
+const HOME = 0.002; // the followed value is "back at the hero" below this
 
-// The twin is hidden by CSS (.hiw-twin) until shown here, so it can never flash before the scripts run.
-function showTwin(el: HTMLElement, on: boolean) {
-  el.style.visibility = on ? "visible" : "";
-  if (on) {
-    el.removeAttribute("inert");
-    el.removeAttribute("aria-hidden");
-  } else {
-    el.setAttribute("inert", "");
-    el.setAttribute("aria-hidden", "true");
-  }
-}
+/** Position along the path: eased up to the target, then (spring overshoot) a straight continuation past it. */
+const along = (p: number) => (p <= 1 ? ease(p) : 1 + (p - 1));
 
 export default function TravelStage({ children }: { children: React.ReactNode }) {
   const mode = useLayoutMode();
+  const travel = mode === "travel";
   const stageRef = useRef<HTMLDivElement>(null);
-  const progress = useMotionValue(0);
-  const range = useRef(1);
+  const raw = useMotionValue(0); // scroll progress, 0 to 1
+  const progress = useSpring(raw, SPRING); // what the cards follow
   const parts = useRef<HeroParts | null>(null);
-  const twin = useRef<HTMLElement | null>(null);
   const handed = useRef(false);
+  const range = useRef(1);
+  const activeRef = useRef(0);
+  const arrivedRef = useRef(false);
   const [arrived, setArrived] = useState(false);
   const [active, setActive] = useState(0);
-  const [hoverCard, setHoverCard] = useState<CardId | null>(null);
 
-  const travel = mode === "travel";
-
-  // The hand-off: from the first pixel of scroll the hero's robot and cards are hidden and the twins shown, in the
-  // same task, so exactly one robot is ever on screen. Back at the top it reverses.
-  const applyHandoff = useCallback((on: boolean) => {
-    const hp = parts.current;
-    if (!hp) return;
-    if (handed.current === on) return;
-    handed.current = on;
-    setHidden(hp.robotLayer, on);
-    hp.cards.forEach((c) => setHidden(c, on));
-    if (twin.current) showTwin(twin.current, on);
-  }, []);
-
-  const registerTwin = useCallback(
-    (el: HTMLElement | null) => {
-      twin.current = el;
-      if (el) showTwin(el, handed.current);
-    },
+  const twins = useCallback(
+    () => Array.from(stageRef.current?.querySelectorAll<HTMLElement>(".hiw-card") ?? []),
     [],
   );
+
+  /**
+   * Puts each twin on its hero card (progress 0) and moves it to the carousel slot (progress 1). Once arrived, the
+   * carousel's own slide positions decide what is visible, so every card is left fully on (a card that slides out
+   * must not be switched off from here).
+   */
+  const place = useCallback(() => {
+    const hp = parts.current;
+    if (!hp) return;
+    const p = Math.max(0, progress.get());
+    const e = along(p);
+    const grow = Math.min(e, 1);
+    const settled = arrivedRef.current;
+    const morph = clamp01((p - MORPH_FROM) / (MORPH_TO - MORPH_FROM));
+    const fade = clamp01((p - FADE_FROM) / (FADE_TO - FADE_FROM));
+    twins().forEach((card, i) => {
+      const heroCard = hp.cards[i];
+      const travelEl = card.querySelector<HTMLElement>(".hiw-card-travel");
+      const compact = card.querySelector<HTMLElement>(".hiw-face-compact");
+      const front = card.querySelector<HTMLElement>(".hiw-face-front");
+      if (!heroCard || !travelEl || !compact || !front) return;
+      const isActive = i === activeRef.current;
+      const vis = heroCard.querySelector<HTMLElement>(".backdrop-blur-md") ?? heroCard;
+      const hr = vis.getBoundingClientRect();
+      const cr = card.getBoundingClientRect(); // the card's own layout box: never transformed
+      const m = new DOMMatrixReadOnly(getComputedStyle(vis.parentElement ?? vis).transform);
+      const tilt = (Math.atan2(m.b, m.a) * 180) / Math.PI;
+      const dx = hr.left + hr.width / 2 - (cr.left + cr.width / 2);
+      const dy = hr.top + hr.height / 2 - (cr.top + cr.height / 2);
+      travelEl.style.transform = `translate(${dx * (1 - e)}px, ${dy * (1 - e)}px) rotate(${tilt * (1 - e)}deg)`;
+      // the hero look stays its own size; the front grows from the hero card's width to the carousel card's width
+      compact.style.width = `${hr.width}px`;
+      const s0 = cr.width > 0 ? hr.width / cr.width : 1;
+      front.style.transform = `scale(${s0 + (1 - s0) * grow})`;
+      if (settled) {
+        compact.style.opacity = "0";
+        front.style.opacity = "1";
+        travelEl.style.opacity = "1";
+      } else {
+        compact.style.opacity = String(isActive ? 1 - morph : 1);
+        front.style.opacity = String(isActive ? morph : 0);
+        travelEl.style.opacity = isActive ? "1" : String(1 - fade);
+      }
+    });
+  }, [progress, twins]);
+
+  const clearTwins = useCallback(() => {
+    twins().forEach((card) => {
+      card.querySelectorAll<HTMLElement>(".hiw-card-travel, .hiw-face-compact, .hiw-face-front").forEach((el) => {
+        el.style.transform = "";
+        el.style.opacity = "";
+        el.style.width = "";
+      });
+    });
+  }, [twins]);
+
+  /** Shows the twins and hides the hero's cards (or back) in one task, so one set is always on screen. */
+  const handOff = useCallback(
+    (on: boolean) => {
+      const hp = parts.current;
+      if (!hp || handed.current === on) return;
+      handed.current = on;
+      if (on) place(); // the twins are on the hero's cards before the hero's are hidden
+      hp.cards.forEach((c) => setHidden(c, on));
+      if (!on) clearTwins();
+    },
+    [place, clearTwins],
+  );
+
+  /** Arrival is applied in one task: the CSS attribute (slide positions take over) and the cards' own opacities. */
+  const setArrivedNow = useCallback(
+    (on: boolean) => {
+      if (arrivedRef.current === on) return;
+      const section = stageRef.current?.closest<HTMLElement>(".hiw");
+      arrivedRef.current = on;
+      if (on) {
+        section?.setAttribute("data-arrived", ""); // the non-focused cards are hidden by their slide position first...
+        place(); // ...then every card is switched on
+      } else {
+        place(); // the non-focused cards are faded out first...
+        section?.removeAttribute("data-arrived"); // ...then the carousel gives up the slide positions
+      }
+      setArrived(on);
+    },
+    [place],
+  );
+
+  // the followed value drives placement, arrival and the hand-back (the spring may still be returning when the
+  // scroll is already at the top)
+  useMotionValueEvent(progress, "change", (p) => {
+    if (!travel) return;
+    if (handed.current && raw.get() === 0 && Math.abs(p) < HOME) {
+      setArrivedNow(false);
+      handOff(false);
+      return;
+    }
+    if (arrivedRef.current ? p < LEFT : p >= ARRIVED) setArrivedNow(!arrivedRef.current);
+    else if (handed.current) place();
+  });
 
   useLayoutEffect(() => {
     if (!travel) return;
     const stage = stageRef.current;
     const section = stage?.closest<HTMLElement>(".hiw");
-    if (!stage || !section) return;
+    const slot = stage?.querySelector<HTMLElement>(".hiw-track");
+    if (!stage || !section || !slot) return;
     let raf = 0;
+    let first = true;
 
     const update = () => {
-      const p = clamp01(window.scrollY / range.current);
-      progress.set(p);
-      applyHandoff(p > 0);
-      if (p >= 1) setArrived(true);
-      else if (p < LEAVE_AT) setArrived(false);
+      const r = clamp01(window.scrollY / range.current);
+      raw.set(r);
+      if ((r > 0 || Math.abs(progress.get()) >= HOME) && !handed.current) handOff(true);
+      else if (handed.current) place();
     };
     const measure = () => {
       parts.current = findHeroParts();
-      const header = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
-      const top = section.getBoundingClientRect().top + window.scrollY;
-      range.current = Math.max(1, top - header - ARRIVE_EARLY * stage.offsetHeight);
+      const rect = slot.getBoundingClientRect();
+      range.current = Math.max(1, rect.top + window.scrollY + rect.height / 2 - ARRIVE_AT * window.innerHeight);
+      if (first) {
+        // loading already inside or past the section: the cards are simply at arrival, with no travel
+        first = false;
+        const r = clamp01(window.scrollY / range.current);
+        raw.set(r);
+        progress.jump(r);
+        if (r > 0) handOff(true);
+        setArrivedNow(r >= ARRIVED);
+      }
       update();
     };
     const schedule = () => {
@@ -99,28 +194,26 @@ export default function TravelStage({ children }: { children: React.ReactNode })
       window.removeEventListener("resize", schedule);
       ro.disconnect();
       // leaving the travel layout (or unmounting): give the hero back exactly as it was
-      const hp = parts.current;
-      if (hp) {
-        setHidden(hp.robotLayer, false);
-        hp.cards.forEach((c) => setHidden(c, false));
-      }
+      parts.current?.cards.forEach((c) => setHidden(c, false));
       handed.current = false;
-      progress.set(0);
+      clearTwins();
+      raw.set(0);
+      progress.jump(0);
+      arrivedRef.current = false;
+      section.removeAttribute("data-arrived");
+      setArrived(false);
     };
-  }, [travel, progress, applyHandoff]);
+  }, [travel, raw, progress, handOff, place, clearTwins, setArrivedNow]);
 
-  // The section's arrival flag drives the coverflow (CSS)
+  // the card in focus changed: the other two must be the ones that are faded out
   useEffect(() => {
-    const section = stageRef.current?.closest<HTMLElement>(".hiw");
-    if (!section) return;
-    if (travel && arrived) section.setAttribute("data-arrived", "");
-    else section.removeAttribute("data-arrived");
-  }, [travel, arrived]);
+    activeRef.current = active;
+    if (travel && handed.current) place();
+  }, [travel, active, place]);
 
-  const hero = useCallback(() => parts.current, []);
   const value = useMemo<TravelValue>(
-    () => ({ mode, progress, arrived: travel && arrived, hero, registerTwin, active, setActive, hoverCard, setHoverCard }),
-    [mode, progress, travel, arrived, hero, registerTwin, active, hoverCard],
+    () => ({ mode, progress, arrived: travel ? arrived : true, hero: findHeroParts, active, setActive }),
+    [mode, progress, travel, arrived, active],
   );
 
   return (

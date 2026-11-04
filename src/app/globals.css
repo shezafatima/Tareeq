@@ -299,18 +299,18 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
 }
 
 /* =====================================================================================================
-   Feature 005: "How it works" layouts (specs/005-robot-travel-carousel, ADR-0001).
-   The layout is chosen by CSS before the first paint: list (default: no JavaScript or reduced motion),
-   travel (html[data-js], 1024px and up, motion allowed) and swipe (html[data-js], below 1024px, motion allowed).
-   Each layout fixes its own heights, so nothing reflows when the scripts arrive. Only transform and opacity animate.
+   Feature 007: "How it works" section (specs/007-how-it-works-section; replaces the feature 005 section).
+   The column layout (two columns from 1024px, stacked below) is plain CSS. The behaviour modes (list, travel,
+   phone, still) are chosen by CSS too (html[data-js], width, reduced motion), so nothing reflows when the scripts
+   arrive. Once the carousel runs, all three cards share one grid cell, so the height is always the tallest card.
+   Only transform and opacity animate.
    ===================================================================================================== */
 
-/* ---- list (default) ---- */
 .hiw {
   position: relative;
   background: var(--color-soft);
   /* travelling cards wait full-size (invisible) over the hero cards; never let them widen the page.
-     clip, not hidden: no scroll container, so the sticky stage and the vertical travel still work */
+     clip, not hidden: no scroll container, so scroll-driven travel still works */
   overflow-x: clip;
 }
 .hiw-stage {
@@ -319,161 +319,228 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
   padding: 4rem var(--spacing-gutter);
   display: grid;
   gap: 2rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "head" "robot" "carousel";
 }
-.hiw-robot-col {
-  display: flex;
-  justify-content: center;
+.hiw-head,
+.hiw-carousel {
+  min-width: 0; /* grid items may shrink below their content */
 }
-.hiw-robot-col,
-.hiw-content-col {
-  min-width: 0; /* grid items may shrink below their content (the swipe track must not widen the page) */
+.hiw-head {
+  grid-area: head;
 }
-.hiw-robot-static {
-  width: min(50vw, 200px);
+.hiw-robot {
+  grid-area: robot;
+  position: relative;
+  justify-self: center;
+  width: min(12.5rem, 60%);
 }
-.hiw-robot-slot,
-.hiw-controls,
-.hiw-face-compact {
-  display: none;
-}
-.hiw-track {
-  display: grid;
-  gap: 1.5rem;
-  margin-top: 2.5rem;
-}
-.hiw-card-travel {
-  display: grid;
-  height: 100%;
-}
-.hiw-card-pose {
-  display: grid;
-  place-items: center;
-  height: 100%;
-}
-.hiw-face-full {
-  grid-area: 1 / 1;
-  width: 100%;
-  height: 100%;
-}
-.hiw-face-compact {
-  grid-area: 1 / 1;
-}
-@media (min-width: 640px) {
-  .hiw-stage {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
+.hiw-carousel {
+  grid-area: carousel;
 }
 @media (min-width: 1024px) {
   .hiw-stage {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 2.2fr);
-    align-items: center;
-    gap: 3rem;
-    padding-top: 6rem;
-    padding-bottom: 6rem;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas: "robot head" "robot carousel";
+    column-gap: 4rem;
+    align-items: start;
+    padding-block: 6rem;
   }
-  .hiw-robot-static {
-    width: min(100%, 240px);
-  }
-  .hiw-track {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .hiw-robot {
+    width: min(21.25rem, 100%);
+    align-self: center;
   }
 }
 
-/* ---- travel: tall runway, sticky stage; the robot and cards arrive from the hero ---- */
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-  html[data-js] .hiw {
-    --stage-h: calc(100svh - var(--header-h));
-    height: calc(var(--stage-h) + 35svh); /* a short reading runway (owner: no long empty scroll) */
-    scroll-margin-top: -1rem; /* an in-page link lands exactly where the travel has arrived */
+/* ---- list (default; what shows without JavaScript): all three steps together, front then example ---- */
+.hiw-track {
+  display: grid;
+  gap: 1.5rem;
+}
+/* a card is a readable card, not as wide as its column (owner feedback: too wide) */
+.hiw-card {
+  width: min(100%, 24rem);
+  justify-self: center;
+}
+.hiw-face-back {
+  margin-top: 0.75rem;
+}
+.hiw-controls,
+.hiw-flip-btn,
+.hiw-face-compact {
+  display: none;
+}
+
+/* ---- carousel (JavaScript on, every width): one card in focus, the others hidden; the flip shows the example ----
+   All three cards share one grid cell, so the height is always the tallest card and nothing shifts. Until the
+   scripts set data-pos, the first card shows alone. Only transform and opacity change. */
+html[data-js] .hiw-track {
+  position: relative;
+  touch-action: pan-y; /* a sideways swipe moves the carousel; the page still scrolls up and down */
+}
+html[data-js] .hiw-card {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+html[data-js] .hiw-card-pose {
+  perspective: 1200px;
+  transition:
+    transform var(--dur-base) var(--ease-soft),
+    opacity var(--dur-base) var(--ease-soft);
+}
+html[data-js] .hiw-card:not([data-pos]):not(:first-child) .hiw-card-pose,
+html[data-js] .hiw-card[data-pos="before"] .hiw-card-pose,
+html[data-js] .hiw-card[data-pos="after"] .hiw-card-pose {
+  opacity: 0;
+}
+html[data-js] .hiw-card[data-pos="before"] .hiw-card-pose {
+  transform: translateX(-40px);
+}
+html[data-js] .hiw-card[data-pos="after"] .hiw-card-pose {
+  transform: translateX(40px);
+}
+html[data-js] .hiw-card:not([data-pos="active"]):not(:first-child),
+html[data-js] .hiw-card[data-pos]:not([data-pos="active"]) {
+  pointer-events: none;
+}
+html[data-js] .hiw-controls {
+  display: flex;
+  justify-content: center;
+}
+
+/* flip: front and back share a cell; the card turns around its vertical axis */
+html[data-js] .hiw-card-flip {
+  position: relative;
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform var(--dur-reveal) var(--ease-soft);
+}
+html[data-js] .hiw-face-front,
+html[data-js] .hiw-face-back {
+  grid-area: 1 / 1;
+  margin-top: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+html[data-js] .hiw-face-back {
+  transform: rotateY(180deg);
+}
+html[data-js] .hiw-card[data-flipped] .hiw-card-flip {
+  transform: rotateY(180deg);
+}
+html[data-js] .hiw-flip-btn {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+}
+
+/* The site turns every transition off under reduced motion (rule near the top of this file). The slide between
+   cards and the flip only happen when the visitor acts, so the owner keeps them: this rule is more specific. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-js] .hiw .hiw-card-pose {
+    transition-duration: var(--dur-base) !important;
   }
-  html[data-js] .hiw-stage {
-    position: sticky;
-    z-index: 20; /* above the hero's scroll cue and strip while the robot travels; below the header (30) */
-    top: var(--header-h);
-    height: var(--stage-h);
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  html[data-js] .hiw .hiw-card-flip {
+    transition-duration: var(--dur-reveal) !important;
   }
-  html[data-js] .hiw-robot-static {
-    display: none;
+}
+
+/* ---- travel (JavaScript, 768px and up, motion allowed): the three hero cards travel into the carousel ----
+   The twin cards in the carousel wait invisible (and cannot be clicked) until the scroll hand-off shows them
+   exactly over the hero's cards (TravelStage). Before the cards arrive all three are shown wherever the scroll has
+   taken them; on arrival only the card in focus stays. The reveal entrance is off here: the cards come from the
+   hero. Only transform and opacity change. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  html[data-js] .hiw-card-travel {
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
   }
-  html[data-js] .hiw-robot-slot {
-    display: block;
-    position: relative;
-    z-index: 20;
-    width: min(100%, 290px, calc((var(--stage-h) - 3rem) / 1.5));
-    aspect-ratio: 2 / 3;
-    margin: 0 auto;
+  html[data-js] .hiw[data-arrived] .hiw-card-travel {
+    pointer-events: inherit;
   }
-  html[data-js] .hiw-twin {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    visibility: hidden;
-    transform-origin: center;
-  }
-  html[data-js] .hiw-track {
-    display: block;
-    position: relative;
-    z-index: 20;
-    height: 24rem;
-    margin-top: 1.75rem;
-    perspective: 1200px;
-  }
-  html[data-js] .hiw-card {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 22%;
-    width: 56%;
-  }
-  html[data-js] .hiw-card[data-pos="center"] {
-    z-index: 2;
+  /* the hero card's look and the carousel front share one cell; the look is on top until the card has grown */
+  html[data-js] .hiw-card-pose {
+    display: grid;
   }
   html[data-js] .hiw-face-compact {
     display: block;
+    grid-area: 1 / 1;
+    justify-self: center;
+    align-self: center;
+    pointer-events: none;
+    opacity: 0;
   }
-  html[data-js] .hiw-card-pose {
-    transition:
-      transform var(--dur-reveal) var(--ease-soft),
-      opacity var(--dur-reveal) var(--ease-soft);
+  html[data-js] .hiw-card-flip {
+    grid-area: 1 / 1;
   }
-  html[data-js] .hiw[data-arrived] .hiw-card[data-pos="left"] .hiw-card-pose {
-    transform: translateX(-52%) scale(0.82) rotateY(28deg);
-    opacity: 0.55;
+  /* before arrival every card is shown (no slide positions yet) */
+  html[data-js] .hiw:not([data-arrived]) .hiw-card .hiw-card-pose {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
-  html[data-js] .hiw[data-arrived] .hiw-card[data-pos="right"] .hiw-card-pose {
-    transform: translateX(52%) scale(0.82) rotateY(-28deg);
-    opacity: 0.55;
-  }
-  html[data-js] .hiw-controls {
-    display: flex;
+  html[data-js] .hiw [data-reveal] {
+    opacity: 1;
+    transform: none;
   }
 }
 
-/* ---- swipe: one full-width card at a time, native scroll snap ---- */
-@media (max-width: 1023.98px) and (prefers-reduced-motion: no-preference) {
-  html[data-js] .hiw-track {
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-  html[data-js] .hiw-track::-webkit-scrollbar {
-    display: none;
-  }
-  html[data-js] .hiw-card {
-    flex: 0 0 100%;
-    scroll-snap-align: center;
-    padding: 0 2px 4px;
-  }
-  html[data-js] .hiw-controls {
-    display: flex;
-  }
+/* ---- the robot stands on a light blue card with a saffron card behind it ----
+   The robot is bigger than the card: its feet touch the card's bottom edge and its head rises out of the top. The
+   blue card is straight and in front; the saffron one is tilted, behind it, lower and a little to the side, so it
+   shows below the blue like a saffron shadow. Decoration only. The light blue is a tint of the sky token (no new
+   colour). BreathingRobot animates the scale (transform only).
+   Numbers: the image is 408 x 612 with 3.1% empty space under the feet, so the figure sits 3% below the card's
+   bottom edge to put the feet exactly on it. */
+.hiw-robot-stage {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 10 / 14;
+}
+.hiw-robot {
+  margin-bottom: 1.25rem; /* room for the saffron card that hangs below the blue one */
+}
+.hiw-robot-figure {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -3%;
+  display: flex;
+  justify-content: center;
+}
+.hiw-breath {
+  width: 90%;
+}
+.hiw-shape {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 2rem;
+}
+.hiw-shape-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.hiw-shape-blue {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 72%;
+}
+.hiw-shape-blue .hiw-shape-fill {
+  background: color-mix(in srgb, var(--color-sky) 30%, white);
+}
+.hiw-shape-saffron {
+  left: -6%;
+  bottom: -8%;
+  width: 100%;
+  height: 72%;
+  transform: rotate(-4deg);
+}
+.hiw-shape-saffron .hiw-shape-fill {
+  background: var(--color-saffron);
 }
 
 /* Workshop form steps (feature 006). The step that is not showing gets .step-off, which only applies with

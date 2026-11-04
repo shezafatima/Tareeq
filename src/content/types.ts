@@ -10,12 +10,25 @@ export type Audience = {
 
 export type StepId = "prompt" | "build" | "learn";
 
-export type Step = {
+/** One card of the "How it works" section (spec 007): the front explains the step, the back gives one example. */
+export type HowStep = {
   id: StepId;
-  label: string;
-  heading: string;
-  body: string;
+  number: number;
+  /** the title on the front, e.g. "Prompt" */
+  name: string;
+  /** one-line explanation on the front */
+  line: string;
+  /** one concrete example, shown on the back */
+  example: string;
   order: number;
+};
+
+export type HowItWorksContent = {
+  heading: string;
+  /** one line under the heading */
+  intro: string;
+  image: { src: string; width: number; height: number; alt: string };
+  steps: HowStep[];
 };
 
 export type ProgramStatus = "available" | "coming-soon";
@@ -83,7 +96,6 @@ export type SectionCopy = { heading: string; intro?: string };
 
 export type HomeCopy = {
   whoItsFor: SectionCopy;
-  howItWorks: SectionCopy;
   programs: SectionCopy & { linkLabel: string };
   why: SectionCopy;
   cta: { line: string; label: string; href: string };

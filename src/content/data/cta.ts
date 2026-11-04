@@ -7,10 +7,6 @@ export const homeCopy: HomeCopy = {
     heading: "Who it’s for",
     intro: "If you teach, study or work, there is a place for you.",
   },
-  howItWorks: {
-    heading: "How it works",
-    intro: "Every session follows the same three steps.",
-  },
   programs: {
     heading: "Programs",
     intro: "Pick the one that fits you. More are on the way.",
