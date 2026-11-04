@@ -59,7 +59,7 @@ export type ContactDetail = {
   href?: string;
 };
 
-export type PageSlug = "home" | "our-way" | "programs" | "contact";
+export type PageSlug = "home" | "our-way" | "programs" | "contact" | "workshop" | "register";
 
 export type PageMeta = {
   slug: PageSlug;
@@ -87,4 +87,29 @@ export type HomeCopy = {
   programs: SectionCopy & { linkLabel: string };
   why: SectionCopy;
   cta: { line: string; label: string; href: string };
+};
+
+/** A course a visitor can pick on the waitlist form. Read only through getCourseOptions(). */
+export type CourseOption = { id: string; name: string };
+
+type ConfirmationCopy = {
+  /** confirmation heading */
+  confirmHeading: string;
+  /** what actually happens next, and roughly when */
+  confirmNext: string;
+  /** prefilled WhatsApp text; "{ref}" is replaced with the reference. No personal data. */
+  whatsappPrefill: string;
+};
+
+export type LeadCopy = {
+  workshop: ConfirmationCopy & { submitLabel: string; bookLabel: string };
+  course: ConfirmationCopy;
+  consentLabel: string;
+  privacyNote: string;
+  guardianNote: string;
+  referenceLabel: string;
+  whatsappButton: string;
+  closeLabel: string;
+  sendingLabel: string;
+  formErrors: { summaryHeading: string; rateLimited: string; internal: string; whatsappLink: string };
 };

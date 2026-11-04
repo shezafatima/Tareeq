@@ -571,7 +571,7 @@ export default function Hero() {
           </motion.p>
           <motion.div {...item(0.28)} className="mt-9 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <a
-              href="#"
+              href="/workshop?book=1"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-midnight px-7 py-3.5 text-base font-semibold text-white transition-colors hover:bg-royal"
             >
               Explore programs

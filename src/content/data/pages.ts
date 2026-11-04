@@ -1,5 +1,6 @@
 // DRAFT: owner to confirm before launch
 import type { PageMeta } from "../types";
+import { courseFormLabel } from "./leads";
 
 export const pages: PageMeta[] = [
   {
@@ -36,5 +37,23 @@ export const pages: PageMeta[] = [
     heading: "Talk to us",
     eyebrow: "Contact",
     intro: "Ask about a workshop for your school, class or team. A short message is enough.",
+  },
+  {
+    slug: "workshop",
+    title: "Workshops",
+    description:
+      "Hands-on AI workshops for schools and teachers in Karachi. You bring a real task and leave with something you built.",
+    heading: "AI workshops for schools and teachers",
+    eyebrow: "Workshops",
+    intro:
+      "Hands-on sessions where you bring a real task and leave with something you built. Tell us about your school and we will agree a date and format with you."
+  },
+  {
+    slug: "register",
+    title: courseFormLabel,
+    description: "Leave your details for Tareeq's online AI courses and we'll WhatsApp you when a course opens.",
+    heading: courseFormLabel,
+    eyebrow: "Online courses",
+    intro: "Leave your details and we'll WhatsApp you when the course opens, with dates and fees.",
   },
 ];
