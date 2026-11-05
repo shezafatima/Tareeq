@@ -4,7 +4,10 @@
 export type Audience = {
   id: string;
   name: string;
+  /** one line: what changes for this group */
   benefit: string;
+  /** where the card goes: an internal path or a WhatsApp ask (same shape as the Programs cards) */
+  cta: HomeProgramCta;
   order: number;
 };
 
@@ -42,6 +45,28 @@ export type Program = {
   format: string;
   bring: string[];
   status: ProgramStatus;
+  order: number;
+};
+
+export type HomeProgramStatus = "booking-now" | "register-interest" | "coming-soon";
+
+export type HomeProgramCta =
+  | { kind: "link"; label: string; href: string }
+  | { kind: "whatsapp"; label: string; message: string };
+
+/** One card in the home Programs section. Separate from Program, which the /programs page uses. */
+export type HomeProgramCard = {
+  id: string;
+  title: string;
+  audience: string;
+  status: HomeProgramStatus;
+  /** the words on the status chip */
+  statusLabel: string;
+  /** format, duration, group size; entries with an empty value are skipped */
+  facts: { label: string; value: string }[];
+  cta: HomeProgramCta;
+  /** the first featured card is shown large */
+  featured?: boolean;
   order: number;
 };
 
@@ -133,4 +158,40 @@ export type WhyTareeqContent = {
   intro: string;
   /** exactly four, in order */
   points: WhyPoint[];
+};
+
+/** One small credential fact on the "Meet your mentor" section (spec 011). Not shown until the owner gives a real value. */
+export type MentorFact = {
+  id: string;
+  /** e.g. "5+"; null until the owner supplies a real one */
+  value: string | null;
+  /** what it counts, e.g. "years teaching" */
+  label: string;
+  order: number;
+};
+
+/** A public profile link. The icon and brand colour come from the id in the display. Not shown without a url. */
+export type MentorSocial = {
+  id: string;
+  platform: string;
+  handle: string;
+  /** small secondary text, e.g. "1.7k subscribers" */
+  followers: string;
+  url: string | null;
+  order: number;
+};
+
+export type MentorContent = {
+  eyebrow: string;
+  heading: string;
+  photo: { src: string; width: number; height: number; alt: string };
+  greeting: string;
+  role: string;
+  /** two short paragraphs */
+  bio: string[];
+  /** one sentence; null hides the block */
+  quote: string | null;
+  /** at most three are shown, and only when two or more have a value */
+  facts: MentorFact[];
+  socials: MentorSocial[];
 };

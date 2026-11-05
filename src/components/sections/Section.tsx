@@ -33,7 +33,7 @@ export default function Section({ id, labelledBy, tone = "paper", decoration, di
           <div className="absolute -bottom-32 -left-20 size-80 rounded-full bg-soft/50" />
         </div>
       )}
-      <Container className={cn("relative py-section lg:py-24", className)}>{children}</Container>
+      <Container className={cn("relative py-section lg:py-16", className)}>{children}</Container>
     </section>
   );
 }

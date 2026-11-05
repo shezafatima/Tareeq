@@ -1,19 +1,20 @@
+import AudienceCard from "@/components/sections/AudienceCard";
 import Section from "@/components/sections/Section";
-import Card from "@/components/ui/Card";
-import IconTile from "@/components/ui/IconTile";
-import type { IconName } from "@/components/ui/icons";
 import Reveal from "@/components/ui/Reveal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { getAudiences, getHomeCopy } from "@/content";
+import type { Audience } from "@/content";
+import { getWhatsAppUrlWithMessage } from "@/lib/site";
 
-// Presentation only: which icon goes with which audience row.
-const icons: Record<string, IconName> = {
-  teachers: "teacher",
-  "school-students": "student",
-  "college-students": "graduate",
-  "professionals-teams": "team",
-};
+/** Internal path, or a WhatsApp link; with no WhatsApp number set the ask falls back to the contact page. */
+function resolveCta(a: Audience): { href: string; external: boolean } {
+  if (a.cta.kind === "link") return { href: a.cta.href, external: false };
+  const wa = getWhatsAppUrlWithMessage(a.cta.message);
+  return wa ? { href: wa, external: true } : { href: "/contact", external: false };
+}
 
+// Server component. Centred wrapping row: 1 per row on phones, 2 from sm, 3 from lg (3 + 2), 5 from xl.
+// Each card is sized from the gap so the last, shorter row sits in the middle.
 export default async function WhoItsFor() {
   const [audiences, copy] = await Promise.all([getAudiences(), getHomeCopy()]);
   if (audiences.length === 0) return null;
@@ -25,17 +26,20 @@ export default async function WhoItsFor() {
           {copy.whoItsFor.heading}
         </SectionHeading>
       </Reveal>
-      <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-        {audiences.map((a, i) => (
-          <Reveal as="li" key={a.id} index={i} className="h-full">
-            <Card lift className="relative flex h-full flex-col overflow-hidden">
-              <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-saffron" />
-              <IconTile name={icons[a.id] ?? "check"} />
-              <h3 className="mt-4 font-heading text-xl font-bold text-midnight">{a.name}</h3>
-              <p className="mt-3 text-base leading-relaxed text-midnight/80">{a.benefit}</p>
-            </Card>
-          </Reveal>
-        ))}
+      <ul className="mt-10 flex flex-wrap items-start justify-center gap-4 [--aud-gap:1rem] lg:gap-6 lg:[--aud-gap:1.5rem]">
+        {audiences.map((a, i) => {
+          const { href, external } = resolveCta(a);
+          return (
+            <Reveal
+              as="li"
+              key={a.id}
+              index={i}
+              className="w-full sm:w-[calc((100%-var(--aud-gap))/2)] lg:w-[calc((100%-2*var(--aud-gap))/3)] xl:w-[calc((100%-4*var(--aud-gap))/5)]"
+            >
+              <AudienceCard audience={a} href={href} external={external} />
+            </Reveal>
+          );
+        })}
       </ul>
     </Section>
   );
