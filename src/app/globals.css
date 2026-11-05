@@ -843,7 +843,7 @@ html:not([data-js]) .step-progress {
 }
 
 /* =====================================================================================================
-   Feature 009: home Programs bento. Border warming toward saffron and the featured glow drift.
+   Feature 009: home Programs cards. Border warming toward saffron.
    Only transform and opacity animate (the border change is colour, not layout).
    ===================================================================================================== */
 
@@ -854,13 +854,6 @@ html:not([data-js]) .step-progress {
     box-shadow var(--dur-base) var(--ease-soft),
     border-color var(--dur-base) var(--ease-soft);
 }
-.program-card[data-variant="featured"] {
-  --pc-border: color-mix(in srgb, white 14%, transparent);
-}
-.program-card[data-variant="quiet"] {
-  --pc-border: color-mix(in srgb, var(--color-royal) 10%, transparent);
-  box-shadow: none;
-}
 .program-card:focus-within {
   border-color: color-mix(in srgb, var(--color-saffron) 80%, transparent);
 }
@@ -870,26 +863,30 @@ html:not([data-js]) .step-progress {
   }
 }
 
-.program-glow {
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--color-sky) 38%, transparent), transparent);
-  opacity: 0.55;
-  will-change: transform, opacity;
-  animation: program-glow-drift 22s ease-in-out infinite alternate;
-}
-@keyframes program-glow-drift {
-  from {
-    transform: translate3d(0, 0, 0);
-    opacity: 0.45;
+/* Equal cards. Columns are built on a finer grid so a short last row can sit in the middle at any card count. */
+@media (min-width: 768px) {
+  .program-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-  to {
-    transform: translate3d(38%, 30%, 0);
-    opacity: 0.8;
+  .program-grid > li {
+    grid-column: span 2;
+  }
+  .program-grid > li:last-child:nth-child(odd) {
+    grid-column: 2 / span 2;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .program-glow {
-    animation: none;
-    will-change: auto;
+@media (min-width: 1024px) {
+  .program-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .program-grid > li:last-child:nth-child(odd) {
+    grid-column: span 2;
+  }
+  .program-grid > li:nth-last-child(2):nth-child(3n + 1) {
+    grid-column: 2 / span 2;
+  }
+  .program-grid > li:last-child:nth-child(3n + 1) {
+    grid-column: 3 / span 2;
   }
 }
 

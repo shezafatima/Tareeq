@@ -28,10 +28,10 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   check(`${tag} 3 steps`, steps === 3);
   check(`${tag} step names Learn, Prompt, Build`, JSON.stringify(await p.locator("#how-it-works .step-name").allTextContents()) === JSON.stringify(["Learn", "Prompt", "Build"]));
   const progs = await p.locator("section[aria-labelledby='programs-title'] ul > li").count();
-  check(`${tag} 5 programs in the preview (feature 009)`, progs === 5, String(progs));
+  check(`${tag} 3 programs in the preview`, progs === 3, String(progs));
   const progText = await p.locator("section[aria-labelledby='programs-title'] ul").innerText();
   check(`${tag} programs show audience, format and duration`, /Format/i.test(progText) && /Duration/i.test(progText) && /Grades 6-10/.test(progText));
-  check(`${tag} a coming-soon program is marked`, /coming soon/i.test(progText));
+  check(`${tag} coming-soon programs are not in the preview`, !/coming soon/i.test(progText));
   check(`${tag} link to /programs`, (await p.locator('main a[href="/programs"]').count()) >= 1);
   const principles = await p.locator("section[aria-labelledby='why-title'] ol > li").count();
   check(`${tag} 4 Why Tareeq points`, principles === 4, String(principles));
