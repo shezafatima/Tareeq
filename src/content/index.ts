@@ -6,6 +6,8 @@ import { contactCta, contactEmpty, contactNote, readContactDetails } from "./dat
 import { homeCopy } from "./data/cta";
 import { howItWorks } from "./how-it-works";
 import { mentor } from "./mentor";
+import { testimonials } from "./testimonials";
+import { selectTestimonials } from "../lib/testimonials";
 import { whyTareeq } from "./why-tareeq";
 import { homeProgramCards } from "./home-programs";
 import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
@@ -26,6 +28,7 @@ import type {
   MentorContent,
   PageMeta,
   PageSlug,
+  ResolvedTestimonial,
   Program,
   StorySection,
   TrustFact,
@@ -123,4 +126,15 @@ export async function getMentor(): Promise<MentorContent> {
     facts: byOrder(mentor.facts),
     socials: byOrder(mentor.socials),
   };
+}
+
+export async function getTestimonials(): Promise<ResolvedTestimonial[]> {
+  const dev = process.env.NODE_ENV !== "production";
+  // the dev-only module is imported behind a constant check so production builds drop it
+  const placeholders = dev ? (await import("./testimonials.dev")).placeholders : [];
+  return selectTestimonials(testimonials, {
+    dev,
+    placeholders,
+    warn: (index) => console.warn("[testimonials] skipped item with an invalid video link, index", index),
+  });
 }

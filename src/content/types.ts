@@ -195,3 +195,23 @@ export type MentorContent = {
   facts: MentorFact[];
   socials: MentorSocial[];
 };
+
+/** One person's video story (spec 012). This shape is the contract the future admin writes to; keep it stable. */
+export type Testimonial = {
+  /** YouTube Shorts, watch or youtu.be link */
+  youtubeUrl: string;
+  name: string;
+  /** e.g. "Teacher" */
+  role: string;
+  organization?: string;
+  /** one short line */
+  quote: string;
+  /** the person agreed to be shown; must be exactly true */
+  consent: boolean;
+  /** the owner approved it for the site; must be exactly true */
+  published: boolean;
+  order: number;
+};
+
+/** What the section renders: a Testimonial plus the parsed video id. Not part of the source contract. */
+export type ResolvedTestimonial = Testimonial & { videoId: string; isPlaceholder: boolean };

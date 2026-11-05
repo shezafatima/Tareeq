@@ -832,3 +832,102 @@ html[data-reveal-ready] [data-reveal].mentor-photo:not([data-revealed]) {
     transform: none;
   }
 }
+
+/* Testimonials (spec 012). .glass-card copies the hero info-card look (white/70, royal ring) without touching Hero. */
+.glass-card {
+  background: color-mix(in srgb, white 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-royal) 14%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-royal) 10%, transparent),
+    var(--shadow-card-rest);
+  border-radius: var(--radius-card);
+}
+.glass-blur {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.testimonial-strip {
+  display: flex;
+  gap: 2rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  padding: 1.75rem 1rem 2rem;
+  margin-inline: -1rem;
+  scrollbar-width: thin;
+}
+.testimonial-strip > li {
+  flex: 0 0 min(72vw, 280px);
+  scroll-snap-align: center;
+}
+@media (min-width: 768px) {
+  .testimonial-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 300px));
+    justify-content: center;
+    gap: 2.75rem;
+    overflow: visible;
+    margin-inline: 0;
+    padding: 0;
+  }
+  .testimonial-strip > li {
+    flex: none;
+  }
+}
+/* the hero's cards rest at a slight tilt; these do too, alternating, and straighten on hover or focus */
+.testimonial-strip > li {
+  --tilt: -2deg;
+  transform: rotate(var(--tilt));
+  transition: transform var(--dur-base) var(--ease-soft);
+}
+.testimonial-strip > li:nth-child(3n + 2) {
+  --tilt: 1.5deg;
+}
+.testimonial-strip > li:nth-child(3n) {
+  --tilt: -1deg;
+}
+/* a solid tone card tucked behind, same geometry and colours as the "Who it's for" cards (.aud-back); decoration only */
+.testimonial-strip > li {
+  --aud-tone: var(--color-royal);
+  position: relative;
+  isolation: isolate;
+}
+.testimonial-strip > li:nth-child(3n + 2) {
+  --aud-tone: var(--color-saffron);
+}
+.testimonial-strip > li:nth-child(3n) {
+  --aud-tone: var(--color-sky);
+}
+.testimonial-strip > li::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0.5rem;
+  border-radius: var(--radius-card);
+  background: var(--aud-tone);
+  transform: translate(-1.5%, 0.5rem) rotate(-3.5deg);
+  transition: transform var(--dur-base) var(--ease-soft);
+  pointer-events: none;
+}
+.testimonial-strip > li:focus-within::before {
+  transform: translate(-2%, 0.6rem) rotate(-5deg);
+}
+@media (hover: hover) {
+  .testimonial-strip > li:hover::before {
+    transform: translate(-2%, 0.6rem) rotate(-5deg);
+  }
+}
+.testimonial-strip > li:focus-within {
+  transform: rotate(0deg);
+}
+@media (hover: hover) {
+  .testimonial-strip > li:hover {
+    transform: rotate(0deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-strip > li,
+  .testimonial-strip > li::before {
+    transition: none;
+  }
+}
