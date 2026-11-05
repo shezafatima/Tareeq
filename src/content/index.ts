@@ -1,11 +1,13 @@
 // The only import path for page content. Pages and components call these accessors; they never
 // import from ./data. To move content to a database, change this file and ./data only.
-import { audiences } from "./data/audiences";
+import { audiences } from "./audiences";
 import { courseList } from "./data/courses";
 import { contactCta, contactEmpty, contactNote, readContactDetails } from "./data/contact";
 import { homeCopy } from "./data/cta";
 import { howItWorks } from "./how-it-works";
+import { mentor } from "./mentor";
 import { whyTareeq } from "./why-tareeq";
+import { homeProgramCards } from "./home-programs";
 import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
 import { pages } from "./data/pages";
 import { programs } from "./data/programs";
@@ -17,9 +19,11 @@ import type {
   ContactDetail,
   CourseOption,
   HomeCopy,
+  HomeProgramCard,
   HowItWorksContent,
   WhyTareeqContent,
   LeadCopy,
+  MentorContent,
   PageMeta,
   PageSlug,
   Program,
@@ -107,4 +111,16 @@ export async function getHowItWorks(): Promise<HowItWorksContent> {
 
 export async function getWhyTareeq(): Promise<WhyTareeqContent> {
   return { ...whyTareeq, points: byOrder(whyTareeq.points) };
+}
+
+export async function getHomeProgramCards(): Promise<HomeProgramCard[]> {
+  return byOrder(homeProgramCards);
+}
+
+export async function getMentor(): Promise<MentorContent> {
+  return {
+    ...mentor,
+    facts: byOrder(mentor.facts),
+    socials: byOrder(mentor.socials),
+  };
 }

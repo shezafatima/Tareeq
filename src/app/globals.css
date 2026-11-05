@@ -7,13 +7,17 @@
   --color-saffron: #f2a93b;
   --color-paper: #faf7f2;
   --color-soft: #e6f0ff;
+  /* official platform glyph colours: the small social icons in the mentor section only */
+  --color-youtube: #ff0000;
+  --color-linkedin: #0a66c2;
+  --color-instagram: #e4405f;
   --color-danger: #b42318; /* form errors only; 6.5:1 on white */
   --font-heading: var(--font-sora);
   --font-sans: var(--font-inter);
 
   /* Shell tokens. New names only, so existing utilities (rounded-xl, numeric spacing) are untouched. */
   --spacing-gutter: 1.25rem;
-  --spacing-section: 4rem;
+  --spacing-section: 3rem;
   --radius-control: 0.75rem;
   --radius-card: 1rem;
   --radius-pill: 9999px;
@@ -316,7 +320,7 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
 .hiw-stage {
   max-width: 80rem;
   margin: 0 auto;
-  padding: 4rem var(--spacing-gutter);
+  padding: 3rem var(--spacing-gutter);
   display: grid;
   gap: 2rem;
   grid-template-columns: minmax(0, 1fr);
@@ -344,7 +348,7 @@ html[data-reveal-ready] [data-reveal]:not([data-revealed]) .draw-in {
     grid-template-areas: "robot head" "robot carousel";
     column-gap: 4rem;
     align-items: start;
-    padding-block: 6rem;
+    padding-block: 4rem;
   }
   .hiw-robot {
     width: min(21.25rem, 100%);
@@ -555,4 +559,276 @@ html:not([data-js]) .step-next,
 html:not([data-js]) .step-back,
 html:not([data-js]) .step-progress {
   display: none !important;
+}
+
+/* =====================================================================================================
+   Feature 009: home Programs bento. Border warming toward saffron and the featured glow drift.
+   Only transform and opacity animate (the border change is colour, not layout).
+   ===================================================================================================== */
+
+.program-card {
+  border: 1px solid var(--pc-border, color-mix(in srgb, var(--color-royal) 12%, transparent));
+  transition:
+    transform var(--dur-base) var(--ease-soft),
+    box-shadow var(--dur-base) var(--ease-soft),
+    border-color var(--dur-base) var(--ease-soft);
+}
+.program-card[data-variant="featured"] {
+  --pc-border: color-mix(in srgb, white 14%, transparent);
+}
+.program-card[data-variant="quiet"] {
+  --pc-border: color-mix(in srgb, var(--color-royal) 10%, transparent);
+  box-shadow: none;
+}
+.program-card:focus-within {
+  border-color: color-mix(in srgb, var(--color-saffron) 80%, transparent);
+}
+@media (hover: hover) {
+  .program-card:hover {
+    border-color: color-mix(in srgb, var(--color-saffron) 80%, transparent);
+  }
+}
+
+.program-glow {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--color-sky) 38%, transparent), transparent);
+  opacity: 0.55;
+  will-change: transform, opacity;
+  animation: program-glow-drift 22s ease-in-out infinite alternate;
+}
+@keyframes program-glow-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.45;
+  }
+  to {
+    transform: translate3d(38%, 30%, 0);
+    opacity: 0.8;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .program-glow {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+/* "Who it's for" audience cards (feature 010). Tones are existing brand tokens mixed; the strong tone is the icon
+   stroke (at least 3:1 on its tile), the tone itself tints the tile. Motion is CSS only: transform and opacity. */
+.aud-item {
+  --aud-tone: var(--color-royal);
+  --aud-strong: var(--color-royal);
+}
+.aud-item[data-audience="teachers"] {
+  --aud-tone: var(--color-saffron);
+  --aud-strong: color-mix(in srgb, var(--color-saffron) 55%, var(--color-midnight));
+}
+.aud-item[data-audience="school-students"] {
+  --aud-tone: var(--color-sky);
+  --aud-strong: var(--color-sky);
+}
+.aud-item[data-audience="college-students"] {
+  --aud-tone: var(--color-royal);
+  --aud-strong: var(--color-royal);
+}
+.aud-item[data-audience="online-learners"] {
+  --aud-tone: color-mix(in srgb, var(--color-sky) 50%, var(--color-royal));
+  --aud-strong: color-mix(in srgb, var(--color-sky) 50%, var(--color-royal));
+}
+.aud-item[data-audience="corporate-teams"] {
+  --aud-tone: var(--color-midnight);
+  --aud-strong: var(--color-midnight);
+}
+
+.aud-tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--radius-card);
+  color: var(--aud-strong);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aud-tone) 22%, white),
+    color-mix(in srgb, var(--aud-tone) 9%, white)
+  );
+}
+/* brighter tint, faded in on hover and focus (opacity only) */
+.aud-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aud-tone) 32%, white),
+    color-mix(in srgb, var(--aud-tone) 16%, white)
+  );
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-soft);
+}
+.aud-icon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  transform-origin: 50% 50%;
+}
+/* corporate: a small saffron accent on the navy tile (decorative) */
+.aud-card[data-audience="corporate-teams"] .aud-tile::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-saffron);
+}
+
+.aud-card:focus-visible .aud-tile::after {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .aud-card:hover .aud-tile::after {
+    opacity: 1;
+  }
+}
+
+@keyframes aud-teacher {
+  35% { transform: rotate(-9deg); }
+  70% { transform: rotate(3deg); }
+}
+@keyframes aud-student {
+  40% { transform: translateY(-5px); }
+  70% { transform: translateY(1px); }
+}
+@keyframes aud-cap {
+  35% { transform: rotate(11deg) translateY(-1px); }
+  70% { transform: rotate(-3deg); }
+}
+@keyframes aud-laptop {
+  40% { transform: rotate(-7deg); }
+  75% { transform: rotate(2deg); }
+}
+@keyframes aud-case {
+  30% { transform: rotate(7deg); }
+  65% { transform: rotate(-5deg); }
+}
+.aud-card[data-audience="teachers"] .aud-icon { transform-origin: 50% 80%; }
+.aud-card[data-audience="school-students"] .aud-icon { transform-origin: 50% 100%; }
+.aud-card[data-audience="college-students"] .aud-icon { transform-origin: 50% 70%; }
+.aud-card[data-audience="online-learners"] .aud-icon { transform-origin: 50% 85%; }
+.aud-card[data-audience="corporate-teams"] .aud-icon { transform-origin: 50% 10%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .aud-card:focus-visible[data-audience="teachers"] .aud-icon { animation: aud-teacher 400ms var(--ease-soft); }
+  .aud-card:focus-visible[data-audience="school-students"] .aud-icon { animation: aud-student 400ms var(--ease-soft); }
+  .aud-card:focus-visible[data-audience="college-students"] .aud-icon { animation: aud-cap 400ms var(--ease-soft); }
+  .aud-card:focus-visible[data-audience="online-learners"] .aud-icon { animation: aud-laptop 400ms var(--ease-soft); }
+  .aud-card:focus-visible[data-audience="corporate-teams"] .aud-icon { animation: aud-case 400ms var(--ease-soft); }
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .aud-card:hover[data-audience="teachers"] .aud-icon { animation: aud-teacher 400ms var(--ease-soft); }
+  .aud-card:hover[data-audience="school-students"] .aud-icon { animation: aud-student 400ms var(--ease-soft); }
+  .aud-card:hover[data-audience="college-students"] .aud-icon { animation: aud-cap 400ms var(--ease-soft); }
+  .aud-card:hover[data-audience="online-learners"] .aud-icon { animation: aud-laptop 400ms var(--ease-soft); }
+  .aud-card:hover[data-audience="corporate-teams"] .aud-icon { animation: aud-case 400ms var(--ease-soft); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aud-icon { animation: none !important; }
+}
+
+/* Tilted back card (same idea as the robot stage): the card is light and straight, a card in the audience's own tone
+   sits behind it, tilted and a little lower, and shows as a coloured edge. Both are sized by the text. The back card
+   belongs to the wrapper, so lifting the front card moves it away from the back one. Decoration only. */
+.aud-item {
+  position: relative;
+  isolation: isolate;
+  padding-bottom: 0.5rem;
+}
+.aud-item .aud-card {
+  background: color-mix(in srgb, var(--aud-tone) 9%, white);
+}
+.aud-back {
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0.5rem;
+  border-radius: var(--radius-card);
+  background: var(--aud-tone);
+  transform: translate(-1.5%, 0.5rem) rotate(-3.5deg);
+  transition: transform var(--dur-base) var(--ease-soft);
+  pointer-events: none;
+}
+.aud-card:focus-visible ~ .aud-back {
+  transform: translate(-2%, 0.6rem) rotate(-5deg);
+}
+@media (hover: hover) {
+  .aud-card:hover ~ .aud-back {
+    transform: translate(-2%, 0.6rem) rotate(-5deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aud-back {
+    transition: none;
+  }
+  .aud-card:hover ~ .aud-back,
+  .aud-card:focus-visible ~ .aud-back {
+    transform: translate(-1.5%, 0.5rem) rotate(-3.5deg);
+  }
+}
+
+/* Meet your mentor (spec 011) */
+.mentor-glow {
+  position: absolute;
+  inset: -8% -10%;
+  z-index: -1;
+  border-radius: 9999px;
+  background:
+    radial-gradient(closest-side at 35% 40%, color-mix(in srgb, var(--color-sky) 28%, transparent), transparent 70%),
+    radial-gradient(closest-side at 70% 70%, color-mix(in srgb, var(--color-saffron) 26%, transparent), transparent 70%);
+  filter: blur(18px);
+  pointer-events: none;
+  animation: mentor-drift 14s ease-in-out infinite alternate;
+}
+@keyframes mentor-drift {
+  from {
+    transform: translate3d(-2%, -1.5%, 0) scale(1);
+    opacity: 0.85;
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) scale(1.06);
+    opacity: 1;
+  }
+}
+html[data-reveal-ready] [data-reveal].mentor-photo:not([data-revealed]) {
+  opacity: 0;
+  transform: scale(0.97);
+}
+.mentor-social {
+  --lift: 2px;
+  transition:
+    transform var(--dur-base) var(--ease-soft),
+    box-shadow var(--dur-base) var(--ease-soft),
+    border-color var(--dur-base) var(--ease-soft);
+}
+.mentor-social:focus-visible {
+  border-color: var(--color-saffron);
+}
+@media (hover: hover) {
+  .mentor-social:hover {
+    border-color: var(--color-saffron);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mentor-glow {
+    animation: none;
+  }
+  .mentor-social,
+  .mentor-social:hover,
+  .mentor-social:focus-within {
+    transform: none;
+  }
 }

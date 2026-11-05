@@ -22,16 +22,16 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   const order = ["Programs", "Why Tareeq", "How it works", "Who it’s for"]; // feature 008: Programs, Why Tareeq, How it works, Who it’s for
   check(`${tag} section headings in order`, order.every((t, i) => headings.map((x) => x.trim())[i] === t), headings.join(" | "));
   check(`${tag} 4 audience cards (Teachers, School students, College students, Professionals and teams)`,
-    JSON.stringify(await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()) === JSON.stringify(["Teachers", "School students", "College students", "Professionals and teams"]),
+    JSON.stringify(await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()) === JSON.stringify(["Teachers", "School students (Grades 6-10)", "College & university students", "Online learners", "Corporate teams"]),
     (await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()).join(","));
   const steps = await p.locator("#how-it-works .hiw-card h3").count();
   check(`${tag} 3 steps`, steps === 3);
   check(`${tag} in "How it works" the cards hold no links or fields (only their example buttons take focus)`, (await p.locator("#how-it-works .hiw-card").evaluateAll((els) => els.reduce((n, el) => n + [...el.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])")].filter((c) => !c.classList.contains("hiw-flip-btn")).length, 0))) === 0);
   check(`${tag} step names Prompt, Build, Learn`, JSON.stringify(await p.locator("#how-it-works .hiw-face-front h3").allTextContents()) === JSON.stringify(["Prompt", "Build", "Learn"]));
   const progs = await p.locator("section[aria-labelledby='programs-title'] ul > li").count();
-  check(`${tag} 2 to 3 programs in the preview`, progs >= 2 && progs <= 3, String(progs));
+  check(`${tag} 5 programs in the preview (feature 009)`, progs === 5, String(progs));
   const progText = await p.locator("section[aria-labelledby='programs-title'] ul").innerText();
-  check(`${tag} programs show who it's for, duration and format`, /Who it’s for/.test(progText) && /Duration/.test(progText) && /Format/.test(progText));
+  check(`${tag} programs show audience, format and duration`, /Format/i.test(progText) && /Duration/i.test(progText) && /Grades 6-10/.test(progText));
   check(`${tag} a coming-soon program is marked`, /coming soon/i.test(progText));
   check(`${tag} link to /programs`, (await p.locator('main a[href="/programs"]').count()) >= 1);
   const principles = await p.locator("section[aria-labelledby='why-title'] ol > li").count();

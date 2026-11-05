@@ -6,7 +6,7 @@ import { navItems, socialLinks, tagline } from "@/lib/site";
 import Logo from "./Logo";
 
 const link =
-  "inline-flex min-h-11 items-center text-white/80 transition-colors duration-[var(--dur-fast)] hover:text-white hover:underline hover:underline-offset-4";
+  "inline-flex min-h-11 items-center text-white/80 md:min-h-6 transition-colors duration-[var(--dur-fast)] hover:text-white hover:underline hover:underline-offset-4";
 const heading = "text-sm font-semibold uppercase tracking-[0.18em] text-white/70";
 
 // Contact and social blocks render only when entries exist; nothing is invented.
@@ -15,15 +15,15 @@ export default async function Footer() {
   return (
     <footer className="overflow-clip bg-midnight text-white [&_a:focus-visible]:outline-saffron">
       <Reveal>
-      <Container className="grid gap-10 pb-28 pt-12 md:grid-cols-[1.2fr_1fr_1fr] md:gap-8">
+      <Container className="grid gap-4 pb-20 pt-6 md:grid-cols-[1.2fr_1fr_1fr] md:gap-x-8 md:gap-y-2 md:pb-16">
         <div>
           <Logo variant="light" className="h-6" />
-          <p className="mt-3 max-w-xs text-base text-white/80">{tagline}</p>
+          <p className="mt-2 max-w-xs text-base text-white/80">{tagline}</p>
         </div>
 
         <nav aria-label="Footer">
           <h2 className={heading}>Explore</h2>
-          <ul className="mt-2">
+          <ul className="mt-1 md:grid md:grid-cols-2 md:gap-x-6">
             {navItems.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className={link}>
@@ -41,13 +41,13 @@ export default async function Footer() {
         </nav>
 
         {(contactDetails.length > 0 || socialLinks.length > 0) && (
-          <div className="space-y-8">
+          <div className="space-y-2">
             {contactDetails.length > 0 && (
               <section aria-labelledby="footer-contact">
                 <h2 id="footer-contact" className={heading}>
                   Contact
                 </h2>
-                <ul className="mt-2">
+                <ul className="mt-1">
                   {contactDetails.map((item) => (
                     <li key={item.label} className="py-1 text-white/80">
                       <span className="block text-sm text-white/70">{item.label}</span>
@@ -56,7 +56,7 @@ export default async function Footer() {
                           {item.value}
                         </a>
                       ) : (
-                        <span className="inline-flex min-h-11 items-center">{item.value}</span>
+                        <span className="inline-flex min-h-11 items-center md:min-h-6">{item.value}</span>
                       )}
                     </li>
                   ))}
@@ -69,7 +69,7 @@ export default async function Footer() {
                 <h2 id="footer-social" className={heading}>
                   Follow us
                 </h2>
-                <ul className="mt-2">
+                <ul className="mt-1">
                   {socialLinks.map((item) => (
                     <li key={item.href}>
                       <a href={item.href} target="_blank" rel="noopener noreferrer" className={link}>
@@ -84,7 +84,7 @@ export default async function Footer() {
           </div>
         )}
 
-        <p className="border-t border-white/15 pt-6 text-sm text-white/70 md:col-span-3">
+        <p className="border-t border-white/15 pt-3 text-sm text-white/70 md:col-span-3">
           © {new Date().getFullYear()} Tareeq. All rights reserved.
         </p>
       </Container>
