@@ -71,8 +71,6 @@ export type HomeProgramCard = {
   /** format, duration, group size; entries with an empty value are skipped */
   facts: { label: string; value: string }[];
   cta: HomeProgramCta;
-  /** the first featured card is shown large */
-  featured?: boolean;
   order: number;
 };
 

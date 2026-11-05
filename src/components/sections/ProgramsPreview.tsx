@@ -13,11 +13,12 @@ function resolveCta(card: HomeProgramCardData): string | null {
   return card.cta.kind === "link" ? card.cta.href : getWhatsAppUrlWithMessage(card.cta.message);
 }
 
-// Server component. Bento grid: one column on phones, two from md (featured full width), four from lg (featured 2x2).
+// Server component. Equal cards: one column on phones, two from md, three from lg. A short last row is centred (globals.css).
 export default async function ProgramsPreview() {
-  const [cards, copy] = await Promise.all([getHomeProgramCards(), getHomeCopy()]);
+  const [allCards, copy] = await Promise.all([getHomeProgramCards(), getHomeCopy()]);
+  // only what visitors can act on now; "See all programs" leads to the rest
+  const cards = allCards.filter((c) => c.status !== "coming-soon");
   if (cards.length === 0) return null;
-  const featuredId = cards.find((c) => c.featured)?.id;
 
   return (
     <Section id="programs" labelledBy="programs-title" tone="paper" divider decoration="circles">
@@ -26,15 +27,12 @@ export default async function ProgramsPreview() {
           {copy.programs.heading}
         </SectionHeading>
       </Reveal>
-      <ul className="mt-10 grid gap-4 md:grid-cols-2 lg:auto-rows-fr lg:grid-cols-4 lg:gap-6">
-        {cards.map((c, i) => {
-          const featured = c.id === featuredId;
-          return (
-            <Reveal as="li" key={c.id} index={i} className={featured ? "md:col-span-2 lg:row-span-2" : undefined}>
-              <HomeProgramCard card={c} ctaHref={resolveCta(c)} featured={featured} />
-            </Reveal>
-          );
-        })}
+      <ul className="program-grid mt-10 grid auto-rows-fr gap-4 lg:gap-6">
+        {cards.map((c, i) => (
+          <Reveal as="li" key={c.id} index={i}>
+            <HomeProgramCard card={c} ctaHref={resolveCta(c)} />
+          </Reveal>
+        ))}
       </ul>
       <Reveal className="mt-10" index={cards.length}>
         <Button href="/programs" variant="secondary">

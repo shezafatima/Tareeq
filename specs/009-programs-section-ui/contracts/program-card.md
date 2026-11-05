@@ -1,5 +1,7 @@
 # Contract: HomeProgramCard and the Programs grid
 
+> Updated 2026-11-05 at the owner's request: all five cards are identical (no featured card, no variants, no glow): same size, surface, chip and button. Three across from lg with the last two centred, two across from md. Facts are icon rows with their labels for screen readers only. Coming-soon cards are not shown on the home page; their data stays in `home-programs.ts`. The details below describe the earlier bento.
+
 ## Component API
 
 ```ts

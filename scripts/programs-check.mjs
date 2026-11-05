@@ -9,8 +9,8 @@ let pass = 0, fail = 0;
 const check = (n, ok, d = "") => { ok ? pass++ : fail++; console.log(`${ok ? "PASS" : "FAIL"}  ${n}${ok ? "" : `  (${d})`}`); };
 mkdirSync("shots/009", { recursive: true });
 
-const titles = ["AI for Teachers workshop", "School student workshops", "Online courses", "College & university", "Corporate teams"];
-const chips = ["Booking now", "Booking now", "Register interest", "Coming soon", "Coming soon"];
+const titles = ["AI for Teachers workshop", "School student workshops", "Online courses"]; // coming-soon cards are hidden on the home page
+const chips = ["Booking now", "Booking now", "Register interest"];
 const SEC = "section[aria-labelledby='programs-title']";
 
 // WCAG contrast of a text element against its effective background (walks up for the first opaque colour, blends alphas)
@@ -38,10 +38,10 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   await p.waitForTimeout(1800);
 
   // content
-  check(`${tag} five cards in brief order`, JSON.stringify(await p.locator(`${SEC} article h3`).allTextContents()) === JSON.stringify(titles), (await p.locator(`${SEC} article h3`).allTextContents()).join("|"));
-  check(`${tag} status chips`, JSON.stringify(await p.locator(`${SEC} article > div > p:first-child`).allInnerTexts().then((a) => a.map((t) => t.trim().toLowerCase()))) === JSON.stringify(chips.map((c) => c.toLowerCase())), "");
+  check(`${tag} three cards in order`, JSON.stringify(await p.locator(`${SEC} article h3`).allTextContents()) === JSON.stringify(titles), (await p.locator(`${SEC} article h3`).allTextContents()).join("|"));
+  check(`${tag} status chips`, JSON.stringify(await p.locator(`${SEC} article > p:first-child`).allInnerTexts().then((a) => a.map((t) => t.trim().toLowerCase()))) === JSON.stringify(chips.map((c) => c.toLowerCase())), "");
   check(`${tag} 'all programs' link kept`, (await p.locator(`${SEC} a[href="/programs"]`).count()) === 1);
-  check(`${tag} one h2, five h3`, (await p.locator(`${SEC} h2`).count()) === 1 && (await p.locator(`${SEC} h3`).count()) === 5);
+  check(`${tag} one h2, three h3`, (await p.locator(`${SEC} h2`).count()) === 1 && (await p.locator(`${SEC} h3`).count()) === 3);
 
   // structure: chip, h3, audience, dl, cta in DOM order on every card
   const structure = await p.evaluate((sel) => [...document.querySelectorAll(`${sel} article`)].map((a) => {
@@ -57,23 +57,20 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   const boxes = await p.evaluate((sel) => [...document.querySelectorAll(`${sel} ul > li`)].map((l) => { const r = l.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height) }; }), SEC);
   check(`${tag} no horizontal scroll`, await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   check(`${tag} no card wider than the screen`, boxes.every((x) => x.x >= 0 && x.x + x.w <= w + 1));
+  check(`${tag} all cards are the same size`, new Set(boxes.map((r) => r.w)).size === 1 && new Set(boxes.map((r) => r.h)).size === 1, JSON.stringify(boxes));
   if (w >= 1024) {
-    const [f, ...rest] = boxes;
-    check(`${tag} featured spans 2 columns and 2 rows`, f.w > rest[0].w * 1.9 && f.h > rest[0].h * 1.9, JSON.stringify([f, rest[0]]));
-    check(`${tag} other four fill a 2x2 block right of the featured card`, rest.every((r) => r.x >= f.x + f.w - 1) && new Set(rest.map((r) => r.x)).size === 2 && new Set(rest.map((r) => r.y)).size === 2, JSON.stringify(rest));
-    check(`${tag} small cards are equal in size`, new Set(rest.map((r) => r.w)).size === 1 && new Set(rest.map((r) => r.h)).size === 1);
-    check(`${tag} featured is the same height as the 2x2 block`, Math.abs(f.h - (rest[2].y + rest[2].h - rest[0].y)) <= 1);
+    check(`${tag} three cards in one row`, new Set(boxes.map((r) => r.y)).size === 1 && new Set(boxes.map((r) => r.x)).size === 3, JSON.stringify(boxes));
   } else if (w >= 768) {
-    check(`${tag} featured full width, then two columns`, boxes[0].w > boxes[1].w * 1.9 && boxes[1].x < boxes[2].x && boxes[1].y === boxes[2].y, JSON.stringify(boxes));
+    check(`${tag} two columns, last card centred`, boxes[0].y === boxes[1].y && boxes[2].y > boxes[0].y && boxes[2].x > boxes[0].x && boxes[2].x < boxes[1].x, JSON.stringify(boxes));
   } else {
     check(`${tag} single column in order`, boxes.every((x, i) => x.x === boxes[0].x && (i === 0 || x.y > boxes[i - 1].y)), JSON.stringify(boxes));
   }
-  const overflow = await p.evaluate((sel) => [...document.querySelectorAll(`${sel} article`)].filter((a) => [...a.querySelectorAll("*:not(.program-glow)")].some((e) => e.getBoundingClientRect().right > a.getBoundingClientRect().right + 1 || e.getBoundingClientRect().left < a.getBoundingClientRect().left - 1)).length, SEC);
+  const overflow = await p.evaluate((sel) => [...document.querySelectorAll(`${sel} article`)].filter((a) => [...a.querySelectorAll("*")].some((e) => e.getBoundingClientRect().right > a.getBoundingClientRect().right + 1 || e.getBoundingClientRect().left < a.getBoundingClientRect().left - 1)).length, SEC);
   check(`${tag} nothing overflows inside a card`, overflow === 0, String(overflow));
 
-  // featured surface
-  const surf = await p.evaluate((sel) => { const a = document.querySelectorAll(`${sel} article`); return [getComputedStyle(a[0]).backgroundColor, getComputedStyle(a[3]).backgroundColor]; }, SEC);
-  check(`${tag} featured card is navy`, surf[0] === "rgb(13, 27, 61)", surf[0]);
+  // same surface on every card
+  const surf = await p.evaluate((sel) => [...document.querySelectorAll(`${sel} article`)].map((a) => getComputedStyle(a).backgroundColor), SEC);
+  check(`${tag} every card has the same surface`, new Set(surf).size === 1 && surf[0] === "rgb(255, 255, 255)", surf.join());
 
   // ctas
   const ctas = await p.evaluate((sel) => [...document.querySelectorAll(`${sel} article a`)].map((a) => ({ href: a.getAttribute("href"), name: a.textContent.trim(), t: a.target, rel: a.rel, h: Math.round(a.getBoundingClientRect().height) })), SEC);
@@ -81,7 +78,7 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   if (expectWa) {
     const wa = ctas.slice(3);
     const msgs = wa.map((c) => decodeURIComponent((c.href.split("text=")[1] ?? "")));
-    check(`${tag} two WhatsApp links with different prefilled messages, new tab`, wa.length === 2 && wa.every((c) => /^https:\/\/wa\.me\/\d+\?text=/.test(c.href) && c.t === "_blank" && /noopener/.test(c.rel)) && msgs[0] !== msgs[1] && /college/i.test(msgs[0]) && /corporate/i.test(msgs[1]), JSON.stringify(wa));
+    check(`${tag} no coming-soon card or WhatsApp link in the section`, wa.length === 0 && !(await p.locator(`${SEC} article[data-status="coming-soon"]`).count()), JSON.stringify(wa));
   } else {
     check(`${tag} no WhatsApp number: coming-soon CTAs omitted, no empty links`, ctas.length === 3 && ctas.every((c) => c.href && c.href !== "#"), JSON.stringify(ctas));
   }
@@ -90,7 +87,7 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   // a11y: one tab stop per card, card is not a link
   const stops = await p.evaluate((sel) => [...document.querySelectorAll(`${sel} article`)].map((a) => a.querySelectorAll("a[href], button, input, select, textarea, [tabindex]").length), SEC);
   check(`${tag} at most one focusable per card; card not a link`, stops.every((n) => n <= 1) && (await p.locator(`${SEC} a:has(article), ${SEC} article[tabindex]`).count()) === 0, JSON.stringify(stops));
-  check(`${tag} decoration hidden from assistive tech`, await p.evaluate((sel) => [...document.querySelectorAll(`${sel} article span.program-glow, ${sel} svg`)].every((e) => e.closest("[aria-hidden='true']") || e.getAttribute("aria-hidden") === "true"), SEC));
+  check(`${tag} decoration hidden from assistive tech`, await p.evaluate((sel) => [...document.querySelectorAll(`${sel} svg`)].every((e) => e.closest("[aria-hidden='true']") || e.getAttribute("aria-hidden") === "true"), SEC));
 
   // contrast
   const cr = await p.evaluate(contrastFn);
@@ -99,8 +96,6 @@ for (const w of [360, 390, 768, 1024, 1440]) {
 
   // motion: lift, border, chevron, glow
   if (w === 1440) {
-    const glow = await p.evaluate((sel) => { const g = document.querySelector(`${sel} .program-glow`); const s = getComputedStyle(g); const kf = [...document.styleSheets].flatMap((ss) => { try { return [...ss.cssRules]; } catch { return []; } }).find((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === s.animationName); const props = new Set(kf ? [...kf.cssRules].flatMap((r) => [...r.style].filter(Boolean)) : []); return { name: s.animationName, dur: parseFloat(s.animationDuration), props: [...props] }; }, SEC);
-    check(`${tag} glow drifts slowly with transform/opacity only`, glow.name !== "none" && glow.dur >= 15 && glow.props.every((x) => x === "transform" || x === "opacity"), JSON.stringify(glow));
     const card = p.locator(`${SEC} article`).nth(1);
     const before = await card.evaluate((a) => ({ t: getComputedStyle(a).transform, bc: getComputedStyle(a).borderTopColor, chev: getComputedStyle(a.querySelector("a svg")).translate }));
     await card.hover();
@@ -131,7 +126,7 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   const hidden = await p.evaluate(() => [...document.querySelectorAll("#programs ul > li")].map((l) => getComputedStyle(l).opacity));
   check("[entrance] cards below the fold start hidden", hidden.every((o) => o === "0"), hidden.join(","));
   await p.evaluate(() => document.querySelector("#programs ul").scrollIntoView({ block: "center" }));
-  const first = [null, null, null, null, null];
+  const first = [null, null, null];
   for (let t = 0; t < 40; t++) {
     const o = await p.evaluate(() => [...document.querySelectorAll("#programs ul > li")].map((l) => parseFloat(getComputedStyle(l).opacity)));
     o.forEach((v, i) => { if (first[i] === null && v > 0.05) first[i] = t; });
@@ -139,7 +134,7 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   }
   const mid = first;
   const end = await p.evaluate(() => [...document.querySelectorAll("#programs ul > li")].map((l) => getComputedStyle(l).opacity));
-  check("[entrance] staggered: each card starts fading in no earlier than the one before", mid.every((v, i) => v !== null && (i === 0 || v >= mid[i - 1])) && mid[4] > mid[0], mid.join(","));
+  check("[entrance] staggered: each card starts fading in no earlier than the one before", mid.every((v, i) => v !== null && (i === 0 || v >= mid[i - 1])) && mid[2] > mid[0], mid.join(","));
   check("[entrance] all visible at the end", end.every((o) => o === "1"), end.join(","));
   await p.evaluate(() => window.scrollTo(0, 0));
   await p.waitForTimeout(800);
@@ -157,8 +152,6 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   const opac = await p.evaluate(() => [...document.querySelectorAll("#programs ul > li")].map((l) => getComputedStyle(l).opacity));
   check("[reduced] cards fully visible without scrolling, no entrance", opac.every((o) => o === "1"), opac.join(","));
   await p.locator("#programs").scrollIntoViewIfNeeded();
-  const glowAnim = await p.evaluate(() => getComputedStyle(document.querySelector("#programs .program-glow")).animationName);
-  check("[reduced] no glow drift", glowAnim === "none", glowAnim);
   const running = await p.evaluate(() => document.querySelector("#programs").getAnimations({ subtree: true }).filter((a) => a.playState === "running" && a.effect?.getComputedTiming().iterations === Infinity).length);
   check("[reduced] no infinite animation in the section", running === 0, String(running));
   const card = p.locator("#programs article").nth(1);
@@ -176,9 +169,9 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   const p = await ctx.newPage();
   await p.goto(base + "/", { waitUntil: "load" });
   await p.waitForTimeout(6500);
-  await p.locator("#programs article").nth(3).scrollIntoViewIfNeeded();
+  await p.locator("#programs article").nth(2).scrollIntoViewIfNeeded();
   await p.waitForTimeout(1200);
-  const card = p.locator("#programs article").nth(3);
+  const card = p.locator("#programs article").nth(2);
   const box = await card.boundingBox();
   await p.touchscreen.tap(box.x + 20, box.y + 20);
   await p.waitForTimeout(600);
@@ -200,7 +193,7 @@ for (const w of [360, 390, 768, 1024, 1440]) {
     await p.keyboard.press("Tab");
     seen.push(await p.evaluate(() => { const e = document.activeElement; const c = e.closest("article"); return c ? c.querySelector("h3").textContent : e.getAttribute("href"); }));
   }
-  check("[keyboard] tab visits each card once in order, then the all-programs link", JSON.stringify(seen.slice(0, 5)) === JSON.stringify(titles) && seen[5] === "/programs", JSON.stringify(seen));
+  check("[keyboard] tab visits each card once in order, then the all-programs link", JSON.stringify(seen.slice(0, 3)) === JSON.stringify(titles) && seen[3] === "/programs", JSON.stringify(seen));
   await p.locator("#programs article a").first().focus();
   await p.keyboard.press("Tab"); await p.keyboard.press("Shift+Tab");
   await p.waitForTimeout(600);
@@ -215,7 +208,7 @@ for (const w of [360, 390, 768, 1024, 1440]) {
   const p = await ctx.newPage();
   await p.goto(base + "/", { waitUntil: "load" });
   const vis = await p.evaluate(() => [...document.querySelectorAll("#programs ul > li")].map((l) => getComputedStyle(l).opacity));
-  check("[no-js] five cards visible", vis.length === 5 && vis.every((o) => o === "1"), vis.join(","));
+  check("[no-js] three cards visible", vis.length === 3 && vis.every((o) => o === "1"), vis.join(","));
   await ctx.close();
 }
 

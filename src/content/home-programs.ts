@@ -17,7 +17,6 @@ export const homeProgramCards: HomeProgramCard[] = [
       { label: "Group size", value: "Up to 30 teachers" },
     ],
     cta: { kind: "link", label: "Book a workshop", href: joinHref },
-    featured: true,
     order: 1,
   },
   {
