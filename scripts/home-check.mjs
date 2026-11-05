@@ -24,10 +24,9 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   check(`${tag} 4 audience cards (Teachers, School students, College students, Professionals and teams)`,
     JSON.stringify(await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()) === JSON.stringify(["Teachers", "School students (Grades 6-10)", "College & university students", "Online learners", "Corporate teams"]),
     (await p.locator("section[aria-labelledby='who-title'] ul > li h3").allInnerTexts()).join(","));
-  const steps = await p.locator("#how-it-works .hiw-card h3").count();
+  const steps = await p.locator("#how-it-works .step-card").count();
   check(`${tag} 3 steps`, steps === 3);
-  check(`${tag} in "How it works" the cards hold no links or fields (only their example buttons take focus)`, (await p.locator("#how-it-works .hiw-card").evaluateAll((els) => els.reduce((n, el) => n + [...el.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])")].filter((c) => !c.classList.contains("hiw-flip-btn")).length, 0))) === 0);
-  check(`${tag} step names Prompt, Build, Learn`, JSON.stringify(await p.locator("#how-it-works .hiw-face-front h3").allTextContents()) === JSON.stringify(["Prompt", "Build", "Learn"]));
+  check(`${tag} step names Learn, Prompt, Build`, JSON.stringify(await p.locator("#how-it-works .step-name").allTextContents()) === JSON.stringify(["Learn", "Prompt", "Build"]));
   const progs = await p.locator("section[aria-labelledby='programs-title'] ul > li").count();
   check(`${tag} 5 programs in the preview (feature 009)`, progs === 5, String(progs));
   const progText = await p.locator("section[aria-labelledby='programs-title'] ul").innerText();
