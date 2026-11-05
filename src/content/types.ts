@@ -13,16 +13,22 @@ export type Audience = {
 
 export type StepId = "prompt" | "build" | "learn";
 
-/** One card of the "How it works" section (spec 007): the front explains the step, the back gives one example. */
+/** One step of the "How it works" video stepper (spec 013): a short video on the tablet and a card beside it. */
 export type HowStep = {
   id: StepId;
-  number: number;
-  /** the title on the front, e.g. "Prompt" */
+  number: 1 | 2 | 3;
+  /** short label, e.g. "Prompt" (the compact cards on small screens show number + name) */
   name: string;
-  /** one-line explanation on the front */
+  /** the headline, e.g. "Ask AI the right way." */
+  title: string;
+  /** one supporting line */
   line: string;
-  /** one concrete example, shown on the back */
-  example: string;
+  /** public path of the step video (H.264 MP4, no audio, 720p at most) */
+  video: string;
+  /** public path of the first-frame still shown before and instead of the video */
+  poster: string;
+  /** what the tablet shows, for assistive technology */
+  videoLabel: string;
   order: number;
 };
 

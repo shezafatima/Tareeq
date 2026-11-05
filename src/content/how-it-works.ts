@@ -1,6 +1,6 @@
-// DRAFT: owner to confirm before launch. Only the Prompt example is the owner's wording; the other lines,
-// the Build and Learn examples, the intro and the image description are drafts adapted from the existing step
-// and hero card wording (specs/007-how-it-works-section). The robot image is shared: see ./robot-image.ts.
+// DRAFT: owner to confirm before launch. The three titles are the owner's wording; the one-line descriptions
+// and the video descriptions are placeholders for owner review (specs/013-how-it-works-video-stepper).
+// Videos and posters live in public/videos/how-it-works/ (posters are made by `npm run posters:how-it-works`).
 import type { HowItWorksContent } from "./types";
 
 export const howItWorks: HowItWorksContent = {
@@ -8,27 +8,36 @@ export const howItWorks: HowItWorksContent = {
   intro: "Every session follows the same three steps.",
   steps: [
     {
-      id: "prompt",
+      id: "learn",
       number: 1,
-      name: "Prompt",
-      line: "Say what you need",
-      example: "Turn a lesson plan into 5 quiz questions in 2 minutes",
+      name: "Learn",
+      title: "Understand what you made, then improve it.",
+      line: "See why it works, then make it better.",
+      video: "/videos/how-it-works/learn.mp4",
+      poster: "/videos/how-it-works/learn.webp",
+      videoLabel: "The Tareeq robot points at a light bulb, a network diagram and a picture.",
       order: 1,
     },
     {
-      id: "build",
+      id: "prompt",
       number: 2,
-      name: "Build",
-      line: "Make something that works",
-      example: "A marking helper you set up in 20 minutes",
+      name: "Prompt",
+      title: "Ask AI the right way.",
+      line: "Say what you need clearly, and get an answer you can use.",
+      video: "/videos/how-it-works/prompt.mp4",
+      poster: "/videos/how-it-works/prompt.webp",
+      videoLabel: "The Tareeq robot points at a prompt box on a large screen.",
       order: 2,
     },
     {
-      id: "learn",
+      id: "build",
       number: 3,
-      name: "Learn",
-      line: "Understand why it works",
-      example: "Teach your class to check AI answers",
+      name: "Build",
+      title: "Make something real.",
+      line: "Turn the answer into a tool or lesson that works.",
+      video: "/videos/how-it-works/build.mp4",
+      poster: "/videos/how-it-works/build.webp",
+      videoLabel: "The Tareeq robot arranges pictures and cards into a web page.",
       order: 3,
     },
   ],
