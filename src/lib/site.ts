@@ -9,6 +9,9 @@ export const navItems: NavItem[] = [
 // Where every "Book a workshop" / "Join a workshop" call to action goes: the workshop page with the booking dialog open.
 export const joinHref = "/workshop?book=1";
 
+// The mentor section on the home page.
+export const mentorHref = "/#mentor";
+
 // Where the fixed "Online courses" card goes. Change this to "/courses" when the Courses feature ships.
 export const onlineCoursesHref = "/register";
 

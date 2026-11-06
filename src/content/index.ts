@@ -12,9 +12,9 @@ import { selectTestimonials } from "../lib/testimonials";
 import { whyTareeq } from "./why-tareeq";
 import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
 import { onlineCoursesCard } from "./online-courses";
+import { ourWay } from "./our-way";
 import { pages } from "./data/pages";
 import { trustFacts } from "./data/trust";
-import { story } from "./data/story";
 import type {
   Audience,
   CourseOption,
@@ -28,7 +28,7 @@ import type {
   PageMeta,
   PageSlug,
   ResolvedTestimonial,
-  StorySection,
+  OurWayContent,
   TrustFact,
 } from "./types";
 
@@ -47,8 +47,8 @@ export async function getOnlineCoursesCard(): Promise<HomeProgramCard> {
   return onlineCoursesCard;
 }
 
-export async function getStorySections(): Promise<StorySection[]> {
-  return byOrder(story);
+export async function getOurWay(): Promise<OurWayContent> {
+  return ourWay;
 }
 
 export async function getTrustFacts(): Promise<TrustFact[]> {

@@ -14,10 +14,8 @@ export const pages: PageMeta[] = [
     slug: "our-way",
     title: "Our Way",
     description:
-      "Why we started Tareeq, what the name means, and how we teach: hands-on, from your own work, with honest talk about what AI gets wrong.",
-    heading: "Learn the way you work",
-    eyebrow: "Our Way",
-    intro: "Why we started Tareeq, what the name means, and how we teach.",
+      "Why Tareeq exists and how we teach: you build something real in every session, and learn to check what AI gets wrong.",
+    heading: "Tareeq means 'the way'.",
   },
   {
     slug: "programs",

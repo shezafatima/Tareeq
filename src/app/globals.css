@@ -1589,3 +1589,216 @@ html:not([data-js]) .program-filter {
     transform: none;
   }
 }
+
+/* ---- Our Way page and its path (feature 016). See specs/016-our-way-page/contracts/way-path.md.
+   The line's default state is complete and static: no scripts and reduced motion need nothing else. ---- */
+.way-section {
+  --way-x: 0.75rem; /* where the line runs, from the container's edge */
+  --way-box: 0.75rem; /* width of a straight piece's box; its line is in the centre */
+  --way-pad-top: 4.5rem;
+  --way-pad-bottom: 4.5rem;
+  --way-cross-h: 0rem;
+  --way-rail-top: 0rem;
+  --way-rail-bottom: 0rem;
+  --way-bg: var(--color-paper);
+  padding-block: var(--way-pad-top) var(--way-pad-bottom);
+}
+.way-section--midnight {
+  --way-bg: var(--color-midnight);
+}
+.way-body {
+  position: relative;
+  z-index: 1;
+  padding-left: 1.5rem;
+}
+
+.way-track {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.way-seg {
+  position: absolute;
+  display: block;
+  overflow: visible;
+}
+.way-seg path {
+  stroke: var(--color-saffron);
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+.way-seg--straight,
+.way-seg--rail {
+  top: var(--way-rail-top);
+  width: var(--way-box);
+  /* an SVG does not stretch from top and bottom alone */
+  height: calc(100% - var(--way-rail-top) - var(--way-rail-bottom));
+}
+.way-seg--straight {
+  left: calc(var(--way-x) - var(--way-box) / 2);
+}
+.way-seg--rail,
+.way-seg--cross {
+  display: none;
+}
+
+.way-node {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--way-pad-top) + 0.75rem);
+  left: calc(var(--way-x) - 0.5625rem);
+  display: block;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--color-saffron);
+  border-radius: var(--radius-pill);
+  background: var(--way-bg);
+  pointer-events: none;
+}
+.way-node-dot {
+  position: absolute;
+  inset: 2px;
+  display: block;
+  border-radius: var(--radius-pill);
+  background: var(--color-saffron);
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* the drawing can run: wait for it, so a page opened partway down never replays from the top */
+  html[data-js] [data-way-page]:not([data-way-ready]) .way-seg {
+    opacity: 0;
+  }
+  html[data-js] .way-node:not([data-reached]) .way-node-dot {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  [data-way-ready] .way-node-dot {
+    transition:
+      opacity var(--dur-reveal) var(--ease-soft),
+      transform var(--dur-reveal) var(--ease-soft);
+  }
+}
+/* the line begins at the first marker and ends in the last section */
+.way-section--first {
+  --way-rail-top: calc(var(--way-pad-top) + 0.75rem);
+}
+.way-section--last {
+  --way-rail-bottom: var(--way-pad-bottom);
+}
+
+.way-word {
+  /* the font's full height is 2.5em, so the long tail is never clipped and a font swap moves nothing */
+  margin-top: -0.5em;
+  font-family: var(--font-urdu), "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif;
+  font-size: clamp(5.5rem, 26vw, 11rem);
+  line-height: 2.5;
+  text-align: left;
+}
+.way-h1 {
+  font-size: clamp(2.25rem, 10.5vw, 5.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+.way-h2 {
+  font-size: clamp(2.25rem, 7vw, 4.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+.way-numeral {
+  font-size: clamp(4rem, 12vw, 6.5rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.way-mark {
+  display: block;
+  width: 3rem;
+  height: 0.25rem;
+  margin-top: 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-saffron);
+}
+
+/* Try, Make, Reflect: stacked and joined by a line, then in a row from 1024px */
+.way-steps {
+  display: grid;
+  gap: 2.5rem;
+}
+.way-step {
+  position: relative;
+}
+.way-step-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.way-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 2.25rem;
+  bottom: -2rem;
+  left: 0.6875rem;
+  width: 2px;
+  background: color-mix(in srgb, var(--color-soft) 30%, transparent);
+}
+.way-step-line {
+  padding-left: 2.25rem;
+}
+
+@media (min-width: 1024px) {
+  .way-section {
+    --way-x: 2.375rem; /* the container's 2rem padding, then half a box */
+    --way-pad-top: 7rem;
+    --way-pad-bottom: 6rem;
+    --way-cross-h: 11rem;
+  }
+  .way-section:not(.way-section--last) {
+    --way-rail-bottom: var(--way-cross-h);
+    padding-bottom: calc(var(--way-pad-bottom) + var(--way-cross-h));
+  }
+  .way-section--left .way-body {
+    padding-right: 0;
+    padding-left: 5rem;
+  }
+  .way-section--right .way-body {
+    padding-right: 5rem;
+    padding-left: 0;
+  }
+  .way-seg--straight {
+    display: none;
+  }
+  .way-seg--rail {
+    display: block;
+  }
+  .way-seg--rail[data-side="left"] {
+    left: calc(var(--way-x) - var(--way-box) / 2);
+  }
+  .way-seg--rail[data-side="right"] {
+    right: calc(var(--way-x) - var(--way-box) / 2);
+  }
+  .way-seg--cross {
+    right: var(--way-x);
+    bottom: 0;
+    left: var(--way-x);
+    display: block;
+    width: calc(100% - 2 * var(--way-x));
+    height: var(--way-cross-h);
+  }
+  .way-section--right .way-node {
+    right: calc(var(--way-x) - 0.5625rem);
+    left: auto;
+  }
+  .way-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3rem;
+  }
+  .way-step:not(:last-child)::after {
+    top: 0.6875rem;
+    right: -2.5rem;
+    bottom: auto;
+    left: 6.5rem;
+    width: auto;
+    height: 2px;
+  }
+  .way-step-line {
+    padding-left: 0;
+  }
+}

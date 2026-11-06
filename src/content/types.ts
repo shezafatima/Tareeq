@@ -59,16 +59,6 @@ export type HomeProgramCard = {
   order: number;
 };
 
-export type StorySectionId = "story" | "meaning" | "approach" | "vision" | "mission" | "people";
-
-export type StorySection = {
-  id: StorySectionId;
-  heading: string;
-  paragraphs: string[];
-  highlight?: { script: string; transliteration: string; meaning: string };
-  order: number;
-};
-
 export type FooterContactItem = {
   kind: "whatsapp" | "email" | "youtube" | "linkedin";
   label: string;
@@ -203,3 +193,33 @@ export type Testimonial = {
 
 /** What the section renders: a Testimonial plus the parsed video id. Not part of the source contract. */
 export type ResolvedTestimonial = Testimonial & { videoId: string; isPlaceholder: boolean };
+
+/** The Our Way page (spec 016). */
+export type OurWayContent = {
+  opening: {
+    /** the Urdu word. The font file holds only these letters: see specs/016-our-way-page/research.md (R1) */
+    word: string;
+    /** the page's h1 */
+    meaning: string;
+    manifesto: string;
+  };
+  problem: { heading: string; lines: string[] };
+  principles: {
+    heading: string;
+    items: { id: string; number: string; title: string; line: string }[];
+  };
+  session: {
+    heading: string;
+    steps: { id: "try" | "make" | "reflect"; number: number; name: string; line: string }[];
+  };
+  purpose: {
+    heading: string;
+    vision: { heading: string; text: string };
+    mission: { heading: string; text: string };
+  };
+  closing: {
+    heading: string;
+    mentorLabel: string;
+    bookLabel: string;
+  };
+};
