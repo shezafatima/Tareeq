@@ -46,9 +46,10 @@ const FILES = [
   "src/components/layout/DesktopNav.tsx", "src/components/layout/MobileMenuContent.tsx", "src/components/layout/Footer.tsx",
   "src/components/sections/Section.tsx", "src/components/sections/HeroExtras.tsx", "src/components/sections/WhoItsFor.tsx",
   "src/components/sections/ProgramsPreview.tsx", "src/components/sections/ProgramCard.tsx", "src/components/sections/WhyTareeq.tsx",
-  "src/components/sections/FinalCta.tsx", "src/components/sections/StorySection.tsx", 
+  "src/components/sections/FinalCta.tsx",
   "src/components/sections/PageHeader.tsx", "src/components/sections/CtaBand.tsx",
   "src/app/(site)/page.tsx", "src/app/(site)/our-way/page.tsx", "src/app/(site)/programs/page.tsx",
+  ...readdirSync("src/components/sections/our-way").filter((f) => f !== "WayPathController.tsx").map((f) => `src/components/sections/our-way/${f}`),
 ].filter(existsSync);
 
 const read = (f) => readFileSync(f, "utf8");

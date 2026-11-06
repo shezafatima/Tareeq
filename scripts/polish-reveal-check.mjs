@@ -418,7 +418,8 @@ if (want("inner")) {
       check(`${tag} ${href}: the main heading is fully visible from the first frame`, (await p.evaluate(() => window.__h1min)) === 1);
       await waitPreloader(p);
       const entered = await p.evaluate(() => [...document.querySelectorAll(".page-enter, .page-enter-h1")].map((e) => getComputedStyle(e).animationName));
-      check(`${tag} ${href}: the page header has its entrance (eyebrow, heading, intro)`, entered.length >= 3 && entered.every((n) => /page-enter/.test(n)), entered.join(","));
+      // Our Way's opening has a heading and one line; the Urdu word above them shows at once
+      check(`${tag} ${href}: the page header has its entrance (eyebrow, heading, intro)`, entered.length >= (href === "/our-way" ? 2 : 3) && entered.every((n) => /page-enter/.test(n)), entered.join(","));
       const total = await p.evaluate(() => document.documentElement.scrollHeight);
       const first = await reveals(p);
       const hiddenBelow = first.filter((x) => x.top > x.h * 1.05);
@@ -438,15 +439,9 @@ if (want("inner")) {
     await waitPreloader(p);
     const urdu = await p.evaluate(() => {
       const el = document.querySelector('[lang="ur"][dir="rtl"]');
-      const bar = document.querySelector(".draw-in");
-      return { text: el?.textContent?.trim(), size: el ? parseFloat(getComputedStyle(el).fontSize) : 0, barBefore: bar ? new DOMMatrixReadOnly(getComputedStyle(bar).transform).a : null, belowFold: bar ? bar.getBoundingClientRect().top > innerHeight : true };
+      return { text: el?.textContent?.trim(), size: el ? parseFloat(getComputedStyle(el).fontSize) : 0 };
     });
     check(`${tag} /our-way: the Urdu word is a large designed feature (at least 56px), marked lang=ur dir=rtl`, urdu.text === "طریق" && urdu.size >= 56, JSON.stringify(urdu));
-    check(`${tag} /our-way: the saffron bar under it waits to be reached (when it starts below the fold)`, !urdu.belowFold || urdu.barBefore === 0, JSON.stringify(urdu));
-    await p.locator('[lang="ur"]').scrollIntoViewIfNeeded();
-    await p.waitForTimeout(1500);
-    const barAfter = await p.evaluate(() => new DOMMatrixReadOnly(getComputedStyle(document.querySelector(".draw-in")).transform).a);
-    check(`${tag} /our-way: the bar has drawn in after it is reached`, barAfter > 0.99, String(barAfter));
     await p.screenshot({ path: `shots/004/our-way-urdu-${w}.png` });
     await p.close();
 
@@ -461,7 +456,8 @@ if (want("inner")) {
     // "Explore programs" is the hero's own button: its arrow icon made it a non-leaf under the old counting rule, so the "before" snapshot skipped it
     // feature 005: the carousel cards' compact faces repeat the step labels, and the carousel adds previous/next arrows
     const ALLOWED_NEW = new Set(["Hands-on learning", "Real projects", "In person or online", "Explore programs", "Prompt", "Build", "Learn", "‹", "›"]);
-    for (const [name, href] of [["home", "/"], ["our-way", "/our-way"], ["programs", "/programs"]]) {
+    // Our Way was rewritten on purpose by feature 016, so its copy from before no longer applies
+    for (const [name, href] of [["home", "/"], ["programs", "/programs"]]) {
       await p.goto(base + href, { waitUntil: "load" });
       await p.waitForTimeout(800);
       const after = (await p.locator("main").evaluate((el) => [...el.querySelectorAll("h1,h2,h3,h4,p,li,dt,dd,a,span,button")].map((n) => ([...n.children].every((c) => c.tagName.toLowerCase() === "svg") ? n.textContent.trim() : "")).filter(Boolean))).sort();

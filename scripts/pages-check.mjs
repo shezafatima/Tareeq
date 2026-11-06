@@ -13,7 +13,7 @@ const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"}  $
 const pages = [
   ["Programs", "/programs", "Pick your way in.", "Programs", "programs"],
   ["Courses", "/courses", "Courses", "Courses", "courses"],
-  ["Our Way", "/our-way", "Learn the way you work", "Our Way", "our-way"],
+  ["Our Way", "/our-way", "Tareeq means 'the way'.", "Our Way", "our-way"],
 ];
 
 // ---------- redirect ----------
@@ -50,7 +50,8 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
 
   // Our Way content
   await p.goto(base + "/our-way", { waitUntil: "load" });
-  check(`${tag} /our-way covers story, meaning, approach, vision, mission, people`, (await p.locator("main h2").count()) === 6, (await p.locator("main h2").allInnerTexts()).join(" | "));
+  // scripts/our-way-check.mjs covers this page in depth
+  check(`${tag} /our-way covers problem, principles, session, vision and mission, closing`, (await p.locator("main h2").count()) === 5, (await p.locator("main h2").allInnerTexts()).join(" | "));
   check(`${tag} /our-way shows the Urdu word with lang and direction`, (await p.locator('[lang="ur"][dir="rtl"]').innerText()).includes("طریق"));
   check(`${tag} /our-way has no hype words`, !/empower|unlock|revolutioni[sz]e/i.test(await p.locator("main").innerText()));
 
