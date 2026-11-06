@@ -23,20 +23,9 @@ export const pages: PageMeta[] = [
     slug: "programs",
     title: "Programs",
     description:
-      "Workshops for teachers, students and teams. See who each is for, what you will be able to do afterwards, how long it takes and what to bring.",
-    heading: "Workshops you can use the next day",
-    eyebrow: "Programs",
-    intro:
-      "Each workshop starts from your own work. Here is who each one is for, what you can do afterwards, and what to bring.",
-  },
-  {
-    slug: "contact",
-    title: "Contact",
-    description:
-      "Message Tareeq on WhatsApp or write to us to ask about a workshop for your school, class or team. We reply as soon as we can.",
-    heading: "Talk to us",
-    eyebrow: "Contact",
-    intro: "Ask about a workshop for your school, class or team. A short message is enough.",
+      "Workshops and courses for teachers, students, colleges and teams. See who each is for, how it runs and what you will leave with.",
+    heading: "Pick your way in.",
+    intro: "Every program starts from your own work. Choose the one that fits you.",
   },
   {
     slug: "workshop",

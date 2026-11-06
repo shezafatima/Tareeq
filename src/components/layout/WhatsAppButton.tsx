@@ -11,6 +11,7 @@ export default function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chat with Tareeq on WhatsApp (opens in a new tab)"
+      data-whatsapp-float=""
       className="fixed bottom-5 right-5 z-40 flex size-14 items-center justify-center rounded-pill bg-royal text-white shadow-float transition-colors hover:bg-midnight sm:bottom-8 sm:right-8"
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" className="h-7 w-7" fill="currentColor">

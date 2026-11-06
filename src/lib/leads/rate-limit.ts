@@ -1,5 +1,6 @@
 import "server-only";
-import { getServerEnv } from "@/lib/env";
+import * as z from "zod/mini";
+import { readEnv } from "@/lib/env";
 import { RateLimit } from "./model";
 import { deriveKey, firstForwardedAddress } from "./rate-key";
 
@@ -9,10 +10,20 @@ import { deriveKey, firstForwardedAddress } from "./rate-key";
 export const RATE_LIMIT_MAX = 5;
 const WINDOW_MS = 60 * 60 * 1000;
 
+const envSchema = z.object({ RATE_LIMIT_SECRET: z.string().check(z.minLength(32)) });
+
+let secret: string | null = null;
+
+/** The key for hashing addresses. Throws a ConfigError if it is missing or too short. */
+export function getRateLimitSecret(): string {
+  secret ??= readEnv(envSchema, { RATE_LIMIT_SECRET: process.env.RATE_LIMIT_SECRET?.trim() }).RATE_LIMIT_SECRET;
+  return secret;
+}
+
 /** The counting key for this request. On Vercel x-forwarded-for always carries the visitor's address. */
 export function clientKey(h: Headers): string {
   const address = firstForwardedAddress(h.get("x-forwarded-for")) ?? (h.get("x-real-ip")?.trim() || "unknown");
-  return deriveKey(address, getServerEnv().RATE_LIMIT_SECRET);
+  return deriveKey(address, getRateLimitSecret());
 }
 
 /** Counts one submission for `key`. Returns false (and counts nothing) when the key already used its 5 this hour. */

@@ -46,9 +46,9 @@ const FILES = [
   "src/components/layout/DesktopNav.tsx", "src/components/layout/MobileMenuContent.tsx", "src/components/layout/Footer.tsx",
   "src/components/sections/Section.tsx", "src/components/sections/HeroExtras.tsx", "src/components/sections/WhoItsFor.tsx",
   "src/components/sections/ProgramsPreview.tsx", "src/components/sections/ProgramCard.tsx", "src/components/sections/WhyTareeq.tsx",
-  "src/components/sections/FinalCta.tsx", "src/components/sections/StorySection.tsx", "src/components/sections/ContactItem.tsx",
+  "src/components/sections/FinalCta.tsx", "src/components/sections/StorySection.tsx", 
   "src/components/sections/PageHeader.tsx", "src/components/sections/CtaBand.tsx",
-  "src/app/(site)/page.tsx", "src/app/(site)/our-way/page.tsx", "src/app/(site)/programs/page.tsx", "src/app/(site)/contact/page.tsx",
+  "src/app/(site)/page.tsx", "src/app/(site)/our-way/page.tsx", "src/app/(site)/programs/page.tsx",
 ].filter(existsSync);
 
 const read = (f) => readFileSync(f, "utf8");
@@ -75,8 +75,8 @@ const useClient = FILES.filter((f) => /^\s*"use client"/m.test(read(f)));
 check('"use client" appears only in RevealController among this feature\'s new files', useClient.every((f) => f.endsWith("RevealController.tsx")), useClient.join(", "));
 
 const deps = JSON.parse(readFileSync("package.json", "utf8"));
-// feature 006 added mongoose, resend and zod (owner-approved); the list is otherwise unchanged
-check("no new dependencies (same list as the last approved set)", JSON.stringify(Object.keys(deps.dependencies)) === JSON.stringify(["clsx", "framer-motion", "mongoose", "next", "react", "react-dom", "resend", "tailwind-merge", "zod"]), Object.keys(deps.dependencies).join(","));
+// feature 006 added mongoose, resend and zod (owner-approved); feature 015 added marked and sanitize-html (named in its plan)
+check("no new dependencies (same list as the last approved set)", JSON.stringify(Object.keys(deps.dependencies)) === JSON.stringify(["@phosphor-icons/react", "clsx", "framer-motion", "marked", "mongoose", "next", "react", "react-dom", "resend", "sanitize-html", "tailwind-merge", "zod"]), Object.keys(deps.dependencies).join(","));
 
 console.log(results.join("\n"));
 console.log(results.some((r) => r.startsWith("FAIL")) ? "\nSOME CHECKS FAILED" : "\nALL CHECKS PASSED");

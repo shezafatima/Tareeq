@@ -1,25 +1,24 @@
 // The only import path for page content. Pages and components call these accessors; they never
 // import from ./data. To move content to a database, change this file and ./data only.
+// Programs have already moved: they are read through src/lib/programs/data.ts.
 import { audiences } from "./audiences";
 import { courseList } from "./data/courses";
-import { contactCta, contactEmpty, contactNote, readContactDetails } from "./data/contact";
+import { readFooterContact } from "./data/footer";
 import { homeCopy } from "./data/cta";
 import { howItWorks } from "./how-it-works";
 import { mentor } from "./mentor";
 import { testimonials } from "./testimonials";
 import { selectTestimonials } from "../lib/testimonials";
 import { whyTareeq } from "./why-tareeq";
-import { homeProgramCards } from "./home-programs";
 import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
+import { onlineCoursesCard } from "./online-courses";
 import { pages } from "./data/pages";
-import { programs } from "./data/programs";
 import { trustFacts } from "./data/trust";
 import { story } from "./data/story";
 import type {
   Audience,
-  ContactCta,
-  ContactDetail,
   CourseOption,
+  FooterContactItem,
   HomeCopy,
   HomeProgramCard,
   HowItWorksContent,
@@ -29,7 +28,6 @@ import type {
   PageMeta,
   PageSlug,
   ResolvedTestimonial,
-  Program,
   StorySection,
   TrustFact,
 } from "./types";
@@ -44,12 +42,9 @@ export async function getAudiences(): Promise<Audience[]> {
   return byOrder(audiences);
 }
 
-export async function getPrograms(): Promise<Program[]> {
-  return byOrder(programs);
-}
-
-export async function getProgramPreview(limit = 3): Promise<Program[]> {
-  return byOrder(programs).slice(0, limit);
+/** The fixed "Online courses" card on /programs and the home page. Not a stored program. */
+export async function getOnlineCoursesCard(): Promise<HomeProgramCard> {
+  return onlineCoursesCard;
 }
 
 export async function getStorySections(): Promise<StorySection[]> {
@@ -60,20 +55,8 @@ export async function getTrustFacts(): Promise<TrustFact[]> {
   return byOrder(trustFacts);
 }
 
-export async function getContactDetails(): Promise<ContactDetail[]> {
-  return readContactDetails();
-}
-
-export async function getContactNote(): Promise<string> {
-  return contactNote;
-}
-
-export async function getContactEmpty(): Promise<string> {
-  return contactEmpty;
-}
-
-export async function getContactCta(): Promise<ContactCta> {
-  return contactCta;
+export async function getFooterContact(): Promise<FooterContactItem[]> {
+  return readFooterContact();
 }
 
 export async function getHomeCopy(): Promise<HomeCopy> {
@@ -114,10 +97,6 @@ export async function getHowItWorks(): Promise<HowItWorksContent> {
 
 export async function getWhyTareeq(): Promise<WhyTareeqContent> {
   return { ...whyTareeq, points: byOrder(whyTareeq.points) };
-}
-
-export async function getHomeProgramCards(): Promise<HomeProgramCard[]> {
-  return byOrder(homeProgramCards);
 }
 
 export async function getMentor(): Promise<MentorContent> {

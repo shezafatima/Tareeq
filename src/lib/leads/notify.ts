@@ -1,6 +1,7 @@
 import "server-only";
 import { Resend } from "resend";
-import { getServerEnv } from "@/lib/env";
+import * as z from "zod/mini";
+import { readEnv } from "@/lib/env";
 import type { LeadDoc } from "./model";
 import { AGE_OPTIONS, labelFor, LEVEL_OPTIONS, monthLabel, ROLE_OPTIONS } from "./options";
 
@@ -10,6 +11,24 @@ import { AGE_OPTIONS, labelFor, LEVEL_OPTIONS, monthLabel, ROLE_OPTIONS } from "
 export type NotifyResult = { ok: true; providerId: string } | { ok: false; code: string };
 
 const TIMEOUT_MS = 10_000;
+
+const envSchema = z.object({
+  RESEND_API_KEY: z.string().check(z.startsWith("re_")),
+  LEAD_NOTIFICATION_TO: z.string().check(z.regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
+  LEAD_EMAIL_FROM: z._default(z.string().check(z.minLength(3)), "Tareeq <onboarding@resend.dev>"),
+});
+
+let resendEnv: z.output<typeof envSchema> | null = null;
+
+/** The email settings. Throws a ConfigError naming any that are missing or invalid. */
+export function getResendEnv(): z.output<typeof envSchema> {
+  resendEnv ??= readEnv(envSchema, {
+    RESEND_API_KEY: process.env.RESEND_API_KEY?.trim(),
+    LEAD_NOTIFICATION_TO: process.env.LEAD_NOTIFICATION_TO?.trim(),
+    LEAD_EMAIL_FROM: process.env.LEAD_EMAIL_FROM?.trim() || undefined,
+  });
+  return resendEnv;
+}
 
 const escapeHtml = (v: string) =>
   v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -90,7 +109,7 @@ ${fields.map(([k, v]) => `<tr><td style="${cell};font-weight:bold;white-space:no
 
 export async function notifyOwner(lead: LeadDoc): Promise<NotifyResult> {
   try {
-    const env = getServerEnv();
+    const env = getResendEnv();
     const resend = new Resend(env.RESEND_API_KEY);
     const { subject, text, html } = buildOwnerEmail(lead);
     let timer: ReturnType<typeof setTimeout> | undefined;

@@ -11,10 +11,9 @@ const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"}  $
 
 // [nav label, href, expected h1, title fragment, screenshot name]
 const pages = [
-  ["Programs", "/programs", "Workshops you can use the next day", "Programs", "programs"],
+  ["Programs", "/programs", "Pick your way in.", "Programs", "programs"],
   ["Courses", "/courses", "Courses", "Courses", "courses"],
   ["Our Way", "/our-way", "Learn the way you work", "Our Way", "our-way"],
-  ["Contact", "/contact", "Talk to us", "Contact", "contact"],
 ];
 
 // ---------- redirect ----------
@@ -55,39 +54,14 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   check(`${tag} /our-way shows the Urdu word with lang and direction`, (await p.locator('[lang="ur"][dir="rtl"]').innerText()).includes("طریق"));
   check(`${tag} /our-way has no hype words`, !/empower|unlock|revolutioni[sz]e/i.test(await p.locator("main").innerText()));
 
-  // Programs content
+  // Programs content (scripts/programs-pages-check.mjs covers these pages in depth)
   await p.goto(base + "/programs", { waitUntil: "load" });
-  const cards = p.locator("main article");
-  const n = await cards.count();
-  check(`${tag} /programs lists programs (2 to 3)`, n >= 2 && n <= 3, String(n));
-  let allFacts = true;
-  let soon = 0;
-  for (let i = 0; i < n; i++) {
-    const t = await cards.nth(i).innerText();
-    const isSoon = /coming soon/i.test(t);
-    if (isSoon) soon++;
-    const need = isSoon ? ["Who it’s for", "After this you will be able to", "What to bring"] : ["Who it’s for", "Duration", "Format", "After this you will be able to", "What to bring"];
-    if (!need.every((x) => t.includes(x))) allFacts = false;
-  }
-  check(`${tag} /programs: every program shows its facts (coming-soon ones need no duration or format)`, allFacts);
-  check(`${tag} /programs: at least one program is marked "Coming soon"`, soon >= 1, String(soon));
-  const joins = await p.locator('main a:has-text("Join this workshop")').count();
-  check(`${tag} /programs: booking button only on programs that are available`, joins === n - soon, `${joins} buttons, ${n - soon} available`);
-  check(`${tag} /programs: calls to action go to /contact`, (await p.locator('main a[href="/contact"]').count()) >= 1);
+  check(`${tag} /programs lists programs and the Online courses card`, (await p.locator("#program-list > li").count()) >= 2);
+  check(`${tag} /programs has no hype words`, !/empower|unlock|revolutioni[sz]e/i.test(await p.locator("main").innerText()));
 
-  // Contact content
-  await p.goto(base + "/contact", { waitUntil: "load" });
-  check(`${tag} /contact has no form`, (await p.locator("main form").count()) === 0);
-  const wa = await p.locator('main a[href^="https://wa.me/"]').count();
-  check(`${tag} /contact: WhatsApp links open wa.me`, wa >= 1, String(wa));
-  const text = await p.locator("main").innerText();
-  check(`${tag} /contact shows a response-time note`, /reply within/i.test(text));
-  const email = process.env.EXPECT_EMAIL;
-  const loc = process.env.EXPECT_LOCATION;
-  check(`${tag} /contact email ${email ? "shown as mailto" : "hidden"}`, email ? (await p.locator(`main a[href="mailto:${email}"]`).count()) === 1 : (await p.locator('main a[href^="mailto:"]').count()) === 0);
-  check(`${tag} /contact location ${loc ? "shown" : "hidden"}`, loc ? text.includes(loc) : !/Location/.test(text));
-  const footerText = await p.locator("footer").innerText();
-  check(`${tag} footer contact block matches the page (WhatsApp${email ? ", email" : ""}${loc ? ", location" : ""})`, footerText.includes("WhatsApp") && (email ? footerText.includes(email) : !footerText.includes("Email")) && (loc ? footerText.includes(loc) : !footerText.includes("Location")));
+  // The old contact address sends people home
+  await p.goto(base + "/" + "contact", { waitUntil: "load" });
+  check(`${tag} the old contact address redirects home`, new URL(p.url()).pathname === "/", p.url());
 
   // Navigation labels
   await p.goto(base + "/", { waitUntil: "load" });
@@ -144,12 +118,12 @@ for (const w of [360, 390, 768, 1024, 1440, 1920]) {
   const ctx = await b.newContext({ viewport: { width: w, height: 900 } });
   const p = await ctx.newPage();
   const bad = [];
-  for (const href of ["/", "/our-way", "/programs", "/contact"]) {
+  for (const href of ["/", "/our-way", "/programs"]) {
     await p.goto(base + href, { waitUntil: "load" });
     await p.waitForTimeout(href === "/" ? 6500 : 400);
     if (await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) bad.push(href);
   }
-  check(`[${w}px] no horizontal scroll on /, /our-way, /programs, /contact`, bad.length === 0, bad.join(","));
+  check(`[${w}px] no horizontal scroll on /, /our-way, /programs`, bad.length === 0, bad.join(","));
   await ctx.close();
 }
 

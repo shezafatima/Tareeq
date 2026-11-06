@@ -39,28 +39,13 @@ export type HowItWorksContent = {
   steps: HowStep[];
 };
 
-export type ProgramStatus = "available" | "coming-soon";
-
-export type Program = {
-  id: string;
-  slug: string;
-  name: string;
-  audience: string;
-  outcomes: string[];
-  duration: string;
-  format: string;
-  bring: string[];
-  status: ProgramStatus;
-  order: number;
-};
-
 export type HomeProgramStatus = "booking-now" | "register-interest" | "coming-soon";
 
 export type HomeProgramCta =
   | { kind: "link"; label: string; href: string }
   | { kind: "whatsapp"; label: string; message: string };
 
-/** One card in the home Programs section. Separate from Program, which the /programs page uses. */
+/** One card in the home Programs section, made from a stored program by toHomeCard. */
 export type HomeProgramCard = {
   id: string;
   title: string;
@@ -84,16 +69,16 @@ export type StorySection = {
   order: number;
 };
 
-export type ContactKind = "whatsapp" | "email" | "location";
-
-export type ContactDetail = {
-  kind: ContactKind;
+export type FooterContactItem = {
+  kind: "whatsapp" | "email" | "youtube" | "linkedin";
   label: string;
   value: string;
-  href?: string;
+  href: string;
+  /** opens in a new tab */
+  external: boolean;
 };
 
-export type PageSlug = "home" | "our-way" | "programs" | "contact" | "workshop" | "register";
+export type PageSlug = "home" | "our-way" | "programs" | "workshop" | "register";
 
 export type PageMeta = {
   slug: PageSlug;
@@ -111,7 +96,6 @@ export type TrustFact = {
   order: number;
 };
 
-export type ContactCta = { line: string; label: string };
 
 export type SectionCopy = { heading: string; intro?: string };
 

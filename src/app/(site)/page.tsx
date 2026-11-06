@@ -8,6 +8,9 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import WhoItsFor from "@/components/sections/WhoItsFor";
 import WhyTareeq from "@/components/sections/WhyTareeq";
 
+// Static, refreshed hourly and by tag because the Programs section reads the database (specs/015-programs-pages/research.md R2).
+export const revalidate = 3600;
+
 export default function Home() {
   return (
     <>

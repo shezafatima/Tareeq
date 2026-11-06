@@ -5,7 +5,7 @@ import { contrastInPage } from "./contrast.mjs";
 
 const base = process.env.BASE ?? "http://localhost:3000";
 const filled = process.env.EXPECT === "filled";
-const routes = ["/", "/programs", "/courses", "/our-way", "/contact"];
+const routes = ["/", "/programs", "/courses", "/our-way"];
 const b = await chromium.launch({ executablePath: process.env.CHROME });
 const results = [];
 const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  (" + extra + ")" : ""}`);
@@ -33,7 +33,12 @@ for (const [w, h] of [[360, 740], [390, 844], [1440, 900]]) {
     check(`${tag} shows a copyright line with the current year`, text.includes(`© ${new Date().getFullYear()} Tareeq`));
     check(`${tag} has the logo linking home`, (await footer.getByRole("link", { name: "tareeq, home" }).getAttribute("href")) === "/");
     const navHrefs = await footer.getByRole("navigation", { name: "Footer" }).getByRole("link").evaluateAll((els) => els.map((e) => e.getAttribute("href")));
-    check(`${tag} footer nav links to the four pages`, JSON.stringify(navHrefs) === JSON.stringify(["/programs", "/courses", "/our-way", "/contact"]), navHrefs.join(","));
+    check(`${tag} footer nav links to the pages and the course form`, JSON.stringify(navHrefs) === JSON.stringify(["/programs", "/courses", "/our-way", "/register"]), navHrefs.join(","));
+    for (const [name, href] of [["WhatsApp", "https://wa.me/"], ["YouTube", "https://www.youtube.com/"], ["LinkedIn", "https://www.linkedin.com/"]]) {
+      check(`${tag} footer lists ${name}`, text.includes(name) && (await footer.locator(`#footer-contact a[href^="${href}"]`).count()) === 1);
+    }
+    const email = process.env.EXPECT_EMAIL;
+    check(`${tag} footer email ${email ? "shown" : "hidden"}`, (await footer.locator(email ? `#footer-email a[href="mailto:${email}"]` : 'a[href^="mailto:"]').count()) === (email ? 1 : 0));
     // Since feature 003 the contact block is filled from the content layer: WhatsApp is configured in .env.local, so it is shown
     check(`${tag} contact block is shown (WhatsApp is configured) and lists WhatsApp`, (await footer.getByRole("heading", { name: "Contact" }).count()) > 0 && text.includes("WhatsApp"));
     check(`${tag} social block is ${filled ? "shown" : "absent while empty"}`, ((await footer.getByRole("heading", { name: "Follow us" }).count()) > 0) === filled);

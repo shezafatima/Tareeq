@@ -1,17 +1,17 @@
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import Reveal from "@/components/ui/Reveal";
-import { getContactDetails, getCourseFormLabel } from "@/content";
-import { navItems, socialLinks, tagline } from "@/lib/site";
+import { getCourseFormLabel, getFooterContact } from "@/content";
+import { footerContactHref, navItems, tagline } from "@/lib/site";
 import Logo from "./Logo";
 
 const link =
   "inline-flex min-h-11 items-center text-white/80 md:min-h-6 transition-colors duration-[var(--dur-fast)] hover:text-white hover:underline hover:underline-offset-4";
 const heading = "text-sm font-semibold uppercase tracking-[0.18em] text-white/70";
 
-// Contact and social blocks render only when entries exist; nothing is invented.
+// The only place for contact details. An entry renders only when it exists; nothing is invented.
 export default async function Footer() {
-  const [contactDetails, courseFormLabel] = await Promise.all([getContactDetails(), getCourseFormLabel()]);
+  const [contactItems, courseFormLabel] = await Promise.all([getFooterContact(), getCourseFormLabel()]);
   return (
     <footer className="overflow-clip bg-midnight text-white [&_a:focus-visible]:outline-saffron">
       <Reveal>
@@ -40,48 +40,27 @@ export default async function Footer() {
           </ul>
         </nav>
 
-        {(contactDetails.length > 0 || socialLinks.length > 0) && (
-          <div className="space-y-2">
-            {contactDetails.length > 0 && (
-              <section aria-labelledby="footer-contact">
-                <h2 id="footer-contact" className={heading}>
-                  Contact
-                </h2>
-                <ul className="mt-1">
-                  {contactDetails.map((item) => (
-                    <li key={item.label} className="py-1 text-white/80">
-                      <span className="block text-sm text-white/70">{item.label}</span>
-                      {item.href ? (
-                        <a href={item.href} className={link}>
-                          {item.value}
-                        </a>
-                      ) : (
-                        <span className="inline-flex min-h-11 items-center md:min-h-6">{item.value}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {socialLinks.length > 0 && (
-              <section aria-labelledby="footer-social">
-                <h2 id="footer-social" className={heading}>
-                  Follow us
-                </h2>
-                <ul className="mt-1">
-                  {socialLinks.map((item) => (
-                    <li key={item.href}>
-                      <a href={item.href} target="_blank" rel="noopener noreferrer" className={link}>
-                        {item.label}
-                        <span className="sr-only"> (opens in a new tab)</span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
+        {contactItems.length > 0 && (
+          <section aria-labelledby="footer-contact-title" id={footerContactHref.slice(1)}>
+            <h2 id="footer-contact-title" className={heading}>
+              Contact
+            </h2>
+            <ul className="mt-1 grid gap-x-6 sm:grid-cols-2">
+              {contactItems.map((item) => (
+                <li key={item.kind} id={item.kind === "email" ? "footer-email" : undefined} className="py-1 text-white/80">
+                  <span className="block text-sm text-white/70">{item.label}</span>
+                  <a
+                    href={item.href}
+                    {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className={`${link} break-all`}
+                  >
+                    {item.value}
+                    {item.external && <span className="sr-only"> (opens in a new tab)</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         <p className="border-t border-white/15 pt-3 text-sm text-white/70 md:col-span-3">
