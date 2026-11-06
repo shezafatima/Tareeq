@@ -5,7 +5,7 @@ import { chromium } from "@playwright/test";
 const base = process.env.BASE ?? "http://localhost:3000";
 const absent = process.env.EXPECT === "absent";
 const number = process.env.NUMBER ?? "923001234567";
-const routes = ["/", "/programs", "/courses", "/our-way", "/contact"];
+const routes = ["/", "/programs", "/courses", "/our-way"];
 const b = await chromium.launch({ executablePath: process.env.CHROME });
 const results = [];
 const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  (" + extra + ")" : ""}`);

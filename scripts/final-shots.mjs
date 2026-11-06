@@ -6,7 +6,7 @@ import { mkdirSync } from "node:fs";
 const base = process.env.BASE ?? "http://localhost:3100";
 mkdirSync("shots/004/final", { recursive: true });
 const b = await chromium.launch({ executablePath: process.env.CHROME });
-const names = { "/": "home", "/our-way": "our-way", "/programs": "programs", "/contact": "contact" };
+const names = { "/": "home", "/our-way": "our-way", "/programs": "programs" };
 const waitPreloader = async (p) => {
   await p.waitForFunction(() => document.documentElement.getAttribute("data-preloader") !== "run", null, { timeout: 20000 });
   await p.waitForTimeout(1300);

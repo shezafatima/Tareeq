@@ -19,22 +19,22 @@ for (const [w, h, headerH] of [[1024, 768, 80], [1280, 720, 80], [1440, 900, 80]
   check(`${tag} menu button hidden`, !(await p.getByRole("button", { name: "Open menu" }).isVisible()));
 
   const nav = p.getByRole("navigation", { name: "Main" });
-  for (const name of ["Programs", "Courses", "Our Way", "Contact"]) {
+  for (const name of ["Programs", "Courses", "Our Way"]) {
     const link = nav.getByRole("link", { name });
     const box = await link.boundingBox();
     check(`${tag} "${name}" link visible, hit area >= 44px`, (await link.isVisible()) && box.height >= 44, `${Math.round(box.height)}px`);
   }
   const join = p.getByRole("banner").getByRole("link", { name: "Book a workshop" });
-  check(`${tag} "Book a workshop" visible, links to /contact`, (await join.isVisible()) && (await join.getAttribute("href")) === "/contact");
+  check(`${tag} "Book a workshop" visible, opens the booking dialog`, (await join.isVisible()) && (await join.getAttribute("href")) === "/workshop?book=1");
 
   // Tab order: skip link, logo, four links, join button
   const order = [];
   await p.evaluate(() => document.activeElement?.blur());
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 6; i++) {
     await p.keyboard.press("Tab");
     order.push(await p.evaluate(() => (document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent || "").trim()));
   }
-  const expected = ["Skip to content", "tareeq, home", "Programs", "Courses", "Our Way", "Contact", "Book a workshop"];
+  const expected = ["Skip to content", "tareeq, home", "Programs", "Courses", "Our Way", "Book a workshop"];
   check(`${tag} tab order`, JSON.stringify(order) === JSON.stringify(expected), order.join(" > "));
 
   // Focus ring visible on the last focused control (join button)

@@ -1209,3 +1209,383 @@ html[data-reveal-ready] [data-reveal].mentor-photo:not([data-revealed]) {
     transition: none;
   }
 }
+
+/* =====================================================================================================
+   Feature 015: /programs and /programs/[slug]. The list is filtered, numbered and alternated here, so the
+   server-rendered panels never re-render (specs/015-programs-pages/research.md R3, R11). Only transform and
+   opacity animate. Hover states apply on pointer devices at desktop width; phones get stacked cards.
+   ===================================================================================================== */
+
+.program-hero-title {
+  font-size: clamp(3rem, 11vw, 8rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+.program-detail-title {
+  font-size: clamp(2.25rem, 6vw, 4.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+html:not([data-js]) .program-filter {
+  display: none;
+}
+
+/* The list: phones get separate cards, desktop gets full-width bands */
+.program-list {
+  counter-reset: program;
+  display: grid;
+  gap: 0.75rem;
+  padding-inline: var(--spacing-gutter);
+  padding-bottom: var(--spacing-section);
+  overflow-x: clip; /* the hover expansion never adds a horizontal scroll */
+}
+.program-list > li {
+  counter-increment: program;
+}
+
+/* Filtering: hidden panels do not count towards the numbers */
+.program-list[data-active="teachers"] > li:not([data-filter="teachers"]),
+.program-list[data-active="students"] > li:not([data-filter="students"]),
+.program-list[data-active="college"] > li:not([data-filter="college"]),
+.program-list[data-active="online"] > li:not([data-filter="online"]),
+.program-list[data-active="corporate"] > li:not([data-filter="corporate"]) {
+  display: none;
+}
+
+/* Surfaces alternate in the visible order: navy first, then paper */
+.program-list > li,
+.program-list[data-active="teachers"] > li:nth-child(odd of [data-filter="teachers"]),
+.program-list[data-active="students"] > li:nth-child(odd of [data-filter="students"]),
+.program-list[data-active="college"] > li:nth-child(odd of [data-filter="college"]),
+.program-list[data-active="corporate"] > li:nth-child(odd of [data-filter="corporate"]) {
+  --panel-bg: var(--color-midnight);
+  --panel-fg: white;
+  --panel-muted: color-mix(in srgb, white 88%, transparent);
+  --panel-line: transparent;
+  --panel-cta-bg: white;
+  --panel-cta-fg: var(--color-midnight);
+  --panel-cta-hover: var(--color-soft);
+  --panel-focus: var(--color-saffron);
+  /* saffron numerals on navy */
+  --number-plain-hover: 0;
+  --number-saffron-hover: 1;
+  --number-shape-hover: 0;
+}
+.program-list > li:nth-child(even),
+.program-list[data-active="teachers"] > li:nth-child(even of [data-filter="teachers"]),
+.program-list[data-active="students"] > li:nth-child(even of [data-filter="students"]),
+.program-list[data-active="college"] > li:nth-child(even of [data-filter="college"]),
+.program-list[data-active="corporate"] > li:nth-child(even of [data-filter="corporate"]) {
+  --panel-bg: var(--color-paper);
+  --panel-fg: var(--color-midnight);
+  --panel-muted: color-mix(in srgb, var(--color-midnight) 88%, transparent);
+  --panel-line: color-mix(in srgb, var(--color-midnight) 14%, transparent);
+  --panel-cta-bg: var(--color-midnight);
+  --panel-cta-fg: white;
+  --panel-cta-hover: var(--color-royal);
+  --panel-focus: var(--color-royal);
+  /* saffron is never text on a light surface: a saffron shape behind dark numerals instead */
+  --number-plain-hover: 1;
+  --number-saffron-hover: 0;
+  --number-shape-hover: 1;
+}
+
+/* The fixed Online courses card: not a program, so it takes no number and keeps its own surface */
+.program-list > li[data-fixed] {
+  counter-increment: none;
+  --panel-bg: var(--color-soft);
+  --panel-fg: var(--color-midnight);
+  --panel-muted: color-mix(in srgb, var(--color-midnight) 88%, transparent);
+  --panel-line: transparent;
+  --panel-cta-bg: var(--color-midnight);
+  --panel-cta-fg: white;
+  --panel-cta-hover: var(--color-royal);
+  --panel-focus: var(--color-royal);
+}
+
+.program-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--panel-bg);
+  color: var(--panel-fg);
+  box-shadow: inset 0 0 0 1px var(--panel-line);
+  transition: transform var(--dur-base) var(--ease-soft);
+}
+.program-panel :focus-visible {
+  outline-color: var(--panel-focus);
+}
+.program-panel__inner {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  padding-block: 1.75rem;
+}
+.program-panel__body {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+.program-panel__title {
+  font-size: clamp(1.75rem, 4vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.program-panel__cover {
+  display: none;
+}
+
+/* The number: three stacked layers, crossfaded because colour is not an animated property here */
+.program-number {
+  position: relative;
+  isolation: isolate;
+  width: fit-content;
+  height: fit-content;
+  font-family: var(--font-heading);
+  font-size: clamp(2.25rem, 7vw, 5.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--panel-fg);
+}
+.program-number::before,
+.program-number::after {
+  content: counter(program, decimal-leading-zero);
+  transition: opacity var(--dur-base) var(--ease-soft);
+}
+.program-number::after {
+  position: absolute;
+  inset: 0;
+  color: var(--color-saffron);
+  opacity: 0;
+}
+.program-number__shape {
+  position: absolute;
+  inset: -0.08em -0.16em;
+  z-index: -1;
+  border-radius: var(--radius-control);
+  background: var(--color-saffron);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-soft);
+}
+
+/* Calls to action take their colours from the surface */
+.program-cta {
+  background: var(--panel-cta-bg);
+  color: var(--panel-cta-fg);
+}
+.program-cta:hover {
+  background: var(--panel-cta-hover);
+}
+.program-cta-quiet {
+  border-color: var(--panel-fg);
+  color: var(--panel-fg);
+}
+.program-cta-quiet:hover {
+  background: color-mix(in srgb, var(--panel-fg) 10%, transparent);
+}
+
+/* Coming soon: shown, but quieter. Text keeps its contrast; only the size and the decorative number step back */
+.program-list > li[data-status="coming-soon"] .program-number {
+  opacity: 0.55;
+}
+.program-list > li[data-status="coming-soon"] .program-panel__title,
+.program-list > li[data-fixed] .program-panel__title {
+  font-size: clamp(1.5rem, 2.6vw, 2.25rem);
+}
+.program-list > li[data-status="coming-soon"] .program-panel__inner {
+  padding-block: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .program-list {
+    gap: 0;
+    padding-inline: 0;
+  }
+  .program-panel {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .program-panel__inner {
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 2rem;
+    padding-block: 4rem;
+  }
+  .program-list > li[data-status="coming-soon"] .program-panel__inner,
+  .program-list > li[data-fixed] .program-panel__inner {
+    padding-block: 2.5rem;
+  }
+  .program-list > li[data-fixed] .program-panel__body {
+    grid-column: 2; /* lines up with the programs above, where the number column is */
+  }
+}
+
+/* Pointer devices at desktop width: the panel expands, the cover reveals, the number takes its saffron state */
+@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+  .program-panel__body {
+    /* stays clear of the cover: the page width less the cover, the left margin and the number column */
+    max-width: calc(68vw - max(2rem, (100vw - 80rem) / 2 + 2rem) - 11rem);
+  }
+  .program-panel__cover {
+    display: block;
+    position: absolute;
+    inset-block: 0;
+    right: 0;
+    width: 32vw;
+    opacity: 0;
+    transform: translateX(1.5rem);
+    transition:
+      opacity var(--dur-base) var(--ease-soft),
+      transform var(--dur-base) var(--ease-soft);
+  }
+  .program-panel:hover,
+  .program-panel:focus-within {
+    z-index: 1;
+    transform: scale(1.012);
+  }
+  .program-panel:hover .program-panel__cover,
+  .program-panel:focus-within .program-panel__cover {
+    opacity: 1;
+    transform: none;
+  }
+  .program-panel:hover .program-number::before,
+  .program-panel:focus-within .program-number::before {
+    opacity: var(--number-plain-hover);
+  }
+  .program-panel:hover .program-number::after,
+  .program-panel:focus-within .program-number::after {
+    opacity: var(--number-saffron-hover);
+  }
+  .program-panel:hover .program-number__shape,
+  .program-panel:focus-within .program-number__shape {
+    opacity: var(--number-shape-hover);
+  }
+}
+
+/* Brand pattern: used when a program has no cover image, and always underneath one */
+.program-pattern {
+  background:
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--color-saffron) 30%, transparent), transparent 32%),
+    linear-gradient(135deg, var(--color-royal), var(--color-midnight) 78%);
+}
+.program-pattern::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: white;
+  opacity: 0.07;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='48' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 6l16 18-16 18M40 6l16 18-16 18'/%3E%3C/svg%3E");
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='48' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 6l16 18-16 18M40 6l16 18-16 18'/%3E%3C/svg%3E");
+}
+
+/* Program page body */
+.program-prose {
+  color: var(--color-midnight);
+  font-size: 1.125rem;
+  line-height: 1.65;
+}
+.program-prose > * + * {
+  margin-top: 1rem;
+}
+.program-prose h2,
+.program-prose h3,
+.program-prose h4 {
+  margin-top: 2rem;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.program-prose h2 {
+  font-size: 1.75rem;
+}
+.program-prose h3 {
+  font-size: 1.375rem;
+}
+.program-prose h4 {
+  font-size: 1.125rem;
+}
+.program-prose ul,
+.program-prose ol {
+  padding-left: 1.5rem;
+}
+.program-prose ul {
+  list-style: disc;
+}
+.program-prose ol {
+  list-style: decimal;
+}
+.program-prose li + li {
+  margin-top: 0.375rem;
+}
+.program-prose a {
+  color: var(--color-royal);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.program-prose blockquote {
+  border-left: 3px solid var(--color-saffron);
+  padding-left: 1rem;
+}
+.program-prose pre {
+  overflow-x: auto;
+  border-radius: var(--radius-control);
+  background: var(--color-soft);
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+.program-timeline__step {
+  position: relative;
+  padding-bottom: 1.75rem;
+  padding-left: 2rem;
+  border-left: 2px solid color-mix(in srgb, var(--color-royal) 22%, transparent);
+}
+.program-timeline__step:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+.program-timeline__step::before {
+  content: "";
+  position: absolute;
+  top: 0.35rem;
+  left: -0.5625rem;
+  width: 1rem;
+  height: 1rem;
+  border: 3px solid var(--color-paper);
+  border-radius: var(--radius-pill);
+  background: var(--color-saffron);
+}
+
+.program-booking-card {
+  position: sticky;
+  top: calc(var(--header-h) + 1.5rem);
+}
+
+/* Phones: the bar stays clear of the page's last content and the floating WhatsApp button */
+:root {
+  --program-cta-bar-h: 4.5rem;
+}
+.program-cta-bar {
+  min-height: calc(var(--program-cta-bar-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@media (max-width: 1023.98px) {
+  :root:has([data-program-cta-bar]) body {
+    padding-bottom: calc(var(--program-cta-bar-h) + env(safe-area-inset-bottom));
+  }
+  :root:has([data-program-cta-bar]) [data-whatsapp-float] {
+    transform: translateY(calc((var(--program-cta-bar-h) + env(safe-area-inset-bottom)) * -1));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .program-panel:hover,
+  .program-panel:focus-within,
+  .program-panel:hover .program-panel__cover,
+  .program-panel:focus-within .program-panel__cover,
+  .program-panel__cover {
+    transform: none;
+  }
+}

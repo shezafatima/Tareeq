@@ -10,7 +10,7 @@ const b = await chromium.launch({ executablePath: process.env.CHROME });
 const results = [];
 const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  (" + extra + ")" : ""}`);
 const want = (name) => !only || only === name;
-const PAGES = ["/", "/our-way", "/programs", "/contact"];
+const PAGES = ["/", "/our-way", "/programs"];
 
 const CLS_INIT = () => {
   window.__cls = 0;
@@ -140,7 +140,7 @@ if (want("nav")) {
     };
     tick();
   });
-  for (const label of ["Programs", "Our Way", "Contact"]) {
+  for (const label of ["Programs", "Our Way", "Courses"]) {
     await p.getByRole("navigation", { name: "Main" }).getByRole("link", { name: label }).click();
     await p.waitForTimeout(1500);
   }
@@ -216,10 +216,10 @@ if (want("interaction")) {
   const navScale = (name) =>
     p.getByRole("navigation", { name: "Main" }).getByRole("link", { name }).evaluate((el) => getComputedStyle(el, "::after").scale).then(scaleOf);
   check("[interaction] the current nav link shows its underline (scaleX 1)", (await navScale("Our Way")) > 0.99);
-  check("[interaction] another nav link shows no underline at rest (scaleX 0)", (await navScale("Contact")) < 0.01);
-  await p.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Contact" }).hover();
+  check("[interaction] another nav link shows no underline at rest (scaleX 0)", (await navScale("Courses")) < 0.01);
+  await p.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Courses" }).hover();
   await p.waitForTimeout(400);
-  check("[interaction] hovering a nav link draws its underline in", (await navScale("Contact")) > 0.99);
+  check("[interaction] hovering a nav link draws its underline in", (await navScale("Courses")) > 0.99);
 
   // keyboard: focus ring visible, targets at least 44px high
   await p.goto(base + "/programs", { waitUntil: "load" });
@@ -257,7 +257,7 @@ if (want("interaction")) {
 
 // ---------- F. stability: no-motion modes, jumps, focus, resize, widths, CPU ----------
 if (want("stability")) {
-  const names = { "/": "home", "/our-way": "our-way", "/programs": "programs", "/contact": "contact" };
+  const names = { "/": "home", "/our-way": "our-way", "/programs": "programs" };
 
   // F1. reduced motion and no JavaScript, both widths: complete, still, screenshots
   for (const [w, h] of [[1440, 900], [390, 844]]) {
@@ -395,9 +395,9 @@ if (want("stability")) {
   }
 }
 
-// ---------- G. inner pages: headers, story reveals, Urdu feature, contact cards, copy unchanged ----------
+// ---------- G. inner pages: headers, story reveals, Urdu feature, copy unchanged ----------
 if (want("inner")) {
-  const INNER = ["/our-way", "/programs", "/contact"];
+  const INNER = ["/our-way", "/programs"];
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const tag = `[${w}px]`;
     const ctx = await b.newContext({ viewport: { width: w, height: h } });
@@ -450,15 +450,6 @@ if (want("inner")) {
     await p.screenshot({ path: `shots/004/our-way-urdu-${w}.png` });
     await p.close();
 
-    // Contact cards
-    const c = await ctx.newPage();
-    await c.goto(base + "/contact", { waitUntil: "load" });
-    await waitPreloader(c);
-    const cards = await c.evaluate(() => [...document.querySelectorAll("main ul > li .lift")].map((el) => el.textContent.trim().replace(/\s+/g, " ")));
-    const links = await c.locator("main a[href^='https://wa.me/'], main a[href^='mailto:']").count();
-    check(`${tag} /contact: each available detail is a styled card (${cards.length}) with its link`, cards.length >= 1 && links >= cards.length - 1, cards.join(" | "));
-    check(`${tag} /contact: no form`, (await c.locator("main form").count()) === 0);
-    await c.close();
     await ctx.close();
   }
 
@@ -470,7 +461,7 @@ if (want("inner")) {
     // "Explore programs" is the hero's own button: its arrow icon made it a non-leaf under the old counting rule, so the "before" snapshot skipped it
     // feature 005: the carousel cards' compact faces repeat the step labels, and the carousel adds previous/next arrows
     const ALLOWED_NEW = new Set(["Hands-on learning", "Real projects", "In person or online", "Explore programs", "Prompt", "Build", "Learn", "‹", "›"]);
-    for (const [name, href] of [["home", "/"], ["our-way", "/our-way"], ["programs", "/programs"], ["contact", "/contact"]]) {
+    for (const [name, href] of [["home", "/"], ["our-way", "/our-way"], ["programs", "/programs"]]) {
       await p.goto(base + href, { waitUntil: "load" });
       await p.waitForTimeout(800);
       const after = (await p.locator("main").evaluate((el) => [...el.querySelectorAll("h1,h2,h3,h4,p,li,dt,dd,a,span,button")].map((n) => ([...n.children].every((c) => c.tagName.toLowerCase() === "svg") ? n.textContent.trim() : "")).filter(Boolean))).sort();

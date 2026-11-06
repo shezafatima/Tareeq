@@ -8,8 +8,8 @@ import { getWhatsAppUrlWithMessage } from "@/lib/site";
 import { WORKSHOP_CITY } from "./config";
 import { logLead } from "./log";
 import { CourseLead, Lead, WorkshopLead, type LeadDoc } from "./model";
-import { notifyOwner } from "./notify";
-import { checkAndCount, clientKey } from "./rate-limit";
+import { getResendEnv, notifyOwner } from "./notify";
+import { checkAndCount, clientKey, getRateLimitSecret } from "./rate-limit";
 import { generateRef } from "./reference";
 import {
   COURSE_FIELDS,
@@ -108,6 +108,9 @@ async function handleSubmission<T extends Common>(p: Pipeline<T>, prev: LeadActi
     if (!parsed.success) return { status: "invalid", attempt, values, errors: toFieldErrors(parsed.error) };
     const data = parsed.data;
 
+    // Never accept a lead the site cannot notify the owner about: a missing setting gives the generic error, nothing stored.
+    getResendEnv();
+    getRateLimitSecret();
     await connectDb();
 
     // A repeated submit of the same form (double tap, retry after a dropped connection) returns the first result.

@@ -585,7 +585,7 @@ if (want("a11y")) {
   const walk = await tabOrder(page, 40);
   const distinct = new Set(walk.filter((x) => x !== "(body)"));
   check("[a11y] Tab moves through the whole page without getting stuck (at least 10 different stops)", distinct.size >= 10, `${distinct.size} distinct stops; ${walk.slice(0, 6).join(" > ")} ...`);
-  check("[a11y] Tab reaches the footer links", [...distinct].some((x) => /Programs|Courses|Our Way|Contact/.test(x)) && walk.some((x) => /Chat with Tareeq/.test(x)), walk.slice(-6).join(" > "));
+  check("[a11y] Tab reaches the footer links", [...distinct].some((x) => /Programs|Courses|Our Way/.test(x)) && walk.some((x) => /Chat with Tareeq/.test(x)), walk.slice(-6).join(" > "));
   await ctx.close();
 
   // The same page in a second session where the overlay is skipped: the Tab order must be identical

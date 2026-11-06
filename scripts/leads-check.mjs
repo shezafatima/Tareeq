@@ -85,7 +85,9 @@ const onProblemField = (p) =>
 
 /** Loads a page and waits for the brand preloader to finish (it plays on load and covers the page). */
 async function open(p, path, js = true) {
-  await p.goto(`${base}${path}`, { waitUntil: js ? "networkidle" : "load" });
+  await p.goto(`${base}${path}`, { waitUntil: "load" });
+  // best effort: link prefetches on an earlier page can hold the network busy without blocking anything
+  if (js) await p.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
   if (js) await p.waitForFunction(() => document.documentElement.getAttribute("data-preloader") !== "run", null, { timeout: 20000 });
 }
 
@@ -343,24 +345,22 @@ if (run("entry")) {
     await landsOnDialog("home final call to action");
 
     await open(p, "/programs");
-    const joins = p.locator('main a:has-text("Join this workshop")');
+    const joins = p.locator('main a:has-text("Book a workshop")');
     const n = await joins.count();
-    check(`${tag} Programs page has Join this workshop buttons`, n >= 1, `${n}`);
+    check(`${tag} Programs page has Book a workshop buttons`, n >= 1, `${n}`);
     for (let i = 0; i < n; i++) {
       await open(p, "/programs");
-      await p.locator('main a:has-text("Join this workshop")').nth(i).click();
+      await p.locator('main a:has-text("Book a workshop")').nth(i).click();
       await landsOnDialog(`Programs page button ${i + 1}`);
     }
 
-    // /register: footer, Courses and Contact, never the header
-    for (const path of ["/", "/courses", "/contact", "/programs"]) {
+    // /register: footer and Courses, never the header
+    for (const path of ["/", "/courses", "/programs"]) {
       await open(p, path);
       check(`${tag} footer links to /register on ${path}`, (await p.locator('footer a[href="/register"]').count()) === 1);
     }
     await open(p, "/courses");
     check(`${tag} Courses page links to /register`, (await p.locator('main a[href="/register"]').count()) >= 1);
-    await open(p, "/contact");
-    check(`${tag} Contact page links to both forms`, (await p.locator('main a[href="/register"]').count()) >= 1 && (await p.locator('main a[href="/workshop?book=1"]').count()) >= 1);
     check(`${tag} the header has no link to /register`, (await p.locator('header a[href="/register"]').count()) === 0);
     if (w < 640) {
       await p.click('button[aria-label="Open menu"]');

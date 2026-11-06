@@ -1,5 +1,7 @@
 # Contract: Environment Variables
 
+> Since feature 015, each module validates its own variables instead of one schema in `src/lib/env.ts`. The variables and formats below are unchanged. See `specs/015-programs-pages/contracts/env.md`.
+
 **Module**: `src/lib/env.ts` (`import "server-only"`). It reads and validates the server variables lazily on first use with a zod schema. A missing or invalid variable throws a `ConfigError` that names **the variable, never its value**. The action catches this and returns the generic `error` state. Values are never logged.
 
 | Variable | Scope | Required | Format | Purpose |

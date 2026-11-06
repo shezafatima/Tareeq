@@ -11,7 +11,7 @@ const base = process.env.BASE ?? "http://localhost:3100";
 const b = await chromium.launch({ executablePath: process.env.CHROME });
 const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" }); // reduced motion: everything visible
 const p = await ctx.newPage();
-for (const [name, href] of [["home", "/"], ["our-way", "/our-way"], ["programs", "/programs"], ["contact", "/contact"]]) {
+for (const [name, href] of [["home", "/"], ["our-way", "/our-way"], ["programs", "/programs"]]) {
   await p.goto(base + href, { waitUntil: "load" });
   await p.waitForTimeout(800);
   // textContent, not innerText: counts text that is present even if visually hidden by a reveal state

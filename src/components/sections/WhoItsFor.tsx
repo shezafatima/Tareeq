@@ -4,13 +4,13 @@ import Reveal from "@/components/ui/Reveal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { getAudiences, getHomeCopy } from "@/content";
 import type { Audience } from "@/content";
-import { getWhatsAppUrlWithMessage } from "@/lib/site";
+import { getContactFallbackHref, getWhatsAppUrlWithMessage } from "@/lib/site";
 
-/** Internal path, or a WhatsApp link; with no WhatsApp number set the ask falls back to the contact page. */
+/** Internal path, or a WhatsApp link; with no WhatsApp number set the ask falls back to the footer's email link. */
 function resolveCta(a: Audience): { href: string; external: boolean } {
   if (a.cta.kind === "link") return { href: a.cta.href, external: false };
   const wa = getWhatsAppUrlWithMessage(a.cta.message);
-  return wa ? { href: wa, external: true } : { href: "/contact", external: false };
+  return wa ? { href: wa, external: true } : { href: getContactFallbackHref(), external: false };
 }
 
 // Server component. Centred wrapping row: 1 per row on phones, 2 from sm, 3 from lg (3 + 2), 5 from xl.

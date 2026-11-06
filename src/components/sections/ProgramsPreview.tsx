@@ -4,8 +4,10 @@ import Button from "@/components/ui/Button";
 import ChevronRight from "@/components/ui/ChevronRight";
 import Reveal from "@/components/ui/Reveal";
 import SectionHeading from "@/components/ui/SectionHeading";
-import { getHomeCopy, getHomeProgramCards } from "@/content";
+import { getHomeCopy, getOnlineCoursesCard } from "@/content";
 import type { HomeProgramCard as HomeProgramCardData } from "@/content";
+import { loadPublishedPrograms } from "@/lib/programs/data";
+import { toHomeCard } from "@/lib/programs/view";
 import { getWhatsAppUrlWithMessage } from "@/lib/site";
 
 /** Internal path, WhatsApp link, or null when the call to action cannot be drawn (no WhatsApp number set). */
@@ -15,10 +17,11 @@ function resolveCta(card: HomeProgramCardData): string | null {
 
 // Server component. Equal cards: one column on phones, two from md, three from lg. A short last row is centred (globals.css).
 export default async function ProgramsPreview() {
-  const [allCards, copy] = await Promise.all([getHomeProgramCards(), getHomeCopy()]);
+  const [programs, copy, onlineCourses] = await Promise.all([loadPublishedPrograms(), getHomeCopy(), getOnlineCoursesCard()]);
+  // no programs could be read: leave the section out rather than show the fixed card alone
+  if (!programs) return null;
   // only what visitors can act on now; "See all programs" leads to the rest
-  const cards = allCards.filter((c) => c.status !== "coming-soon");
-  if (cards.length === 0) return null;
+  const cards = [...programs.filter((p) => p.status !== "coming-soon").map(toHomeCard), onlineCourses];
 
   return (
     <Section id="programs" labelledBy="programs-title" tone="paper" divider decoration="circles">
