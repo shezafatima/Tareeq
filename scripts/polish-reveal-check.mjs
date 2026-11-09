@@ -166,7 +166,11 @@ if (want("interaction")) {
       return { a: m.a, f: m.f, shadow: getComputedStyle(el).boxShadow };
     }, [sel, pseudo]);
 
-  for (const [href, sel] of [["/", 'section[aria-labelledby="who-title"] .lift'], ["/programs", "main article.lift"]]) {
+  // Lift cards live on the home page. Since feature 015 the /programs panels expand instead of lifting;
+  // scripts/programs-pages-check.mjs covers their hover and focus.
+  const CARDS = [["who", 'section[aria-labelledby="who-title"] .lift'], ["programs", "#programs article.lift"]];
+  for (const [name, sel] of CARDS) {
+    const href = "/";
     await p.goto(base + href, { waitUntil: "load" });
     await waitPreloader(p);
     await p.locator(sel).first().scrollIntoViewIfNeeded();
@@ -176,27 +180,29 @@ if (want("interaction")) {
     await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
     await p.waitForTimeout(500);
     const hov = await matrix(sel);
-    check(`[interaction] ${href}: a card lifts 2 to 6px on hover and its shadow deepens`, hov.f <= -2 && hov.f >= -6 && hov.shadow !== rest.shadow, `lift ${hov.f.toFixed(1)}px`);
-    await p.screenshot({ path: `shots/004/hover-${href === "/" ? "home" : "programs"}-1440.png` });
+    check(`[interaction] / ${name}: a card lifts 2 to 6px on hover and its shadow deepens`, hov.f <= -2 && hov.f >= -6 && hov.shadow !== rest.shadow, `lift ${hov.f.toFixed(1)}px`);
+    await p.screenshot({ path: `shots/004/hover-home-${name}-1440.png` });
     await p.mouse.move(5, 5);
     await p.waitForTimeout(500);
     const back = await matrix(sel);
-    check(`[interaction] ${href}: the card returns to rest when the pointer leaves`, Math.abs(back.f) < 0.5);
+    check(`[interaction] / ${name}: the card returns to rest when the pointer leaves`, Math.abs(back.f) < 0.5);
   }
 
   // keyboard focus lifts the card that holds the focused link
-  await p.goto(base + "/programs", { waitUntil: "load" });
+  await p.goto(base + "/", { waitUntil: "load" });
   await waitPreloader(p);
-  await p.evaluate(() => document.querySelector("main article.lift a")?.focus({ focusVisible: true }));
+  await p.locator("#programs article.lift").first().scrollIntoViewIfNeeded();
+  await p.waitForTimeout(1400);
+  await p.evaluate(() => document.querySelector("#programs article.lift a")?.focus({ focusVisible: true }));
   await p.waitForTimeout(500);
   const focusLift = await p.evaluate(() => {
     const art = document.activeElement?.closest("article.lift");
     return art ? new DOMMatrixReadOnly(getComputedStyle(art).transform).f : null;
   });
-  check("[interaction] /programs: keyboard focus inside a card lifts it", focusLift !== null && focusLift <= -2, String(focusLift));
+  check("[interaction] / programs: keyboard focus inside a card lifts it", focusLift !== null && focusLift <= -2, String(focusLift));
 
-  // button press feedback
-  const btn = p.locator("main article a:has-text('Join this workshop')").first();
+  // button press feedback, on the shared Button (the header's call to action)
+  const btn = p.locator("header a:has-text('Book a workshop')").first();
   await btn.scrollIntoViewIfNeeded();
   await p.waitForTimeout(500);
   const bb = await btn.boundingBox();
