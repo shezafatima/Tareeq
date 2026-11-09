@@ -6,7 +6,7 @@ import { footerContactHref, navItems, tagline } from "@/lib/site";
 import Logo from "./Logo";
 
 const link =
-  "inline-flex min-h-11 items-center text-white/80 md:min-h-6 transition-colors duration-[var(--dur-fast)] hover:text-white hover:underline hover:underline-offset-4";
+  "inline-flex min-h-11 items-center text-white/80 transition-colors duration-[var(--dur-fast)] hover:text-white hover:underline hover:underline-offset-4";
 const heading = "text-sm font-semibold uppercase tracking-[0.18em] text-white/70";
 
 // The only place for contact details. An entry renders only when it exists; nothing is invented.
@@ -45,14 +45,15 @@ export default async function Footer() {
             <h2 id="footer-contact-title" className={heading}>
               Contact
             </h2>
-            <ul className="mt-1 grid gap-x-6 sm:grid-cols-2">
+            {/* one column from 768px to 1023px, where the footer's third column is too narrow for two */}
+            <ul className="mt-1 grid gap-x-6 sm:grid-cols-2 md:max-lg:grid-cols-1">
               {contactItems.map((item) => (
                 <li key={item.kind} id={item.kind === "email" ? "footer-email" : undefined} className="py-1 text-white/80">
                   <span className="block text-sm text-white/70">{item.label}</span>
                   <a
                     href={item.href}
                     {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className={`${link} break-all`}
+                    className={`${link} [overflow-wrap:anywhere]`}
                   >
                     {item.value}
                     {item.external && <span className="sr-only"> (opens in a new tab)</span>}
