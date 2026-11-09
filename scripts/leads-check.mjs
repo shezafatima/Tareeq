@@ -128,6 +128,9 @@ if (run("workshop-errors")) {
     check(`${tag} exactly one h1`, (await p.locator("h1").count()) === 1);
     check(`${tag} no horizontal scroll`, await noHScroll(p));
     await shot(p, `${shots}/workshop-form-${w}.png`);
+    // feature 013's How it works styles once hid this text on desktop and clipped it to a 3px bar on phones
+    const stepText = await p.locator(".step-progress").evaluate((e) => ({ h: e.getBoundingClientRect().height, v: getComputedStyle(e).visibility }));
+    check(`${tag} "Step 1 of 2" can be seen`, stepText.h >= 16 && stepText.v === "visible", JSON.stringify(stepText));
 
     // Step 1 problems stop "Next"; step 2 problems stop "Send"
     const cases = [
