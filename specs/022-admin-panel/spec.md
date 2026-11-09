@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Admin panel (launch scope): a private panel for a single owner to manage leads (submissions) and programs. Polished UI built with styling and light motion only, no new UI libraries." (full brief recorded in the PHR for this feature)
 
+## Clarifications
+
+### Session 2026-11-09
+
+- Q: Should the owner's search text appear in the page address? → A: Yes. It survives refresh, is never logged, and lead records appear only by opaque id.
+- Q: How long does a sign-in last? → A: 7 days from sign-in, then the owner signs in again.
+- Q: Is lead deletion permanent or undoable? → A: Permanent after the confirmation dialog; no undo.
+- Q: What do visitors see at a renamed program's old address? → A: The normal "not found" page; no redirect.
+- Q: Can the owner view an unpublished program's public page? → A: No; it shows "not found" to everyone until published, and the form's preview card is the only preview.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Secure sign-in for the owner (Priority: P1)
@@ -95,7 +105,7 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 
 - A lead is deleted or changed elsewhere while the detail panel is open: saving shows a clear "not found / out of date" error rather than silently succeeding.
 - Two programs given the same slug (including a race between two saves): only one succeeds; the other shows the slug error.
-- Renaming a program's slug: both the old and new public addresses refresh; the old address no longer shows the program.
+- Renaming a program's slug: both the old and new public addresses refresh; the old address shows the normal "not found" page (no redirect).
 - Search with no matches, a page number past the last page, or an unknown status/type in the address: shows the empty state or falls back to the first page / no filter, never an error.
 - Very long notes, names or descriptions: limits are enforced with inline messages; the layout does not break.
 - Leads with missing optional data (e.g. no email for a workshop request): copy-email is disabled or hidden and the field shows a dash.
@@ -116,7 +126,7 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 - **FR-005**: Every admin page, every admin data change and every admin endpoint MUST verify the owner's session on the server; access control MUST NOT depend on hidden buttons or browser-side checks.
 - **FR-006**: Requests without a valid session MUST be redirected to sign-in (pages) or refused as unauthorised (direct data calls), with no data returned and no change made.
 - **FR-007**: Admin pages MUST be excluded from the site map, disallowed for crawlers and marked no-index.
-- **FR-008**: The owner MUST be able to log out, ending the session.
+- **FR-008**: The owner MUST be able to log out, ending the session. A session MUST expire 7 days after sign-in, after which any admin request is treated as logged out.
 - **FR-009**: Configuration examples MUST list the new settings with placeholder values only.
 
 **Sign-in page**
@@ -128,11 +138,11 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 **Submissions**
 - **FR-012**: The system MUST show counts of leads per status (New, Contacted, Booked, Closed) in a stat strip; clicking a card MUST apply that status filter.
 - **FR-013**: The system MUST list leads newest first, 25 per page, with paging controls.
-- **FR-014**: The owner MUST be able to filter by type and status and search by name, phone, email or organization; filters, search and page MUST be stored in the page address so they survive refresh, without putting personal data in that address beyond the search term the owner typed. [Assumption A4]
+- **FR-014**: The owner MUST be able to filter by type and status and search by name, phone, email or organization; type, status, search text and page MUST be stored in the page address so they survive refresh. The search text MUST NOT be written to any log, and no other personal data may appear in the address.
 - **FR-015**: Each lead's status MUST be shown as a colour-coded chip (new = saffron, contacted = sky, booked = royal blue, closed = muted grey) meeting AA text contrast.
 - **FR-016**: Opening a lead MUST show a detail panel with all stored fields, a status selector with immediate (optimistic) feedback, a notes box with explicit save, an "Open in WhatsApp" link with a short prefilled greeting, copy-phone and copy-email buttons, and delete behind an in-app confirmation dialog.
 - **FR-017**: Status and notes changes MUST persist and be visible after refresh; the status change time MUST be recorded.
-- **FR-018**: Deleting a lead MUST be permanent only after explicit confirmation.
+- **FR-018**: Deleting a lead MUST be permanent, with no undo or archive, and MUST happen only after explicit confirmation.
 
 **Programs**
 - **FR-019**: The system MUST list all programs (published and unpublished) as cards in display order showing title, audience, status chip and a published toggle that saves instantly.
@@ -141,7 +151,8 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 - **FR-022**: The same validation rules MUST apply in the browser (for instant feedback) and on the server (for safety); server-side errors MUST appear next to the relevant fields.
 - **FR-023**: On wide screens the form MUST show a live preview card of how the program will appear on the public site.
 - **FR-024**: Any program create, edit, delete or published change MUST refresh the public Programs list and that program's page (old and new slug when renamed) so visitors see it without a redeploy.
-- **FR-025**: Deleting a program MUST require in-app confirmation.
+- **FR-025**: An unpublished program MUST show the normal "not found" page at its public address for everyone, including the signed-in owner; the form's preview card is the only draft preview.
+- **FR-025a**: Deleting a program MUST require in-app confirmation.
 
 **Feedback and resilience**
 - **FR-026**: The system MUST show toasts for save, delete, copy and error outcomes.
@@ -151,7 +162,7 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 **Motion, accessibility, privacy, scope**
 - **FR-029**: Animations (count-up, panel slide, toggle, sidebar indicator) MUST be short (150–250 ms), limited to movement and fade, and MUST be disabled when the visitor prefers reduced motion.
 - **FR-030**: Detail panel, drawers and dialogs MUST be fully keyboard-operable: focus moves in on open, stays inside while open, Escape closes, and focus returns to where it was. All fields MUST have labels and all interactive elements a visible focus state.
-- **FR-031**: Personal data MUST NOT be written to logs or placed in page addresses (except the search text the owner types and an opaque record identifier).
+- **FR-031**: Personal data MUST NOT be written to logs or placed in page addresses (except the search text the owner types, which is never logged, and an opaque record identifier).
 - **FR-032**: All admin screens MUST be usable at 360 px width without horizontal page scrolling.
 - **FR-033**: The panel MUST follow the site's existing brand look (colours, fonts, icon style) and MUST NOT add a UI component library.
 
@@ -185,8 +196,8 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 - **A1**: The panel manages the existing lead and program records created by features 006 (lead capture) and 015 (programs pages); no data-shape changes are needed beyond what those already store.
 - **A2**: There is one owner; no roles, invitations, multiple accounts or password reset. Changing the password means regenerating the verifier and updating private configuration.
 - **A3**: The panel is for English-language desktop and mobile use; it is not translated.
-- **A4**: The search text appears in the page address so it survives refresh; the brief's rule against personal data in addresses is read as applying to lead records (details shown by opaque identifier only), and the owner's own search term is allowed in the address.
-- **A5**: Lead deletion is permanent (no recycle bin) in the launch scope, protected by the confirmation dialog.
+- **A4**: Per the clarification above, the owner's own search text may appear in the page address; lead details are addressed only by opaque identifier.
+- **A5**: Lead deletion is permanent (no recycle bin, no undo), protected by the confirmation dialog, as confirmed in the clarification above.
 - **A6**: Technology constraints from the brief are carried into planning, not this spec: the site's current framework with server-rendered pages and server-side actions, an established sign-in library with signed session tokens, password hashing via a standard library, and no other new dependencies.
 - **A7**: "Instant" public updates rely on the site's existing cache-refresh mechanism for programs.
 
