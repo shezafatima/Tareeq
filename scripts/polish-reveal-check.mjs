@@ -293,10 +293,34 @@ if (want("stability")) {
     const p = await ctx.newPage();
     await p.goto(base + "/", { waitUntil: "load" });
     await waitPreloader(p);
+    // Timed in the page, from the moment the scroll arrives, so a slow test machine does not eat the budget.
+    // Waiting up to 5 s also tells a slow fade from a block that is stuck faint, the bug this guards against.
+    await p.evaluate(() => {
+      window.__jump = { arrived: null, clear: null };
+      const t0 = performance.now();
+      let lastY = -1;
+      const tick = () => {
+        const now = performance.now() - t0;
+        const atEnd = scrollY >= document.documentElement.scrollHeight - innerHeight - 1;
+        if (window.__jump.arrived === null && atEnd && scrollY === lastY) window.__jump.arrived = now;
+        lastY = scrollY;
+        const faint = [...document.querySelectorAll("[data-reveal]")].some((el) => {
+          const r = el.getBoundingClientRect();
+          return r.top < innerHeight && r.bottom > 0 && Number(getComputedStyle(el).opacity) <= 0.99;
+        });
+        if (window.__jump.arrived !== null && !faint) window.__jump.clear = now;
+        else if (now < 5000) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
     await p.keyboard.press("End");
-    await p.waitForTimeout(1600);
+    await p.waitForFunction(() => window.__jump.clear !== null, null, { timeout: 6000 }).catch(() => {});
+    const jump = await p.evaluate(() => window.__jump);
     const endState = await reveals(p);
-    check("[jumps] End: everything is visible within 1.6 s", endState.filter((x) => x.top < x.h && x.bottom > 0).every((x) => x.o > 0.99), `${endState.filter((x) => x.top < x.h && x.bottom > 0 && x.o <= 0.99).length} still faint`);
+    const faint = endState.filter((x) => x.top < x.h && x.bottom > 0 && x.o <= 0.99).length;
+    check("[jumps] End: nothing stays faint after the jump", jump.clear !== null && faint === 0, `${faint} still faint after 5 s`);
+    const fadeMs = jump.clear === null ? null : Math.round(jump.clear - jump.arrived);
+    check("[jumps] End: everything is visible within 1.6 s of arriving", fadeMs !== null && fadeMs <= 1600, `${fadeMs} ms after arriving`);
     await p.keyboard.press("Home");
     await p.waitForTimeout(1200);
     const target = p.locator('section[aria-labelledby="programs-title"] a[href="/programs"]');
