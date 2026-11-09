@@ -149,7 +149,7 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 - **FR-020**: The owner MUST be able to create, edit and delete programs with the fields: title, slug, audience, status, call-to-action type, summary, description (markdown), outcomes list, curriculum list (title + description), facts (format, duration, groupSize, location), price text, optional cover image address, order, published.
 - **FR-021**: The slug MUST be auto-suggested from the title, remain editable, be unique and follow the site's existing slug rules.
 - **FR-022**: The same validation rules MUST apply in the browser (for instant feedback) and on the server (for safety); server-side errors MUST appear next to the relevant fields.
-- **FR-023**: On wide screens the form MUST show a live preview card of how the program will appear on the public site.
+- **FR-023**: On wide screens the form MUST show a live preview of how the program will appear on the public Programs page, rendered by the same presentational component the public page uses (not a separate look-alike). See assumption A8.
 - **FR-024**: Any program create, edit, delete or published change MUST refresh the public Programs list and that program's page (old and new slug when renamed) so visitors see it without a redeploy.
 - **FR-025**: An unpublished program MUST show the normal "not found" page at its public address for everyone, including the signed-in owner; the form's preview card is the only draft preview.
 - **FR-025a**: Deleting a program MUST require in-app confirmation.
@@ -160,7 +160,7 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 - **FR-028**: Admin pages MUST show a clear message with a Retry button on failure, including database unavailability, instead of crashing.
 
 **Motion, accessibility, privacy, scope**
-- **FR-029**: Animations (count-up, panel slide, toggle, sidebar indicator) MUST be short (150–250 ms), limited to movement and fade, and MUST be disabled when the visitor prefers reduced motion.
+- **FR-029**: Interaction motion (hover, toggle, panel slide, sidebar indicator) MUST be short (150–250 ms) and limited to movement and fade. The stat count-up is exempt from the duration limit and MAY run up to 800 ms. All motion, including the count-up, MUST be disabled when the visitor prefers reduced motion.
 - **FR-030**: Detail panel, drawers and dialogs MUST be fully keyboard-operable: focus moves in on open, stays inside while open, Escape closes, and focus returns to where it was. All fields MUST have labels and all interactive elements a visible focus state.
 - **FR-031**: Personal data MUST NOT be written to logs or placed in page addresses (except the search text the owner types, which is never logged, and an opaque record identifier).
 - **FR-032**: All admin screens MUST be usable at 360 px width without horizontal page scrolling.
@@ -187,7 +187,7 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 - **SC-007**: Every admin screen is fully usable at 360 px width with no horizontal page scrolling.
 - **SC-008**: All admin dialogs and panels can be opened, operated and closed using only the keyboard, with focus returning to the trigger.
 - **SC-009**: All status chip and body text colour pairs meet AA contrast (4.5:1 for normal text).
-- **SC-010**: With reduced motion enabled, zero admin animations play.
+- **SC-010**: With reduced motion enabled, zero admin animations play, including the count-up, which shows its final number at once.
 - **SC-011**: When the database is unreachable, 100% of admin pages show the friendly message and Retry button rather than a crash or blank page.
 - **SC-012**: No personal data (names, phones, emails) appears in logs or page addresses, apart from the search text the owner types.
 
@@ -200,6 +200,8 @@ The panel feels consistent with the brand: a navigation sidebar on desktop, a to
 - **A5**: Lead deletion is permanent (no recycle bin, no undo), protected by the confirmation dialog, as confirmed in the clarification above.
 - **A6**: Technology constraints from the brief are carried into planning, not this spec: the site's current framework with server-rendered pages and server-side actions, an established sign-in library with signed session tokens, password hashing via a standard library, and no other new dependencies.
 - **A7**: "Instant" public updates rely on the site's existing cache-refresh mechanism for programs.
+- **A8**: The live preview reuses the public Programs panel component. If that needs more than a small refactor (extracting a pure presentational version used by both), the preview is dropped for launch and this is recorded in the plan; no separate look-alike is built. The edit form's other behaviour does not depend on it.
+- **A9**: Verification includes an automated test that calls every admin Server Action and admin Route Handler with no session and checks each is rejected with no database change (SC-001). It must pass before the feature is done.
 
 ## Out of Scope
 

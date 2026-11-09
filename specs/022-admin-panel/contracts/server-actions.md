@@ -1,6 +1,6 @@
 # Contract: Admin Server Actions
 
-Every action is a public POST endpoint. Each one: (1) calls `requireAdmin()`; on failure returns `{ ok: false, code: "unauthorized" }` and does nothing else; (2) validates input on the server; (3) writes; (4) returns a result. Nothing personal is logged.
+Every action is a public POST endpoint, defined as `withAdmin(handler)` (see research R15). Each one: (1) gets the session via `withAdmin`; on failure returns `{ ok: false, code: "unauthorized" }` and does nothing else; (2) validates input on the server; (3) writes; (4) returns a result. Nothing personal is logged.
 
 ```ts
 type Result<T = {}> =
@@ -32,3 +32,9 @@ Revalidation call: `revalidateTag(tag, { expire: 0 })`, made only after a succes
 ## Auth
 
 Sign-in and sign-out go through Auth.js (`signIn("credentials")`, `signOut`) from server actions in `src/auth.ts`; see `auth-and-routes.md`.
+
+## UI handling
+
+- `unauthorized`: show an error toast "Your session has ended" and send the owner to `/admin/login`; never show success.
+- `not_found`: show "This item no longer exists", close the drawer or form and refresh the list.
+- `unavailable`: error toast, keep the form data.

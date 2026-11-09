@@ -16,7 +16,7 @@ A private, single-owner panel under `/admin` for working leads and managing prog
 **Target Platform**: Vercel-style serverless hosting; mobile-first browsers from 360px.
 **Project Type**: Web, single Next.js project.
 **Performance Goals**: Submissions list renders in under 1 s on a warm server with up to ~10k leads (indexes exist); toggle and status changes feel instant (optimistic).
-**Constraints**: transform/opacity-only motion, 150-250 ms, off under `prefers-reduced-motion`; no personal data in logs; no UI library; no dependency beyond Auth.js and bcryptjs.
+**Constraints**: transform/opacity-only interaction motion, 150-250 ms (the stat count-up is exempt, up to 800 ms), off under `prefers-reduced-motion`; no personal data in logs; no UI library; no dependency beyond Auth.js and bcryptjs.
 **Scale/Scope**: one admin; hundreds to low thousands of leads; tens of programs.
 
 No `NEEDS CLARIFICATION` remain: the five spec clarifications plus research.md cover them.
@@ -32,14 +32,14 @@ No `NEEDS CLARIFICATION` remain: the five spec clarifications plus research.md c
 | III Brand tokens | PASS | Existing tokens only. Saffron is a chip background and indicator bar, never text on light. |
 | IV Accessible | PASS | Existing `useFocusTrap`, Esc closes, focus returns, labelled fields, reduced motion respected. |
 | V Protect data | PASS | `requireAdmin()` on every page, action and route; server-side validation; no personal data in logs or URLs (owner's own search text is the clarified exception); secrets in env. |
-| VI Fast | PASS | Public pages untouched; admin uses transform/opacity motion and no heavy libraries. |
+| VI Fast | PASS with one tracked exception | Public pages untouched. Admin pages are held to the same Lighthouse gates: Performance 90+ and Accessibility 95+ must be met (task T061), SEO 90+ is checked too. Because the spec requires `noindex` (FR-007), Lighthouse's "page is blocked from indexing" audit fails by design and caps the SEO score below 90; this is the one justified violation, recorded under Complexity Tracking, using the constitution's own process. The constitution is not amended. |
 | VII Small verified steps | PASS | Tasks split by user story with build, lint and visual check each. |
 | VIII Don't touch the hero | PASS | No change to hero, Header or Footer; admin has its own layout outside `(site)`. |
 | IX No surprise dependencies | PASS (justified) | Two dependencies, both named in the brief. `framer-motion` is installed but not used here. |
 | X Safest option | PASS | Assumptions recorded in spec and research. |
 | XI Server Components default | PASS | Client leaves listed in research R8, each with a reason. |
 
-**Gate result**: PASS. No Complexity Tracking entries needed.
+**Gate result**: PASS, with one Complexity Tracking entry (Principle VI, SEO score on `noindex` pages).
 
 ## Project Structure
 
@@ -87,7 +87,9 @@ src/
 │                                         # ProgramPreview, ConfirmDialog, Drawer, Toast(Provider),
 │                                         # Skeleton, EmptyState, LoginForm
 └── lib/admin/
-    ├── session.ts                        # requireAdmin(), getAdmin() (server-only)
+    ├── session.ts                        # requireAdmin(), withAdmin(handler, resolver?) (server-only)
+    ├── login-window.ts                   # pure: window start, isOverLimit(count) (unit-tested)
+    ├── leads-params.ts                   # pure: parse URL params, escape search text (unit-tested)
     ├── login-limit.ts                    # 5 failed / 15 min / address, on the RateLimit model
     ├── leads-query.ts                    # parse URL params, build filter, stats aggregate
     ├── leads-actions.ts                  # "use server": setStatus, saveNotes, deleteLead
@@ -96,11 +98,18 @@ src/
     ├── whatsapp.ts                       # pure wa.me link builder
     └── log.ts                            # one logging call, accepts no personal data
 tests/unit/admin-*.test.ts                # pure modules
+scripts/admin-guard-test.ts               # run with tsx: every Server Action and Route Handler rejects with no session
 scripts/admin-check.mjs                   # guards, 360px layout, persistence
 .env.example                              # + AUTH_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD_HASH
 ```
 
 **Structure Decision**: single Next.js project. `/admin` is a top-level route tree outside `(site)`, so it gets none of the public Header, Footer, WhatsApp button or preloader, and the hero and site shell are untouched. The `(panel)` route group separates the authenticated shell from `/admin/login`.
+
+## Complexity Tracking
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| Principle VI SEO 90+ cannot be met on admin pages | FR-007 (and the owner's brief) require `noindex`, a `robots.txt` Disallow and `X-Robots-Tag` on `/admin`. Lighthouse's crawlability audit fails for exactly that, which lowers the SEO score below 90. | Dropping `noindex` to score 90 would let private pages be indexed, a worse outcome than the lower score. Performance 90+ and Accessibility 95+ remain hard gates, and every other SEO audit (title, status code, link text, viewport) must still pass. |
 
 ## Key Decisions (detail in research.md)
 
@@ -111,7 +120,10 @@ scripts/admin-check.mjs                   # guards, 360px layout, persistence
 5. `revalidateTag(tag, { expire: 0 })` for program changes, for both old and new slug on rename.
 6. One shared `zod/mini` schema for client form and Server Actions.
 7. Filters, search and page live in the URL; one aggregate for the four stat counts.
-8. Drawers and dialogs on the existing `useFocusTrap`; CSS transitions only.
+8. Drawers and dialogs on the existing `useFocusTrap`; CSS transitions only (150-250 ms); the stat count-up is exempt and capped at 800 ms; all motion off under reduced motion.
+9. Every Server Action goes through one `withAdmin()` wrapper with an injectable session resolver, so a guard test can call every action with no session and prove it is rejected before any database access (research R15).
+10. The live preview renders the public `ProgramPanel` component with form state; if that needs more than a small refactor the preview is dropped (research R16).
+11. `trustHost: true` in the Auth.js config, so no extra host variable is needed (research R17).
 
 📋 Architectural decision detected: authentication approach (Auth.js v5 beta, JWT, single env-held admin, layered server-side checks). Document reasoning and tradeoffs? Run `/sp.adr admin-authentication`
 

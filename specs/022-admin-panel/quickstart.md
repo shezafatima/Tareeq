@@ -22,7 +22,9 @@
 
 ## Checks
 
-`npm run lint`, `npm run build`, `npm run test:unit`, `node scripts/admin-check.mjs`, `node scripts/contrast.mjs` (chip colours).
+Must pass before the feature is done: `npm run test:admin-guard` (every Server Action and Route Handler rejects a logged-out caller and changes nothing).
+
+`npm run lint`, `npm run build`, `npm run test:unit`, `npm run test:admin-guard`, Lighthouse on admin pages (Performance 90+, Accessibility 95+; SEO reported, see plan Complexity Tracking), `node scripts/admin-check.mjs`, `node scripts/contrast.mjs` (chip colours).
 
 ## Deployment notes
 

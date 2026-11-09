@@ -59,7 +59,7 @@ Table, cards, stat layout, headers and chips stay Server Components. Rows are li
 Chip pairs, to be checked with `scripts/contrast.mjs`: new = Saffron background with Midnight text; contacted = Soft Blue background with Royal text and a Sky dot; booked = Royal background with white text; closed = light grey `#E5E7EB` with `#374151` text. Saffron is never text on a light background. The grey pair is the only value not already a brand token and is defined once as a token.
 
 ## R10. Motion
-CSS transitions on `transform` and `opacity` only, 150-250 ms: drawer slide, toggle thumb, sidebar indicator, toast fade. `CountUp` updates number text with `requestAnimationFrame` and jumps straight to the final value under reduced motion. `globals.css` already collapses transitions and animations under `prefers-reduced-motion`. `framer-motion` is not used.
+Interaction motion (hover, drawer slide, toggle thumb, sidebar indicator, toast fade) uses CSS transitions on `transform` and `opacity` only, 150-250 ms. The stat `CountUp` is exempt from the duration limit (it changes number text, not a transform) and runs up to 800 ms with `requestAnimationFrame`, once per load; it jumps straight to the final value under reduced motion. `globals.css` already collapses transitions and animations under `prefers-reduced-motion`. `framer-motion` is not used.
 
 ## R11. Not indexed
 `src/app/admin/layout.tsx` exports `metadata.robots = { index: false, follow: false }`; `robots.ts` adds `Disallow: /admin`; no sitemap entry. `proxy.ts` also sets `X-Robots-Tag: noindex` on `/admin/*`.
@@ -72,3 +72,19 @@ Reads throw when `connectDb()` fails. `(panel)/error.tsx` detects connection and
 
 ## R14. Login page visuals
 Reuses `components/ui/background-gradient-animation.tsx`, `public/logo-tareeq-light.png` and `public/robot-head.png` (exists). Glass card = translucent white with `backdrop-blur` and a subtle border; contrast checked on Midnight.
+
+## R15. Proving every admin entry point rejects a logged-out caller (C1)
+- **Decision**: three layers, all must pass before the feature is done.
+  1. **`withAdmin()` wrapper** in `session.ts`: every exported Server Action is defined as `withAdmin(async (input) => ...)`. It reads the session through an injectable resolver (default: Auth.js `auth()`), returns `{ ok:false, code:"unauthorized" }` when there is none, and runs the handler only when there is one. This makes the guard testable without a request context.
+  2. **`scripts/admin-guard-test.ts`**, run with `tsx --conditions=react-server` (the pattern `seed:programs` already uses). It imports every `*-actions.ts` file in `src/lib/admin/`, enumerates every exported function, and for each: asserts it is wrapped by `withAdmin`, calls it with a resolver returning no session and valid-looking arguments, asserts the result is `unauthorized`, and asserts the Mongoose models and `connectDb` were never touched (they are replaced with throwing stubs). A new exported action that is not wrapped fails the test.
+  3. **Route Handlers and pages over HTTP** in `scripts/admin-check.mjs`: with no cookie, every admin page redirects to `/admin/login`; a file scan lists every `route.ts` under `src/app` and fails if any exists other than the allow-listed Auth.js handler `/api/auth/[...nextauth]` (a future admin route handler must call `requireAdmin()` and be added to the list with a 401 assertion); `GET /api/auth/session` with no cookie returns an empty session and no admin data.
+- **Rationale**: Server Actions cannot be called by URL without a build-specific action id, so direct HTTP testing is brittle; testing the guard at the function level plus the wrapper rule covers all of them, and the scan stops later additions skipping the check.
+- **Add npm script**: `"test:admin-guard": "tsx --conditions=react-server scripts/admin-guard-test.ts"`.
+
+## R16. Live preview reuse (A1)
+- **Finding**: `src/components/sections/programs/ProgramPanel.tsx` takes a plain `Program` prop and imports only presentational pieces and the pure `visibleFacts` helper; it has no `server-only` import and no data access. Its look comes from `.program-*` classes in `globals.css`, which the admin root layout already loads.
+- **Decision**: `ProgramPreview` renders `<ProgramPanel program={formStateAsProgram} />` inside a wrapper that gives it the same list-position class the first public panel gets. If a child of `ProgramPanel` turns out to need a server-only import or a larger refactor, extract a pure presentational version used by both pages (small refactor only). If that is more than a small refactor, drop the preview, record that in this plan and in the tasks, and continue. No look-alike component is built.
+
+## R17. Auth.js host trust (U3)
+- **Decision**: set `trustHost: true` in `src/auth.ts`. One line, no extra environment variable.
+- **Rationale**: Auth.js v5 refuses unknown hosts outside Vercel unless told to trust the host or given `AUTH_URL`. With one admin and a signed session cookie, trusting the incoming host is the simplest option that meets the spec. Alternative: require `AUTH_URL` (rejected: one more setting to get wrong on every deploy).
