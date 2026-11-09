@@ -423,9 +423,17 @@ if (want("inner")) {
       await p.waitForTimeout(600);
       check(`${tag} ${href}: the main heading is fully visible from the first frame`, (await p.evaluate(() => window.__h1min)) === 1);
       await waitPreloader(p);
-      const entered = await p.evaluate(() => [...document.querySelectorAll(".page-enter, .page-enter-h1")].map((e) => getComputedStyle(e).animationName));
-      // Our Way's opening has a heading and one line; the Urdu word above them shows at once
-      check(`${tag} ${href}: the page header has its entrance (eyebrow, heading, intro)`, entered.length >= (href === "/our-way" ? 2 : 3) && entered.every((n) => /page-enter/.test(n)), entered.join(","));
+      // Headers differ by page: Our Way and Programs have a heading and one line, with no eyebrow (features 015 and 016).
+      // So: the h1 enters, at least one line beside it does, and every part marked for an entrance has one.
+      const header = await p.evaluate(() => ({
+        h1: getComputedStyle(document.querySelector("h1")).animationName,
+        parts: [...document.querySelectorAll(".page-enter, .page-enter-h1")].map((e) => getComputedStyle(e).animationName),
+      }));
+      check(
+        `${tag} ${href}: the page header has its entrance (heading and the lines around it)`,
+        /page-enter/.test(header.h1) && header.parts.length >= 2 && header.parts.every((n) => /page-enter/.test(n)),
+        `h1 ${header.h1}; parts ${header.parts.join(",")}`,
+      );
       const total = await p.evaluate(() => document.documentElement.scrollHeight);
       const first = await reveals(p);
       const hiddenBelow = first.filter((x) => x.top > x.h * 1.05);
@@ -454,28 +462,9 @@ if (want("inner")) {
     await ctx.close();
   }
 
-  // copy unchanged: every line of text from before is still there, nothing else added except the trust strip
-  {
-    const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: "reduce" });
-    const p = await ctx.newPage();
-    const fs = await import("node:fs");
-    // "Explore programs" is the hero's own button: its arrow icon made it a non-leaf under the old counting rule, so the "before" snapshot skipped it
-    // feature 005: the carousel cards' compact faces repeat the step labels, and the carousel adds previous/next arrows
-    const ALLOWED_NEW = new Set(["Hands-on learning", "Real projects", "In person or online", "Explore programs", "Prompt", "Build", "Learn", "‹", "›"]);
-    // Our Way was rewritten on purpose by feature 016, so its copy from before no longer applies
-    for (const [name, href] of [["home", "/"], ["programs", "/programs"]]) {
-      await p.goto(base + href, { waitUntil: "load" });
-      await p.waitForTimeout(800);
-      const after = (await p.locator("main").evaluate((el) => [...el.querySelectorAll("h1,h2,h3,h4,p,li,dt,dd,a,span,button")].map((n) => ([...n.children].every((c) => c.tagName.toLowerCase() === "svg") ? n.textContent.trim() : "")).filter(Boolean))).sort();
-      const before = fs.readFileSync(`shots/004/text-before-${name}.txt`, "utf8").split("\n").filter(Boolean).sort();
-      const count = (arr) => arr.reduce((m, x) => ((m[x] = (m[x] || 0) + 1), m), {});
-      const cb = count(before), ca = count(after);
-      const removed = Object.keys(cb).filter((k) => (ca[k] || 0) < cb[k]);
-      const added = Object.keys(ca).filter((k) => (cb[k] || 0) < ca[k] && !ALLOWED_NEW.has(k));
-      check(`[copy] ${href}: no text removed or changed, none added (trust strip excepted)`, removed.length === 0 && added.length === 0, `removed: ${removed.join(" | ")}; added: ${added.join(" | ")}`);
-    }
-    await ctx.close();
-  }
+  // Retired: the "copy unchanged" comparison against shots/004/text-before-*.txt. It guarded feature 004's rule
+  // that the polish pass changes no copy. Features 008 to 016 have since rewritten that copy on purpose, and the
+  // snapshots were never in git (shots/ is ignored), so a fresh clone could not run it.
 }
 
 // ---------- H. hero-area additions: outside the hero, the hero itself unchanged ----------
