@@ -12,7 +12,7 @@
   --color-linkedin: #0a66c2;
   --color-instagram: #e4405f;
   --color-danger: #b42318; /* form errors only; 6.5:1 on white */
-  /* admin panel only: the "closed" lead chip (neutral grey, 9.9:1 together) */
+  /* admin panel only: the "closed" lead chip (neutral grey, 8.3:1 together) */
   --color-chip-grey-bg: #e5e7eb;
   --color-chip-grey-text: #374151;
   --font-heading: var(--font-sora);

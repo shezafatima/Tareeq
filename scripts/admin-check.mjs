@@ -23,8 +23,8 @@ const freshAddress = () => `198.${18 + Math.floor(Math.random() * 2)}.${Math.flo
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME });
 
-async function session(viewport = { width: 1440, height: 900 }) {
-  const context = await browser.newContext({ viewport, extraHTTPHeaders: { "x-forwarded-for": freshAddress() } });
+async function session(viewport = { width: 1440, height: 900 }, reducedMotion = "no-preference") {
+  const context = await browser.newContext({ viewport, reducedMotion, extraHTTPHeaders: { "x-forwarded-for": freshAddress() } });
   return { context, page: await context.newPage() };
 }
 
@@ -315,6 +315,98 @@ if (process.env.SKIP_PROGRAMS !== "1") {
 
   await pub.dispose();
   await context.close();
+}
+
+// ---------- US4: motion, reduced motion, keyboard and labels (needs the test leads)
+if (process.env.SKIP_POLISH !== "1") {
+  const seconds = (v) => Number.parseFloat(v) * (v.endsWith("ms") ? 0.001 : 1);
+  const openLead = async (page) => {
+    await page.goto(`${base}/admin?q=QA+Ayesha`);
+    await page.getByRole("link", { name: "QA Ayesha Workshop" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.waitFor();
+    return dialog;
+  };
+
+  // normal motion: interaction durations are 150-250 ms
+  {
+    const { context, page } = await session();
+    await signIn(page);
+    await page.waitForURL(`${base}/admin`, { timeout: 20000 });
+    const dialog = await openLead(page);
+    const d = seconds(await dialog.evaluate((el) => getComputedStyle(el).animationDuration));
+    check("motion: the drawer slide lasts 150-250 ms", d >= 0.15 && d <= 0.25, `${d}s`);
+    const indicator = await page.locator("nav[aria-label='Admin'] > span").evaluate((el) => getComputedStyle(el).transitionDuration);
+    check("motion: the sidebar indicator moves in 150-250 ms", seconds(indicator) >= 0.15 && seconds(indicator) <= 0.25, indicator);
+
+    // keyboard: focus stays inside the drawer, however many times Tab is pressed
+    let escaped = 0;
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press("Tab");
+      if (!(await dialog.evaluate((el) => el.contains(document.activeElement)))) escaped++;
+    }
+    check("keyboard: Tab never leaves the open drawer (40 presses)", escaped === 0, `${escaped} escapes`);
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press("Shift+Tab");
+      if (!(await dialog.evaluate((el) => el.contains(document.activeElement)))) escaped++;
+    }
+    check("keyboard: Shift+Tab never leaves the open drawer (40 presses)", escaped === 0, `${escaped} escapes`);
+
+    // labels and headings
+    for (const path of ["/admin", "/admin/programs", "/admin/programs/new"]) {
+      await page.goto(`${base}${path}`);
+      await page.locator("h1").first().waitFor();
+      const h1 = await page.locator("h1").count();
+      const unlabelled = await page.evaluate(
+        () =>
+          [...document.querySelectorAll("input:not([type=hidden]), select, textarea")]
+            .filter((el) => el.getClientRects().length > 0)
+            .filter((el) => !(el.labels?.length || el.getAttribute("aria-label") || el.getAttribute("aria-labelledby"))).length,
+      );
+      check(`a11y: ${path} has one h1 and every field is labelled`, h1 === 1 && unlabelled === 0, `h1=${h1}, unlabelled=${unlabelled}`);
+    }
+    await context.close();
+  }
+
+  // reduced motion: nothing animates, the count-up shows its final number at once
+  {
+    const { context, page } = await session({ width: 1440, height: 900 }, "reduce");
+    await signIn(page);
+    await page.waitForURL(`${base}/admin`, { timeout: 20000 });
+    const strip = page.getByRole("list", { name: "Submissions by status" }).locator("li").first();
+    const first = await strip.innerText();
+    await page.waitForTimeout(1200);
+    const later = await strip.innerText();
+    check("reduced motion: the count-up shows its final number immediately", first === later, first.replace(/\s+/g, " "));
+    const dialog = await openLead(page);
+    const d = seconds(await dialog.evaluate((el) => getComputedStyle(el).animationDuration));
+    check("reduced motion: the drawer does not animate", d <= 0.001, `${d}s`);
+    const indicator = await page.locator("nav[aria-label='Admin'] > span").evaluate((el) => getComputedStyle(el).transitionDuration);
+    check("reduced motion: the sidebar indicator does not animate", seconds(indicator) <= 0.001, indicator);
+    await context.close();
+  }
+
+  // phone menu: opens as a drawer, Escape closes it, focus returns to the button
+  {
+    const { context, page } = await session({ width: 360, height: 740 });
+    await signIn(page);
+    await page.waitForURL(`${base}/admin`, { timeout: 20000 });
+    await page.getByRole("button", { name: "Open menu" }).click();
+    const menu = page.getByRole("dialog", { name: "Admin menu" });
+    await menu.waitFor();
+    check(
+      "phone: the menu opens as a drawer with the same links",
+      (await menu.getByRole("link", { name: "Programs" }).count()) === 1 && (await menu.getByRole("button", { name: "Log out" }).count()) === 1,
+    );
+    await page.keyboard.press("Escape");
+    await menu.waitFor({ state: "hidden" });
+    check("phone: Escape closes the menu and focus returns to its button", await page.evaluate(() => document.activeElement?.getAttribute("aria-label") === "Open menu"));
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await page.getByRole("dialog", { name: "Admin menu" }).getByRole("link", { name: "Programs" }).click();
+    await page.waitForURL(`${base}/admin/programs`);
+    check("phone: choosing a link closes the menu", (await page.getByRole("dialog").count()) === 0);
+    await context.close();
+  }
 }
 
 await browser.close();

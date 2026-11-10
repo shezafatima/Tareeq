@@ -108,20 +108,20 @@
 **Goal**: consistent feel, graceful failure and motion rules across the panel.
 **Independent Test**: skeletons while loading, empty states, toasts, friendly DB-down message with Retry, drawer menu on mobile, no animation under reduced motion.
 
-- [ ] T055 [US4] Audit every admin route for `loading.tsx` coverage (add `src/app/admin/(panel)/programs/loading.tsx` and `src/app/admin/(panel)/programs/[id]/edit/loading.tsx` if the shared one does not fit) and for toasts on every save, delete, copy and error path
-- [ ] T056 [US4] Simulate the database being down (bad `MONGODB_URI`): `/admin` and `/admin/programs` show the friendly message and Retry, actions return `unavailable` and show an error toast, nothing crashes; fix gaps in `error.tsx` and the actions
-- [ ] T057 [P] [US4] Reduced-motion audit: enable `prefers-reduced-motion` and confirm count-up (shows the final number at once), drawer slide, toggle, sidebar indicator and toasts do not animate; confirm interaction transitions are 150-250 ms and the count-up at most 800 ms; add `@media (prefers-reduced-motion: reduce)` overrides in `src/app/globals.css` only where the global rule does not already cover an admin transition
-- [ ] T058 [P] [US4] Accessibility audit: every drawer and dialog traps focus, Esc closes, focus returns; all inputs labelled; visible focus on every control; headings: one `<h1>` per page; fix in the relevant `src/components/admin/*.tsx`
-- [ ] T059 [P] [US4] Privacy audit: grep the admin code and dev server output for logging of names, phones, emails, notes or search text (none allowed); confirm URLs contain only `type`, `status`, `q`, `page`, `lead=<id>`
+- [X] T055 [US4] Audit every admin route for `loading.tsx` coverage (add `src/app/admin/(panel)/programs/loading.tsx` and `src/app/admin/(panel)/programs/[id]/edit/loading.tsx` if the shared one does not fit) and for toasts on every save, delete, copy and error path
+- [X] T056 [US4] Simulate the database being down (bad `MONGODB_URI`): `/admin` and `/admin/programs` show the friendly message and Retry, actions return `unavailable` and show an error toast, nothing crashes; fix gaps in `error.tsx` and the actions
+- [X] T057 [P] [US4] Reduced-motion audit: enable `prefers-reduced-motion` and confirm count-up (shows the final number at once), drawer slide, toggle, sidebar indicator and toasts do not animate; confirm interaction transitions are 150-250 ms and the count-up at most 800 ms; add `@media (prefers-reduced-motion: reduce)` overrides in `src/app/globals.css` only where the global rule does not already cover an admin transition
+- [X] T058 [P] [US4] Accessibility audit: every drawer and dialog traps focus, Esc closes, focus returns; all inputs labelled; visible focus on every control; headings: one `<h1>` per page; fix in the relevant `src/components/admin/*.tsx`
+- [X] T059 [P] [US4] Privacy audit: grep the admin code and dev server output for logging of names, phones, emails, notes or search text (none allowed); confirm URLs contain only `type`, `status`, `q`, `page`, `lead=<id>`
 
 ---
 
 ## Phase 7: Final verification
 
-- [ ] T060 Run `npm run lint`, `npm run build`, `npm run test:unit`, `npm run test:admin-guard` (**must pass; the feature is not done without it**), `node scripts/admin-check.mjs`, `node scripts/contrast.mjs`; fix failures
-- [ ] T061 Run Lighthouse (mobile) on `/admin/login` and, signed in, on `/admin`, `/admin/programs` and `/admin/programs/new`: Performance 90+ and Accessibility 95+ are hard gates (Principle VI); report the SEO score and confirm the only failing SEO audit is the crawlability one caused by the required `noindex` (justified in `plan.md` Complexity Tracking); fix anything else that fails
-- [ ] T062 Walk through every step of `specs/022-admin-panel/quickstart.md` at 360 px, 390 px and 1440 px and tick the success criteria SC-001 to SC-012 in your notes; confirm the public hero, header and footer are unchanged (Principle VIII)
-- [ ] T063 Confirm no real credentials or hashes were committed (`git grep -n "ADMIN_PASSWORD_HASH"` shows only `.env.example` and docs) and that `npm run test:admin-guard` passed on the final commit; then commit, merge to `main`, delete the branch and leave `main` clean (project rule: one feature per branch)
+- [X] T060 Run `npm run lint`, `npm run build`, `npm run test:unit`, `npm run test:admin-guard` (**must pass; the feature is not done without it**), `node scripts/admin-check.mjs`, `node scripts/contrast.mjs`; fix failures
+- [X] T061 Run Lighthouse (mobile) on `/admin/login` and, signed in, on `/admin`, `/admin/programs` and `/admin/programs/new`: Performance 90+ and Accessibility 95+ are hard gates (Principle VI); report the SEO score and confirm the only failing SEO audit is the crawlability one caused by the required `noindex` (justified in `plan.md` Complexity Tracking); fix anything else that fails
+- [X] T062 Walk through every step of `specs/022-admin-panel/quickstart.md` at 360 px, 390 px and 1440 px and tick the success criteria SC-001 to SC-012 in your notes; confirm the public hero, header and footer are unchanged (Principle VIII)
+- [X] T063 Confirm no real credentials or hashes were committed (`git grep -n "ADMIN_PASSWORD_HASH"` shows only `.env.example` and docs) and that `npm run test:admin-guard` passed on the final commit; then commit, merge to `main`, delete the branch and leave `main` clean (project rule: one feature per branch)
 
 ---
 

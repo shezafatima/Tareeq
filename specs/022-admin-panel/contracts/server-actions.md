@@ -23,7 +23,7 @@ The UI applies status changes optimistically and restores the previous value on 
 | Action | Input | Effect | Errors |
 |---|---|---|---|
 | `createProgram` | program form values | Validates, inserts, revalidates `programs` and `program:<slug>`. Returns `{ id }`. | `invalid` + `fieldErrors`, `conflict` (`fieldErrors.slug`), `unavailable` |
-| `updateProgram` | `{ id, ...values }` | Validates, updates, revalidates `programs`, `program:<newSlug>` and, if changed, `program:<oldSlug>`. | as above + `not_found` |
+| `updateProgram` | `{ id, values }` | Validates, updates, revalidates `programs`, `program:<newSlug>` and, if changed, `program:<oldSlug>`. | as above + `not_found` |
 | `setProgramPublished` | `{ id, published }` | Sets `published`; revalidates `programs` and `program:<slug>`. | `invalid`, `not_found`, `unavailable` |
 | `deleteProgram` | `{ id }` | Deletes; revalidates `programs` and `program:<slug>`. | `invalid`, `not_found`, `unavailable` |
 
