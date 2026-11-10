@@ -5,7 +5,7 @@ import { connectDb } from "@/lib/db/mongoose";
 import { Lead } from "@/lib/leads/model";
 import { isObjectId, LEAD_STATUS_VALUES } from "./leads-params";
 import { logAdmin } from "./log";
-import type { ActionResult } from "./result";
+import type { ActionResult, Failure } from "./result";
 import { withAdmin } from "./session";
 
 // Lead edits (specs/022-admin-panel/contracts/server-actions.md). Each action is a public POST endpoint, so each one is
@@ -13,7 +13,7 @@ import { withAdmin } from "./session";
 
 const NOTES_MAX = 5000;
 
-const unavailable = (err: unknown): ActionResult => {
+const unavailable = (err: unknown): Failure => {
   console.error(`[admin] lead action failed: ${err instanceof Error ? err.name : "UnknownError"}`);
   return { ok: false, code: "unavailable" };
 };

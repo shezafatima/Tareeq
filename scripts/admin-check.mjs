@@ -18,9 +18,8 @@ mkdirSync(shots, { recursive: true });
 const results = [];
 const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  (" + extra + ")" : ""}`);
 
-const runRange = 1 + Math.floor(Math.random() * 250);
-let nextHost = 10;
-const freshAddress = () => `198.18.${runRange}.${nextHost++}`;
+// 198.18.0.0/15 is reserved for testing; each session picks a random address in it, so two runs never share a count
+const freshAddress = () => `198.${18 + Math.floor(Math.random() * 2)}.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME });
 
@@ -199,6 +198,122 @@ if (process.env.SKIP_LEADS !== "1") {
   await mobile.page.keyboard.press("Escape");
   await mobile.page.screenshot({ path: `${shots}/submissions-360.png` });
   await mobile.context.close();
+  await context.close();
+}
+
+// ---------- US3: programs, and the public site refreshing without a redeploy
+if (process.env.SKIP_PROGRAMS !== "1") {
+  const { context, page } = await session();
+  const pub = await request.newContext({ baseURL: base });
+  const TITLE = "QA Program 022 Alpha";
+  const SLUG = "qa-program-022-alpha";
+  const RENAMED = "qa-program-022-beta";
+
+  /** Polls a public page until `test(status, body)` is true, up to `seconds`. Returns the seconds it took, or -1. */
+  async function waitPublic(path, test, seconds = 10) {
+    const started = Date.now();
+    while ((Date.now() - started) / 1000 < seconds) {
+      const res = await pub.get(path);
+      if (test(res.status(), await res.text())) return (Date.now() - started) / 1000;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    return -1;
+  }
+
+  await signIn(page);
+  await page.waitForURL(`${base}/admin`, { timeout: 20000 });
+
+  // empty form shows inline errors and saves nothing
+  await page.goto(`${base}/admin/programs/new`);
+  await page.getByRole("button", { name: "Create program" }).click();
+  await page.locator("#field-title-error").waitFor();
+  check("an empty program shows its errors next to the fields", (await page.locator("#field-title-error").innerText()).length > 0 && /\/new/.test(page.url()));
+
+  // create: slug follows the title, preview follows the form
+  await page.getByLabel(/^Title/).fill(TITLE);
+  check("the web address is suggested from the title", (await page.getByLabel(/Web address/).inputValue()) === SLUG);
+  await page.getByLabel("Status").selectOption("booking-now");
+  await page.getByLabel("Button type").selectOption("register");
+  await page.getByLabel(/^Summary/).fill("A QA program created by the admin check.");
+  await page.getByLabel("Outcome 1").fill("Learn the QA way");
+  await page.getByRole("button", { name: "Add step" }).click();
+  await page.getByLabel("Step 1 title").fill("First step");
+  await page.getByLabel("Duration").fill("2 hours");
+  await page.getByLabel(/Published/).check();
+  const preview = page.getByRole("region", { name: /Preview of the public Programs page/ });
+  check("the live preview shows the program as typed", (await preview.innerText()).includes(TITLE) && (await preview.innerText()).includes("2 hours"));
+  await page.screenshot({ path: `${shots}/program-form-1440.png` });
+  await page.getByRole("button", { name: "Create program" }).click();
+  await page.waitForURL(`${base}/admin/programs`, { timeout: 20000 });
+  check("the new program appears in the admin grid", (await page.getByRole("heading", { name: TITLE }).count()) === 1);
+
+  const listTime = await waitPublic("/programs", (s, b) => s === 200 && b.includes(TITLE));
+  check("a published program shows on /programs within 10 s", listTime >= 0, `${listTime}s`);
+  const homeTime = await waitPublic("/", (s, b) => s === 200 && b.includes(TITLE));
+  check("a published program shows in the home Programs section within 10 s", homeTime >= 0, `${homeTime}s`);
+  const pageTime = await waitPublic(`/programs/${SLUG}`, (s) => s === 200);
+  check("its own page is live", pageTime >= 0, `${pageTime}s`);
+
+  // duplicate address
+  await page.goto(`${base}/admin/programs/new`);
+  await page.getByLabel(/^Title/).fill("QA Program 022 Twin");
+  await page.getByLabel(/Web address/).fill(SLUG);
+  await page.getByLabel(/^Summary/).fill("Twin with the same address.");
+  await page.getByLabel("Outcome 1").fill("x");
+  await page.getByRole("button", { name: "Create program" }).click();
+  await page.locator("#field-slug-error").waitFor();
+  check("a taken address is rejected next to the address field", /already uses this address/.test(await page.locator("#field-slug-error").innerText()));
+
+  // rename the address
+  await page.goto(`${base}/admin/programs`);
+  await page.getByRole("link", { name: new RegExp(`Edit ${TITLE}`) }).click();
+  await page.getByLabel(/Web address/).fill(RENAMED);
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await page.waitForURL(`${base}/admin/programs`, { timeout: 20000 });
+  const newTime = await waitPublic(`/programs/${RENAMED}`, (s) => s === 200);
+  const oldGone = await waitPublic(`/programs/${SLUG}`, (s) => s === 404);
+  check("after a rename the new address is live", newTime >= 0, `${newTime}s`);
+  check("after a rename the old address shows not found", oldGone >= 0, `${oldGone}s`);
+
+  // unpublish with the card switch
+  const toggle = page.getByRole("switch", { name: `Published: ${TITLE}` });
+  check("the card switch starts on", (await toggle.getAttribute("aria-checked")) === "true");
+  await toggle.click();
+  await page.getByText(/is hidden from the site/).waitFor();
+  check("the switch flips at once", (await toggle.getAttribute("aria-checked")) === "false");
+  const hidden = await waitPublic(`/programs/${RENAMED}`, (s) => s === 404);
+  const delisted = await waitPublic("/programs", (s, b) => s === 200 && !b.includes(TITLE));
+  check("an unpublished program disappears from its page and from /programs", hidden >= 0 && delisted >= 0, `${hidden}s / ${delisted}s`);
+  await page.reload();
+  check("the published switch state persists after a refresh", (await page.getByRole("switch", { name: `Published: ${TITLE}` }).getAttribute("aria-checked")) === "false");
+
+  // delete with the in-app dialog
+  await page.getByRole("link", { name: new RegExp(`Edit ${TITLE}`) }).click();
+  await page.getByRole("button", { name: "Delete program" }).click();
+  await page.getByRole("alertdialog").waitFor();
+  await page.keyboard.press("Escape");
+  await page.getByRole("alertdialog").waitFor({ state: "hidden" });
+  check("Escape cancels the delete dialog and focus returns to its button", await page.evaluate(() => document.activeElement?.textContent === "Delete program"));
+  await page.getByRole("button", { name: "Delete program" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete", exact: true }).click();
+  await page.waitForURL(`${base}/admin/programs`, { timeout: 20000 });
+  check("a deleted program is gone from the grid", (await page.getByRole("heading", { name: TITLE }).count()) === 0);
+
+  // phone width
+  const mobile = await session({ width: 360, height: 740 });
+  await signIn(mobile.page);
+  await mobile.page.waitForURL(`${base}/admin`, { timeout: 20000 });
+  await mobile.page.goto(`${base}/admin/programs/new`);
+  const overflow = await mobile.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  check("360px: the program form has no horizontal scroll", !overflow);
+  check("360px: the form is one column (preview hidden)", !(await mobile.page.getByRole("region", { name: /Preview/ }).isVisible()));
+  await mobile.page.screenshot({ path: `${shots}/program-form-360.png`, fullPage: true });
+  await mobile.page.goto(`${base}/admin/programs`);
+  await mobile.page.getByRole("heading", { level: 1, name: "Programs" }).waitFor();
+  await mobile.page.screenshot({ path: `${shots}/programs-360.png` });
+  await mobile.context.close();
+
+  await pub.dispose();
   await context.close();
 }
 

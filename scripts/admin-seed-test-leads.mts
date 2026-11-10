@@ -1,10 +1,12 @@
 // Seeds (or removes) clearly fake test leads for the admin checks (feature 022). They use the example.com domain and
 // made-up numbers, and every submissionKey starts with "qa022-", so --clean removes exactly these and nothing else.
+// --clean also removes any program whose slug starts with "qa-program-022" (left behind if a check stopped half way).
 // Usage: npx tsx --conditions=react-server scripts/admin-seed-test-leads.mts [--clean]
 // A MONGODB_URI already in the environment wins over .env.local. Only run it against the dev database.
 import { config } from "dotenv";
 import { connectDb } from "../src/lib/db/mongoose.ts";
 import { CourseLead, Lead, WorkshopLead } from "../src/lib/leads/model.ts";
+import { ProgramModel } from "../src/lib/programs/model.ts";
 
 config({ path: ".env.local", quiet: true });
 
@@ -14,7 +16,8 @@ async function main() {
   await connectDb();
   if (process.argv.includes("--clean")) {
     const result = await Lead.deleteMany({ submissionKey: /^qa022-/ });
-    console.log(`removed ${result.deletedCount} test lead(s)`);
+    const programs = await ProgramModel.deleteMany({ slug: /^qa-program-022/ });
+    console.log(`removed ${result.deletedCount} test lead(s) and ${programs.deletedCount} test program(s)`);
     return;
   }
   const existing = await Lead.countDocuments({ submissionKey: /^qa022-/ });
