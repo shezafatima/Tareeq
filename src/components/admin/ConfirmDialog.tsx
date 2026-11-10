@@ -1,7 +1,6 @@
-"use client"; // needs state, effects and browser APIs (Escape, focus trap and focus return)
+"use client"; // needs state, effects and browser APIs (Escape, Tab handling, focus and focus return)
 
 import { useEffect, useId, useRef } from "react";
-import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -14,25 +13,58 @@ type ConfirmDialogProps = {
   onCancel: () => void;
 };
 
-/** An in-app confirmation for destructive actions (never a browser alert). Cancel comes first in tab order. */
+const FOCUSABLE = "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])";
+
+/**
+ * An in-app confirmation for destructive actions (never a browser alert). Cancel comes first and gets focus.
+ *
+ * It handles Tab and Escape itself, in the capture phase, and stops them there. That is deliberate: it can open on top of
+ * a Drawer that has its own focus trap, and two traps listening at once would fight. Focus returns to the opener on close.
+ */
 export default function ConfirmDialog({ open, title, body, confirmLabel, pending, onConfirm, onCancel }: ConfirmDialogProps) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const bodyId = useId();
-  useFocusTrap(ref, open);
+  const stateRef = useRef({ pending, onCancel });
+  useEffect(() => {
+    stateRef.current = { pending, onCancel };
+  });
 
   useEffect(() => {
     if (!open) return;
+    const root = ref.current;
+    if (!root) return;
+    const opener = document.activeElement as HTMLElement | null;
+    root.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !pending) {
+      if (e.key === "Escape") {
         e.stopPropagation();
-        onCancel();
+        if (!stateRef.current.pending) stateRef.current.onCancel();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE));
+      if (!items.length) return;
+      e.stopPropagation(); // keep a Drawer's own trap out of it
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !root.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !root.contains(active))) {
+        e.preventDefault();
+        first.focus();
       }
     };
-    // capture phase, so Escape closes this dialog and not a drawer underneath it
+
     document.addEventListener("keydown", onKeyDown, true);
-    return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [open, pending, onCancel]);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      if (opener?.isConnected) opener.focus();
+    };
+  }, [open]);
 
   if (!open) return null;
 

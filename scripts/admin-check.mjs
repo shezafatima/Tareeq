@@ -100,6 +100,108 @@ async function signIn(page, pw = password, mail = email) {
   await context.close();
 }
 
+// ---------- US2: leads (needs the test leads from scripts/admin-seed-test-leads.mts)
+if (process.env.SKIP_LEADS !== "1") {
+  const { context, page } = await session();
+  await signIn(page);
+  await page.waitForURL(`${base}/admin`, { timeout: 20000 });
+
+  // stat strip, filters in the address
+  const strip = page.getByRole("list", { name: "Submissions by status" });
+  await strip.getByRole("link", { name: /^Contacted/ }).click();
+  await page.waitForURL(/status=contacted/);
+  const contactedRows = await page.locator("tbody tr").count();
+  const chips = await page.locator("tbody tr td:nth-child(4)").allInnerTexts();
+  check("a stat card applies its status filter", contactedRows >= 1 && chips.every((c) => c.trim() === "Contacted"), `${contactedRows} rows`);
+  await page.reload();
+  check("the status filter survives a refresh", /status=contacted/.test(page.url()) && (await page.locator("tbody tr").count()) === contactedRows);
+  await page.goto(`${base}/admin`);
+
+  await page.getByLabel("Search by name, phone, email or organization").fill("Ayesha");
+  await page.waitForURL(/q=Ayesha/);
+  check("search by name filters the list", (await page.locator("tbody tr").count()) >= 1 && (await page.getByRole("link", { name: "QA Ayesha Workshop" }).count()) === 1);
+  await page.getByLabel("Search by name, phone, email or organization").fill("0300 1110002");
+  await page.waitForURL(/q=0300/);
+  check("search by phone (typed with a leading 0) finds the lead", (await page.getByRole("link", { name: "QA Bilal Workshop" }).count()) === 1);
+  await page.getByLabel("Search by name, phone, email or organization").fill("QA Sunrise");
+  await page.waitForURL(/q=QA\+Sunrise|q=QA%20Sunrise/);
+  check("search by organization finds the lead", (await page.getByRole("link", { name: "QA Ayesha Workshop" }).count()) === 1);
+  await page.goto(`${base}/admin?type=course`);
+  check("type filter shows course sign-ups only", (await page.locator("tbody tr td:nth-child(2)").allInnerTexts()).every((t) => t.trim() === "Course sign-up"));
+  for (const bad of ["?page=999", "?status=bogus", "?type=bogus", "?lead=bogus", "?lead=ffffffffffffffffffffffff"]) {
+    const res = await page.goto(`${base}/admin${bad}`);
+    check(`odd address ${bad} does not error`, res?.status() === 200 && (await page.locator("h1").first().innerText()).trim() === "Submissions");
+  }
+
+  // the detail drawer
+  await page.goto(`${base}/admin?q=QA+Ayesha`);
+  const rowLink = page.getByRole("link", { name: "QA Ayesha Workshop" });
+  await rowLink.click();
+  const drawer = page.getByRole("dialog", { name: /Submission from QA Ayesha Workshop/ });
+  await drawer.waitFor();
+  check("clicking a row opens the detail drawer with ?lead=<id>", /lead=[0-9a-f]{24}/.test(page.url()));
+  check("the drawer shows the stored fields", (await drawer.innerText()).includes("QA Sunrise School") && (await drawer.innerText()).includes("Lahore"));
+  const wa = await drawer.getByRole("link", { name: /Open in WhatsApp/ }).getAttribute("href");
+  check("WhatsApp link goes to the lead's number with a greeting", /^https:\/\/wa\.me\/923001110001\?text=/.test(wa ?? ""));
+  await page.screenshot({ path: `${shots}/drawer-1440.png` });
+
+  await drawer.getByLabel("Status").selectOption("contacted");
+  await page.getByText(/Status set to Contacted/).waitFor();
+  await page.reload();
+  check("a status change persists after a refresh", (await page.getByRole("dialog").getByLabel("Status").inputValue()) === "contacted");
+  await page.getByRole("dialog").getByLabel("Status").selectOption("new");
+  await page.getByText(/Status set to New/).waitFor();
+
+  const note = `QA note ${Date.now()}`;
+  await page.getByRole("dialog").getByLabel("Admin notes").fill(note);
+  await page.getByRole("button", { name: "Save notes" }).click();
+  await page.getByText("Notes saved").waitFor();
+  await page.reload();
+  check("notes persist after a refresh", (await page.getByRole("dialog").getByLabel("Admin notes").inputValue()) === note);
+  await page.getByRole("dialog").getByLabel("Admin notes").fill("");
+  await page.getByRole("button", { name: "Save notes" }).click();
+  await page.getByText("Notes saved").first().waitFor();
+
+  await page.keyboard.press("Escape");
+  await drawer.waitFor({ state: "hidden" });
+  const dropped = await page.waitForURL((u) => !/lead=/.test(u.href), { timeout: 10000 }).then(() => true, () => false);
+  check("Escape closes the drawer and the address drops ?lead", dropped);
+  check("focus returns to the row that opened it", await page.evaluate(() => document.activeElement?.textContent?.includes("QA Ayesha Workshop") ?? false));
+
+  // delete with the in-app dialog
+  await page.goto(`${base}/admin?q=QA+Hira`);
+  await page.getByRole("link", { name: "QA Hira Course" }).click();
+  await page.getByRole("button", { name: "Delete submission" }).click();
+  const confirm = page.getByRole("alertdialog");
+  await confirm.waitFor();
+  await page.keyboard.press("Escape");
+  await confirm.waitFor({ state: "hidden" });
+  check("Escape closes only the confirmation, the drawer stays", (await page.getByRole("dialog").count()) === 1);
+  await page.getByRole("button", { name: "Delete submission" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete", exact: true }).click();
+  await page.getByText("Submission deleted").waitFor();
+  await page.reload();
+  check("a deleted submission is gone", (await page.getByRole("link", { name: "QA Hira Course" }).count()) === 0);
+
+  // phone width: cards, full-screen drawer, no horizontal scroll
+  const mobile = await session({ width: 360, height: 740 });
+  await signIn(mobile.page);
+  await mobile.page.waitForURL(`${base}/admin`, { timeout: 20000 });
+  check("360px: the table is replaced by cards", (await mobile.page.locator("table").isVisible()) === false);
+  await mobile.page.getByRole("link", { name: /QA Ayesha Workshop/ }).first().click();
+  const md = mobile.page.getByRole("dialog");
+  await md.waitFor();
+  const box = await md.boundingBox();
+  check("360px: the drawer fills the screen", Boolean(box) && box.width >= 359);
+  const scroll = await mobile.page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  check("360px: no horizontal scroll with the drawer open", !scroll);
+  await mobile.page.screenshot({ path: `${shots}/drawer-360.png` });
+  await mobile.page.keyboard.press("Escape");
+  await mobile.page.screenshot({ path: `${shots}/submissions-360.png` });
+  await mobile.context.close();
+  await context.close();
+}
+
 await browser.close();
 console.log(results.join("\n"));
 process.exit(results.some((r) => r.startsWith("FAIL")) ? 1 : 0);
