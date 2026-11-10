@@ -10,7 +10,7 @@ Next.js behaviour was checked against the docs shipped in `node_modules/next/dis
 
 ## R2. Password hashing
 - **Decision**: `bcryptjs@3.0.3`. `npm run hash-password` runs `scripts/hash-password.mjs`, takes the password as an argument or a prompt, prints a bcrypt hash (cost 12).
-- **Rationale**: pure JS, no native build on serverless; the brief allows either package. The hash contains `$`, so quickstart tells the owner to single-quote it in `.env`.
+- **Rationale**: pure JS, no native build on serverless; the brief allows either package. The hash contains `$`, so quickstart tells the owner to escape each `$` with a backslash in `.env.local` (single quotes do not protect it in Next.js; verified).
 - **Alternatives**: native `bcrypt` (build problems on serverless), `argon2` (not in the brief).
 
 ## R3. Where session checks live

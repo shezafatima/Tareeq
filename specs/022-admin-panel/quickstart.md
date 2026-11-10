@@ -4,7 +4,7 @@
 
 1. `npm install` (adds `next-auth` and `bcryptjs`).
 2. `npm run hash-password -- "your password"`; copy the printed hash.
-3. In `.env.local` set `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH='<hash>'` (single quotes), `AUTH_SECRET`, plus the existing `MONGODB_URI` and `RATE_LIMIT_SECRET`.
+3. In `.env.local` set `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH=<hash with a backslash before every $>` (the hash script prints this line ready to paste), `AUTH_SECRET`, plus the existing `MONGODB_URI` and `RATE_LIMIT_SECRET`.
 4. `npm run dev`, then open `/admin`.
 
 ## Verification (maps to spec acceptance)

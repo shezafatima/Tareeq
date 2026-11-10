@@ -5,7 +5,7 @@ All server-only. Real values are never committed; `.env.example` gets placeholde
 | Variable | Required | Rule |
 |---|---|---|
 | `ADMIN_EMAIL` | yes | A valid email. Compared case-insensitively after trimming. |
-| `ADMIN_PASSWORD_HASH` | yes | A bcrypt hash starting `$2a$`, `$2b$` or `$2y$`. Wrap in single quotes in `.env` because it contains `$`. |
+| `ADMIN_PASSWORD_HASH` | yes | A bcrypt hash starting `$2a$`, `$2b$` or `$2y$`. In `.env.local` write a backslash before every `$` (Next.js expands `$` even inside quotes; `npm run hash-password` prints the ready-to-paste line). In a host dashboard paste the plain hash. |
 | `AUTH_SECRET` | yes | 32+ random characters: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `RATE_LIMIT_SECRET` | yes (already exists) | Also keys the admin sign-in limit. |
 | `MONGODB_URI` | yes (already exists) | Leads, programs and rate-limit counters. |

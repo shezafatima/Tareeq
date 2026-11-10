@@ -16,4 +16,8 @@ if (!password || password.length < 12) {
 }
 const hash = await bcrypt.hash(password, 12);
 console.log(hash);
-console.error("\nPut this in .env.local, wrapped in single quotes:\nADMIN_PASSWORD_HASH='" + hash + "'");
+console.error(
+  "\nFor .env.local (Next.js expands $ signs even inside quotes, so each one needs a backslash):\nADMIN_PASSWORD_HASH=" +
+    hash.replaceAll("$", "\\$") +
+    "\n\nFor a host dashboard (Vercel and similar), paste the plain hash printed above, with no backslashes.",
+);
