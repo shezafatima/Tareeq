@@ -12,6 +12,9 @@
   --color-linkedin: #0a66c2;
   --color-instagram: #e4405f;
   --color-danger: #b42318; /* form errors only; 6.5:1 on white */
+  /* admin panel only: the "closed" lead chip (neutral grey, 8.3:1 together) */
+  --color-chip-grey-bg: #e5e7eb;
+  --color-chip-grey-text: #374151;
   --font-heading: var(--font-sora);
   --font-sans: var(--font-inter);
 
@@ -1800,4 +1803,76 @@ html:not([data-js]) .program-filter {
   .way-step-line {
     padding-left: 0;
   }
+}
+
+/* ---------------------------------------------------------------------------------------------------------------
+   Admin panel motion (specs/022-admin-panel). Interaction motion is transform/opacity only, 150-250 ms.
+   The global reduced-motion rule above collapses every one of these to nothing.
+   --------------------------------------------------------------------------------------------------------------- */
+@keyframes admin-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes admin-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes admin-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes admin-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes admin-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes admin-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+.admin-slide-right {
+  animation: admin-slide-in-right 220ms var(--ease-soft) both;
+}
+.admin-slide-left {
+  animation: admin-slide-in-left 220ms var(--ease-soft) both;
+}
+.admin-fade {
+  animation: admin-fade-in 180ms ease-out both;
+}
+.admin-toast {
+  animation: admin-toast-in 200ms var(--ease-soft) both;
+}
+.admin-pop {
+  animation: admin-pop-in 180ms var(--ease-soft) both;
+}
+.admin-skeleton {
+  animation: admin-pulse 1.4s ease-in-out infinite;
 }
