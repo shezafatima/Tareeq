@@ -39,6 +39,6 @@ test("draft copy avoids the words the brand rules out", () => {
 test("online courses are a fixed card that links through the one constant, not a stored program", () => {
   assert.equal(programSeeds.some((p) => p.slug === "online-courses" || (p.audience as string) === "online"), false);
   assert.equal(onlineCoursesCard.title, "Online courses");
-  assert.deepEqual(onlineCoursesCard.cta, { kind: "link", label: "Register interest", href: onlineCoursesHref });
-  assert.equal(onlineCoursesHref, "/register");
+  assert.deepEqual(onlineCoursesCard.cta, { kind: "link", label: "Browse courses", href: onlineCoursesHref });
+  assert.equal(onlineCoursesHref, "/courses"); // 025-courses-catalog: the card now leads to the course catalogue
 });

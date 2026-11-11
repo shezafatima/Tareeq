@@ -2,12 +2,21 @@
 
 import { useState, useTransition } from "react";
 import { setProgramPublished } from "@/lib/admin/programs-actions";
+import type { ActionResult } from "@/lib/admin/result";
 import { cn } from "@/lib/utils";
 import { useToast } from "./Toast";
 import { useActionFeedback } from "./useActionFeedback";
 
-/** A switch that publishes or hides a program the moment it is flipped. Shown at once, put back if the save fails. */
-export default function PublishedToggle({ id, title, published }: { id: string; title: string; published: boolean }) {
+type PublishedToggleProps = {
+  id: string;
+  title: string;
+  published: boolean;
+  /** the Server Action that saves the switch; programs by default, courses pass setCoursePublished */
+  action?: (input: { id: string; published: boolean }) => Promise<ActionResult>;
+};
+
+/** A switch that publishes or hides a program or course the moment it is flipped. Shown at once, put back if the save fails. */
+export default function PublishedToggle({ id, title, published, action = setProgramPublished }: PublishedToggleProps) {
   const toast = useToast();
   const fail = useActionFeedback();
   const [on, setOn] = useState(published);
@@ -17,7 +26,7 @@ export default function PublishedToggle({ id, title, published }: { id: string; 
     const next = !on;
     setOn(next);
     start(async () => {
-      const result = await setProgramPublished({ id, published: next });
+      const result = await action({ id, published: next });
       if (result.ok) toast.success(next ? `“${title}” is now published` : `“${title}” is hidden from the site`);
       else {
         setOn(!next);

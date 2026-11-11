@@ -2,7 +2,8 @@
 
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { getCourseOptions, getLeadCopy, PRIVACY_NOTE_VERSION } from "@/content";
+import { getCourseOptions, getLeadCopy, PRIVACY_NOTE_VERSION, type CourseOption } from "@/content";
+import { confirmationVariant } from "@/lib/courses/view";
 import { connectDb } from "@/lib/db/mongoose";
 import { getWhatsAppUrlWithMessage } from "@/lib/site";
 import { WORKSHOP_CITY } from "./config";
@@ -38,7 +39,11 @@ type Pipeline<T extends Common> = {
   parse: (values: Record<string, string | undefined>) => Promise<{ success: true; data: T } | { success: false; error: Parameters<typeof toFieldErrors>[0] }>;
   /** type-specific fields to store */
   create: (data: T, base: Record<string, unknown>) => Promise<LeadDoc>;
+  /** the WhatsApp link (and, for courses, the confirmation variant) for a reference; courseId is the chosen course, if any */
+  respond: (ref: string, courseId?: string) => Promise<Success>;
 };
+
+type Success = { whatsappUrl: string | null; variant?: "open" | "waitlist" };
 
 const isDuplicateKey = (err: unknown, field: string) =>
   typeof err === "object" &&
@@ -46,9 +51,24 @@ const isDuplicateKey = (err: unknown, field: string) =>
   (err as { code?: number }).code === 11000 &&
   Object.prototype.hasOwnProperty.call((err as { keyPattern?: object }).keyPattern ?? {}, field);
 
+type StoredRef = { ref: string; courseId?: string } | null;
+
 async function whatsappFor(kind: Kind, ref: string): Promise<string | null> {
   const copy = await getLeadCopy();
   return getWhatsAppUrlWithMessage(copy[kind].whatsappPrefill.replace("{ref}", ref));
+}
+
+/**
+ * A course sign-up's confirmation: the open-course wording when the chosen course is open now, otherwise the waitlist
+ * wording. Worked out against the current options, so a replayed submit follows the course's present status.
+ */
+async function courseResponse(options: CourseOption[], ref: string, courseId?: string): Promise<Success> {
+  const option = options.find((o) => o.id === courseId);
+  const variant = confirmationVariant(option);
+  if (!option || variant === "waitlist") return { variant: "waitlist", whatsappUrl: await whatsappFor("course", ref) };
+  const copy = await getLeadCopy();
+  const text = copy.course.open.whatsappPrefill.replace("{course}", option.name).replace("{ref}", ref);
+  return { variant, whatsappUrl: getWhatsAppUrlWithMessage(text) };
 }
 
 /** Saves with a fresh reference, retrying if the reference happens to exist already. */
@@ -101,7 +121,7 @@ async function handleSubmission<T extends Common>(p: Pipeline<T>, prev: LeadActi
       }
       logLead("submit", { type: p.kind, outcome: "honeypot" });
       const fakeRef = generateRef(); // not stored
-      return { status: "success", attempt, ref: fakeRef, whatsappUrl: await whatsappFor(p.kind, fakeRef) };
+      return { status: "success", attempt, ref: fakeRef, ...(await p.respond(fakeRef, values.courseId)) };
     }
 
     const parsed = await p.parse(values);
@@ -114,10 +134,10 @@ async function handleSubmission<T extends Common>(p: Pipeline<T>, prev: LeadActi
     await connectDb();
 
     // A repeated submit of the same form (double tap, retry after a dropped connection) returns the first result.
-    const existing = await Lead.findOne({ submissionKey: data.submissionKey }, { ref: 1 }).lean();
+    const existing = await Lead.findOne({ submissionKey: data.submissionKey }, { ref: 1, courseId: 1 }).lean<StoredRef>();
     if (existing) {
       logLead("submit", { type: p.kind, ref: existing.ref, outcome: "duplicate" });
-      return { status: "success", attempt, ref: existing.ref, whatsappUrl: await whatsappFor(p.kind, existing.ref) };
+      return { status: "success", attempt, ref: existing.ref, ...(await p.respond(existing.ref, existing.courseId)) };
     }
 
     // Rate limit: 5 submissions per address per hour, both forms together. Only valid submissions are counted, so
@@ -142,14 +162,14 @@ async function handleSubmission<T extends Common>(p: Pipeline<T>, prev: LeadActi
       );
     } catch (err) {
       if (!isDuplicateKey(err, "submissionKey")) throw err;
-      const again = await Lead.findOne({ submissionKey: data.submissionKey }, { ref: 1 }).lean();
+      const again = await Lead.findOne({ submissionKey: data.submissionKey }, { ref: 1, courseId: 1 }).lean<StoredRef>();
       if (!again) throw err;
-      return { status: "success", attempt, ref: again.ref, whatsappUrl: await whatsappFor(p.kind, again.ref) };
+      return { status: "success", attempt, ref: again.ref, ...(await p.respond(again.ref, again.courseId)) };
     }
 
     logLead("submit", { type: p.kind, ref: lead.ref, outcome: "saved" });
     notifyAfterResponse(lead);
-    return { status: "success", attempt, ref: lead.ref, whatsappUrl: await whatsappFor(p.kind, lead.ref) };
+    return { status: "success", attempt, ref: lead.ref, ...(await p.respond(lead.ref, (data as { courseId?: string }).courseId)) };
   } catch (err) {
     logLead("submit", { type: p.kind, outcome: "error", code: err instanceof Error ? err.name : "UnknownError" });
     return { status: "error", attempt, values };
@@ -172,6 +192,7 @@ export async function submitWorkshop(prev: LeadActionState, formData: FormData):
           participants: data.participants,
           preferredMonth: data.preferredMonth,
         }) as Promise<LeadDoc>,
+      respond: async (ref) => ({ whatsappUrl: await whatsappFor("workshop", ref) }),
     },
     prev,
     formData,
@@ -190,11 +211,12 @@ export async function submitCourse(prev: LeadActionState, formData: FormData): P
         CourseLead.create({
           ...base,
           courseId: data.courseId,
-          // a snapshot, so later changes to the list don't rewrite what the visitor picked
+          // a snapshot of the course title, so renaming or deleting the course never rewrites what the visitor picked
           courseName: options.find((o) => o.id === data.courseId)!.name,
           level: data.level,
           ageGroup: data.ageGroup,
         }) as Promise<LeadDoc>,
+      respond: (ref, courseId) => courseResponse(options, ref, courseId),
     },
     prev,
     formData,

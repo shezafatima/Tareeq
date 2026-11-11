@@ -7,6 +7,7 @@ export type LeadActionState =
   | { status: "invalid"; attempt: number; values: FormValues; errors: FieldErrors }
   | { status: "rate_limited"; attempt: number; values: FormValues }
   | { status: "error"; attempt: number; values: FormValues }
-  | { status: "success"; attempt: number; ref: string; whatsappUrl: string | null };
+  /** `variant` is set for course sign-ups only: "open" for an open course, otherwise the waitlist wording */
+  | { status: "success"; attempt: number; ref: string; whatsappUrl: string | null; variant?: "open" | "waitlist" };
 
 export const initialLeadState: LeadActionState = { status: "idle", attempt: 0 };

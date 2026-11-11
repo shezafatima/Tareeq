@@ -31,6 +31,11 @@ export function useActionFeedback() {
         case "conflict":
           toast.error("That conflicts with something that already exists. Check the highlighted field.");
           break;
+        case "in_use": {
+          const n = failure.count ?? 0;
+          toast.error(`This category still has ${n} course${n === 1 ? "" : "s"}. Move them to another category or delete them first.`);
+          break;
+        }
         default:
           toast.error("Please check the highlighted fields and try again.");
       }

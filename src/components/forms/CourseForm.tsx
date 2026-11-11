@@ -19,16 +19,18 @@ import { useLeadForm } from "./useLeadForm";
 
 type CourseFormProps = {
   copy: LeadCopy;
-  /** heading and button label ("Join the waitlist" until real courses exist) */
+  /** heading and button label ("Register") */
   label: string;
   courseOptions: CourseOption[];
+  /** the course to start selected, from /register?course=<slug>; only an offered course's id is passed */
+  defaultCourseId?: string;
   submissionKey: string;
   /** general WhatsApp chat link for the error messages; null when no number is set */
   whatsappHref: string | null;
 };
 
-// Form B: online course waitlist. Same behaviour as the workshop form; adds the under-18 guardian note.
-export default function CourseForm({ copy, label, courseOptions, submissionKey, whatsappHref }: CourseFormProps) {
+// Form B: online course registration. Same behaviour as the workshop form; adds the under-18 guardian note.
+export default function CourseForm({ copy, label, courseOptions, defaultCourseId, submissionKey, whatsappHref }: CourseFormProps) {
   const schema = useMemo(() => courseSchema(courseOptions.map((o) => o.id)), [courseOptions]);
   const { state, formAction, pending, errors, onSubmit, onBlur, summaryRef, alertRef } = useLeadForm({
     action: submitCourse,
@@ -41,10 +43,12 @@ export default function CourseForm({ copy, label, courseOptions, submissionKey, 
   const ageGroup = ageChoice && ageChoice.attempt === state.attempt ? ageChoice.value : (v.ageGroup ?? "");
 
   if (state.status === "success") {
+    // an open course gets the "registered" wording; a coming-soon course or "Not sure yet" keeps the waitlist wording
+    const confirm = state.variant === "open" ? copy.course.open : copy.course;
     return (
       <Confirmation
-        heading={copy.course.confirmHeading}
-        next={copy.course.confirmNext}
+        heading={confirm.confirmHeading}
+        next={confirm.confirmNext}
         referenceLabel={copy.referenceLabel}
         reference={state.ref}
         whatsappHref={state.whatsappUrl}
@@ -53,7 +57,7 @@ export default function CourseForm({ copy, label, courseOptions, submissionKey, 
     );
   }
 
-  const options = courseOptions.map((o) => ({ value: o.id, label: o.name }));
+  const options = courseOptions.map((o) => ({ value: o.id, label: o.name, ...(o.group ? { group: o.group } : {}) }));
 
   return (
     <form key={state.attempt} action={formAction} onSubmit={onSubmit} onBlur={onBlur} noValidate className="space-y-6">
@@ -93,7 +97,7 @@ export default function CourseForm({ copy, label, courseOptions, submissionKey, 
         name="courseId"
         options={options}
         placeholderOption="Choose a course"
-        defaultValue={v.courseId ?? ""}
+        defaultValue={v.courseId ?? defaultCourseId ?? ""}
         error={errors.courseId}
         required
       />

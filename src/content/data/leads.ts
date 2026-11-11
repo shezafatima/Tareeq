@@ -2,11 +2,8 @@
 // Confirmation headings and next-step lines were agreed with the owner on 2026-11-03 (specs/006-lead-capture).
 import type { LeadCopy } from "../types";
 
-/**
- * Heading and button label for the online course form at /register. Kept in one place so the courses
- * feature can change it to "Register" once real courses and dates exist.
- */
-export const courseFormLabel = "Join the waitlist";
+/** Heading and button label for the online course form at /register (025-courses-catalog, clarification Q2). */
+export const courseFormLabel = "Register";
 
 /** Which privacy note a visitor agreed to; stored with each lead. Change it when the note changes. */
 export const PRIVACY_NOTE_VERSION = "2026-11-03";
@@ -26,6 +23,13 @@ export const leadCopy: LeadCopy = {
     confirmNext: "We'll WhatsApp you when this course opens for enrolment, with dates and fees.",
     whatsappPrefill:
       "Hi Tareeq, I've just joined the waitlist for an online course on your website (ref {ref}). Please let me know when it opens.",
+    // DRAFT: owner to confirm (025-courses-catalog). Shown when the chosen course is open for enrolment.
+    // "{course}" is replaced with the course title and "{ref}" with the reference.
+    open: {
+      confirmHeading: "You’re registered",
+      confirmNext: "We'll WhatsApp you within 1 working day with dates, fees and how to join.",
+      whatsappPrefill: "Hi Tareeq, I've just registered for {course} on your website (ref {ref}). Please send me the dates and fees.",
+    },
   },
   consentLabel: "I agree to Tareeq contacting me about this request by phone, WhatsApp or email.",
   privacyNote: "We use these details only to reply about your request. We don’t share or sell them.",

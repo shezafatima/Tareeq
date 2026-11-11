@@ -1,17 +1,18 @@
 "use client"; // needs the current path to place the sliding active indicator
 
-import { BookOpen, Tray } from "@phosphor-icons/react/dist/ssr";
+import { BookOpen, GraduationCap, Tray } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/admin", label: "Submissions", Icon: Tray, isActive: (p: string) => p === "/admin" },
   { href: "/admin/programs", label: "Programs", Icon: BookOpen, isActive: (p: string) => p.startsWith("/admin/programs") },
+  { href: "/admin/courses", label: "Courses", Icon: GraduationCap, isActive: (p: string) => p.startsWith("/admin/courses") },
 ];
 
 const ROW = 48; // item height (h-11 = 44px) plus the 4px gap, in px: how far the indicator moves per item
 
-/** The two page links with a saffron bar that slides (transform only) to the current page. */
+/** The page links with a saffron bar that slides (transform only) to the current page. */
 export default function AdminNav() {
   const pathname = usePathname();
   const active = ITEMS.findIndex((i) => i.isActive(pathname));
