@@ -217,7 +217,7 @@ async function workshopHappy(w, h, js) {
       ![WORKSHOP.fullName, WORKSHOP.email, "3001234567", WORKSHOP.organization].some((s) => text.includes(s)),
     );
     check(`${tag} WhatsApp opens in a new tab`, (await wa.getAttribute("target")) === "_blank");
-  } else check(`${tag} WhatsApp button present`, false, "no NEXT_PUBLIC_WHATSAPP_NUMBER?");
+  } else check(`${tag} WhatsApp button present`, false, "no WhatsApp number in Settings or env?");
   check(`${tag} URL carries no form data`, new URL(p.url()).search === (tag.includes("/workshop") ? "?book=1" : ""));
   check(`${tag} no horizontal scroll`, await noHScroll(p));
   await shot(p, `${shots}/workshop-confirmation-${w}${js ? "" : "-nojs"}.png`);

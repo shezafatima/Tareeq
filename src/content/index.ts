@@ -15,10 +15,12 @@ import { onlineCoursesCard } from "./online-courses";
 import { ourWay } from "./our-way";
 import { pages } from "./data/pages";
 import { trustFacts } from "./data/trust";
+import type { EffectiveSettings } from "../lib/settings/merge";
 import type {
   Audience,
   CourseOption,
   FooterContactItem,
+  FooterSocial,
   HomeCopy,
   HomeProgramCard,
   HowItWorksContent,
@@ -55,8 +57,9 @@ export async function getTrustFacts(): Promise<TrustFact[]> {
   return byOrder(trustFacts);
 }
 
-export async function getFooterContact(): Promise<FooterContactItem[]> {
-  return readFooterContact();
+/** The footer's contact rows and social icons, from the site settings (specs/028-site-settings). */
+export async function getFooterContact(settings: EffectiveSettings): Promise<{ items: FooterContactItem[]; socials: FooterSocial[] }> {
+  return readFooterContact(settings);
 }
 
 export async function getHomeCopy(): Promise<HomeCopy> {

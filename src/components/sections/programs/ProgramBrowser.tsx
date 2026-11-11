@@ -4,6 +4,7 @@ import Reveal from "@/components/ui/Reveal";
 import type { HomeProgramCard } from "@/content";
 import { footerContactHref } from "@/lib/site";
 import { AUDIENCE_FILTER, FILTER_VALUES, type FilterValue, type Program } from "@/lib/programs/options";
+import type { ContactDetails } from "@/lib/settings/merge";
 import OnlineCoursesPanel from "./OnlineCoursesPanel";
 import ProgramFilter from "./ProgramFilter";
 import ProgramFilterScript from "./ProgramFilterScript";
@@ -16,6 +17,8 @@ type ProgramBrowserProps = {
   intro?: string;
   /** null: the programs could not be read */
   programs: Program[] | null;
+  /** from the site settings, for the WhatsApp calls to action */
+  contact: ContactDetails;
   /** fixed card, not a stored program: it stays when programs cannot be read */
   onlineCourses: HomeProgramCard;
 };
@@ -29,7 +32,7 @@ function countByFilter(programs: Program[]): Record<FilterValue, number> {
 }
 
 /** The /programs page body: big heading, audience chips and the numbered panels. Holds the page's only h1. */
-export default function ProgramBrowser({ heading, intro, programs, onlineCourses }: ProgramBrowserProps) {
+export default function ProgramBrowser({ heading, intro, programs, contact, onlineCourses }: ProgramBrowserProps) {
   return (
     <>
       <Container as="header" className="pb-10 pt-12 lg:pb-16 lg:pt-20">
@@ -64,7 +67,7 @@ export default function ProgramBrowser({ heading, intro, programs, onlineCourses
             data-filter={AUDIENCE_FILTER[program.audience]}
             data-status={program.status}
           >
-            <ProgramPanel program={program} />
+            <ProgramPanel program={program} contact={contact} />
           </Reveal>
         ))}
         {/* last, unnumbered and on its own surface: it is a way to Courses, not a program */}

@@ -2,6 +2,7 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import { AUDIENCE_LABELS, type Program } from "@/lib/programs/options";
+import type { ContactDetails } from "@/lib/settings/merge";
 import { visibleFacts } from "@/lib/programs/view";
 import ProgramCover from "./ProgramCover";
 import ProgramCta from "./ProgramCta";
@@ -12,7 +13,7 @@ import StatusChip from "./StatusChip";
  * One program on /programs. Server component. Its colours, number and surface come from its place in the list,
  * in CSS (.program-* in globals.css), so filtering never re-renders it.
  */
-export default function ProgramPanel({ program }: { program: Program }) {
+export default function ProgramPanel({ program, contact }: { program: Program; contact: ContactDetails }) {
   const quiet = program.status === "coming-soon";
 
   return (
@@ -38,6 +39,7 @@ export default function ProgramPanel({ program }: { program: Program }) {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <ProgramCta
               program={program}
+              contact={contact}
               variant={quiet ? "secondary" : "primary"}
               className={quiet ? "program-cta-quiet" : "program-cta"}
             />

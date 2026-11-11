@@ -10,6 +10,7 @@ import ProgramProse from "@/components/sections/programs/ProgramProse";
 import Container from "@/components/ui/Container";
 import { getProgramBySlug, getPublishedSlugs } from "@/lib/programs/data";
 import { isAllowedCover, visibleFacts } from "@/lib/programs/view";
+import { getSiteSettings } from "@/lib/settings/data";
 
 // Static, refreshed hourly and by tag. See specs/015-programs-pages/research.md R2.
 export const revalidate = 3600;
@@ -48,7 +49,8 @@ export async function generateMetadata({ params }: ProgramPageProps): Promise<Me
 
 export default async function ProgramPage({ params }: ProgramPageProps) {
   const { slug } = await params;
-  const program = await getProgramBySlug(slug);
+  const [program, { whatsappNumber, email }] = await Promise.all([getProgramBySlug(slug), getSiteSettings()]);
+  const contact = { whatsappNumber, email };
   if (!program) notFound();
 
   return (
@@ -69,10 +71,10 @@ export default async function ProgramPage({ params }: ProgramPageProps) {
           )}
         </div>
         <div className="hidden lg:block">
-          <BookingCard program={program} />
+          <BookingCard program={program} contact={contact} />
         </div>
       </Container>
-      <MobileCtaBar program={program} />
+      <MobileCtaBar program={program} contact={contact} />
     </>
   );
 }

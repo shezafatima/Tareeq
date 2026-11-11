@@ -5,7 +5,9 @@ import { after } from "next/server";
 import { getCourseOptions, getLeadCopy, PRIVACY_NOTE_VERSION, type CourseOption } from "@/content";
 import { confirmationVariant } from "@/lib/courses/view";
 import { connectDb } from "@/lib/db/mongoose";
-import { getWhatsAppUrlWithMessage } from "@/lib/site";
+import { ConfigError } from "@/lib/env";
+import { getSiteSettings } from "@/lib/settings/data";
+import { whatsappUrl } from "@/lib/site";
 import { readCategorySnapshot } from "./category-snapshot";
 import { WORKSHOP_CITY } from "./config";
 import { logLead } from "./log";
@@ -55,8 +57,8 @@ const isDuplicateKey = (err: unknown, field: string) =>
 type StoredRef = { ref: string; courseId?: string } | null;
 
 async function whatsappFor(kind: Kind, ref: string): Promise<string | null> {
-  const copy = await getLeadCopy();
-  return getWhatsAppUrlWithMessage(copy[kind].whatsappPrefill.replace("{ref}", ref));
+  const [copy, { whatsappNumber }] = await Promise.all([getLeadCopy(), getSiteSettings()]);
+  return whatsappUrl(whatsappNumber, copy[kind].whatsappPrefill.replace("{ref}", ref));
 }
 
 /**
@@ -67,9 +69,9 @@ async function courseResponse(options: CourseOption[], ref: string, courseId?: s
   const option = options.find((o) => o.id === courseId);
   const variant = confirmationVariant(option);
   if (!option || variant === "waitlist") return { variant: "waitlist", whatsappUrl: await whatsappFor("course", ref) };
-  const copy = await getLeadCopy();
+  const [copy, { whatsappNumber }] = await Promise.all([getLeadCopy(), getSiteSettings()]);
   const text = copy.course.open.whatsappPrefill.replace("{course}", option.name).replace("{ref}", ref);
-  return { variant, whatsappUrl: getWhatsAppUrlWithMessage(text) };
+  return { variant, whatsappUrl: whatsappUrl(whatsappNumber, text) };
 }
 
 /** Saves with a fresh reference, retrying if the reference happens to exist already. */
@@ -85,9 +87,9 @@ async function saveWithRef(create: (ref: string) => Promise<LeadDoc>): Promise<L
 }
 
 /** Sends the owner email after the response and records the outcome on the lead. */
-function notifyAfterResponse(lead: LeadDoc) {
+function notifyAfterResponse(lead: LeadDoc, to: string) {
   after(async () => {
-    const result = await notifyOwner(lead);
+    const result = await notifyOwner(lead, to);
     try {
       await Lead.updateOne(
         { _id: lead._id },
@@ -131,6 +133,9 @@ async function handleSubmission<T extends Common>(p: Pipeline<T>, prev: LeadActi
 
     // Never accept a lead the site cannot notify the owner about: a missing setting gives the generic error, nothing stored.
     getResendEnv();
+    // the owner's address comes from the site settings, falling back to LEAD_NOTIFICATION_TO (specs/028-site-settings R6)
+    const { notifyEmail } = await getSiteSettings();
+    if (!notifyEmail) throw new ConfigError(["LEAD_NOTIFICATION_TO"]);
     getRateLimitSecret();
     await connectDb();
 
@@ -169,7 +174,7 @@ async function handleSubmission<T extends Common>(p: Pipeline<T>, prev: LeadActi
     }
 
     logLead("submit", { type: p.kind, ref: lead.ref, outcome: "saved" });
-    notifyAfterResponse(lead);
+    notifyAfterResponse(lead, notifyEmail);
     return { status: "success", attempt, ref: lead.ref, ...(await p.respond(lead.ref, (data as { courseId?: string }).courseId)) };
   } catch (err) {
     logLead("submit", { type: p.kind, outcome: "error", code: err instanceof Error ? err.name : "UnknownError" });

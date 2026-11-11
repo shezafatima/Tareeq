@@ -1,25 +1,34 @@
-// What the footer lists, the only place for contact details. WhatsApp and email come from environment variables, and a
-// missing or invalid value drops that entry. YouTube and LinkedIn are read from the mentor's links, so they live in one place.
-import { getContactEmail, getWhatsAppUrl } from "@/lib/site";
-import { mentor } from "../mentor";
-import type { FooterContactItem } from "../types";
+// What the footer lists, the only place for contact details (specs/028-site-settings contracts/data-access.md).
+// Everything comes from the site settings, already merged over their fallbacks; an entry renders only when it is set.
+// Pure, so it is unit-tested.
+import { whatsappUrl } from "../../lib/site.ts";
+import { SOCIAL_KINDS, type EffectiveSettings, type SocialKind } from "../../lib/settings/merge.ts";
+import type { FooterContactItem, FooterSocial } from "../types.ts";
 
-export function readFooterContact(): FooterContactItem[] {
+const SOCIAL_LABELS: Record<SocialKind, string> = {
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  x: "X",
+};
+
+export function readFooterContact(s: EffectiveSettings): { items: FooterContactItem[]; socials: FooterSocial[] } {
   const items: FooterContactItem[] = [];
 
-  const whatsappUrl = getWhatsAppUrl();
-  const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  if (whatsappUrl && number) {
-    items.push({ kind: "whatsapp", label: "WhatsApp", value: `+${number}`, href: whatsappUrl, external: true });
+  const chat = whatsappUrl(s.whatsappNumber);
+  if (chat && s.whatsappNumber) {
+    items.push({ kind: "whatsapp", label: "WhatsApp", value: s.whatsappNumber, href: chat, external: true });
+  }
+  if (s.email) items.push({ kind: "email", label: "Email", value: s.email, href: `mailto:${s.email}`, external: false });
+  if (s.phone) items.push({ kind: "phone", label: "Phone", value: s.phone, href: `tel:${s.phone}`, external: false });
+  if (s.address) items.push({ kind: "address", label: "Address", value: s.address, external: false });
+
+  const socials: FooterSocial[] = [];
+  for (const kind of SOCIAL_KINDS) {
+    const href = s.socialLinks[kind];
+    if (href) socials.push({ kind, label: SOCIAL_LABELS[kind], href });
   }
 
-  const email = getContactEmail();
-  if (email) items.push({ kind: "email", label: "Email", value: email, href: `mailto:${email}`, external: false });
-
-  for (const kind of ["youtube", "linkedin"] as const) {
-    const social = mentor.socials.find((s) => s.id === kind);
-    if (social?.url) items.push({ kind, label: social.platform, value: social.handle, href: social.url, external: true });
-  }
-
-  return items;
+  return { items, socials };
 }

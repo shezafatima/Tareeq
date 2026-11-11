@@ -38,6 +38,7 @@ const REQUIRED_ACTIONS = new Set([
   "createProgram", "updateProgram", "setProgramPublished", "deleteProgram",
   "createCategory", "updateCategory", "setCategoryOrder", "deleteCategory",
   "createCourse", "updateCourse", "setCoursePublished", "setCourseFeatured", "deleteCourse",
+  "saveSettings", // specs/028-site-settings FR-012
 ]);
 const seen = new Set<string>();
 
