@@ -6,6 +6,7 @@ import { getCourseOptions, getLeadCopy, PRIVACY_NOTE_VERSION, type CourseOption 
 import { confirmationVariant } from "@/lib/courses/view";
 import { connectDb } from "@/lib/db/mongoose";
 import { getWhatsAppUrlWithMessage } from "@/lib/site";
+import { readCategorySnapshot } from "./category-snapshot";
 import { WORKSHOP_CITY } from "./config";
 import { logLead } from "./log";
 import { CourseLead, Lead, WorkshopLead, type LeadDoc } from "./model";
@@ -207,15 +208,17 @@ export async function submitCourse(prev: LeadActionState, formData: FormData): P
       kind: "course",
       fields: COURSE_FIELDS,
       parse: async (values) => courseSchema(options.map((o) => o.id)).safeParse(values),
-      create: (data, base) =>
-        CourseLead.create({
+      create: async (data, base) =>
+        (await CourseLead.create({
           ...base,
           courseId: data.courseId,
           // a snapshot of the course title, so renaming or deleting the course never rewrites what the visitor picked
           courseName: options.find((o) => o.id === data.courseId)!.name,
           level: data.level,
           ageGroup: data.ageGroup,
-        }) as Promise<LeadDoc>,
+          // and of its category, read by the server only; nothing here comes from the form (specs/026 FR-014)
+          ...(await readCategorySnapshot(data.courseId)),
+        })) as LeadDoc,
       respond: (ref, courseId) => courseResponse(options, ref, courseId),
     },
     prev,

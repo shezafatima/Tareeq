@@ -1,28 +1,36 @@
 "use client"; // needs state, transitions and browser APIs (optimistic status, notes, clipboard, dialogs)
 
 import { ChatCircleText, Copy, Trash } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
-import { formatDateTime, TYPE_LABEL } from "@/lib/admin/format";
-import { LEAD_STATUS_VALUES } from "@/lib/admin/leads-params";
+import { formatDateTime } from "@/lib/admin/format";
+import { TYPE_NOUN } from "@/lib/admin/lead-status";
+import { LEAD_STATUS_VALUES, type LeadStatusValue } from "@/lib/admin/leads-params";
 import { deleteLead, saveLeadNotes, setLeadStatus } from "@/lib/admin/leads-actions";
 import type { LeadDetail } from "@/lib/admin/leads-query";
 import { whatsappLink } from "@/lib/admin/whatsapp";
+import { AGE_OPTIONS, labelFor, LEVEL_OPTIONS, monthLabel, ROLE_OPTIONS } from "@/lib/leads/options";
 import { controlBase, controlBorder } from "@/components/ui/FieldFrame";
 import { cn } from "@/lib/utils";
 import ConfirmDialog from "./ConfirmDialog";
 import Drawer from "./Drawer";
-import StatusChip, { LEAD_STATUS_LABEL, LEAD_STATUS_TONE } from "./StatusChip";
+import StatusChip, { LEAD_STATUS_TONE } from "./StatusChip";
 import { useToast } from "./Toast";
 import { useActionFeedback } from "./useActionFeedback";
 
 const action =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-midnight/70 px-4 text-sm font-semibold text-midnight hover:bg-midnight/5 disabled:opacity-50";
 
-/** The lead detail panel. Opens from the right (full screen on phones) whenever the address holds ?lead=<id>. */
-export default function LeadDrawer({ lead, closeHref }: { lead: LeadDetail | null; closeHref: string }) {
+type Labels = Record<LeadStatusValue, string>;
+
+/**
+ * The lead detail panel. Opens from the right (full screen on phones) whenever the address holds ?lead=<id> of this
+ * view's type. Every action sends the lead's type, so the server refuses a record of the other type (specs/026 FR-006).
+ */
+export default function LeadDrawer({ lead, closeHref, labels }: { lead: LeadDetail | null; closeHref: string; labels: Labels }) {
   if (!lead) return null;
-  return <DrawerBody key={lead.id} lead={lead} closeHref={closeHref} />;
+  return <DrawerBody key={lead.id} lead={lead} closeHref={closeHref} labels={labels} />;
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -34,7 +42,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }) {
+function DrawerBody({ lead, closeHref, labels }: { lead: LeadDetail; closeHref: string; labels: Labels }) {
   const router = useRouter();
   const toast = useToast();
   const fail = useActionFeedback();
@@ -56,8 +64,8 @@ function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }
     const previous = status;
     setStatus(next); // optimistic: shown at once, put back if the save fails
     startSaving(async () => {
-      const result = await setLeadStatus({ id: lead.id, status: next });
-      if (result.ok) toast.success(`Status set to ${LEAD_STATUS_LABEL[next]}`);
+      const result = await setLeadStatus({ id: lead.id, type: lead.type, status: next });
+      if (result.ok) toast.success(`Status set to ${labels[next]}`);
       else {
         setStatus(previous);
         fail(result, "update the status");
@@ -68,7 +76,7 @@ function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }
   const saveNotes = () => {
     setNotesError("");
     startSaving(async () => {
-      const result = await saveLeadNotes({ id: lead.id, notes });
+      const result = await saveLeadNotes({ id: lead.id, type: lead.type, notes });
       if (result.ok) {
         setSavedNotes(notes.trim());
         toast.success("Notes saved");
@@ -90,7 +98,7 @@ function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }
 
   const confirmDelete = async () => {
     setDeleting(true);
-    const result = await deleteLead({ id: lead.id });
+    const result = await deleteLead({ id: lead.id, type: lead.type });
     setDeleting(false);
     setConfirming(false);
     if (result.ok) {
@@ -101,7 +109,13 @@ function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }
     }
   };
 
-  const wa = whatsappLink(lead.phone, lead.fullName);
+  const wa = whatsappLink(
+    lead.phone,
+    lead.fullName,
+    lead.type === "workshop"
+      ? { type: "workshop", organization: lead.workshop.organization }
+      : { type: "course", courseName: lead.course.courseName },
+  );
   const notesChanged = notes.trim() !== savedNotes;
 
   return (
@@ -111,8 +125,9 @@ function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }
           <header className="pr-12">
             <h2 className="font-heading text-xl font-bold text-midnight">{lead.fullName}</h2>
             <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-midnight/80">
-              <StatusChip label={LEAD_STATUS_LABEL[status]} tone={LEAD_STATUS_TONE[status]} />
-              <span>{TYPE_LABEL[lead.type]}</span>
+              <StatusChip label={labels[status]} tone={LEAD_STATUS_TONE[status]} />
+              {lead.type === "course" && lead.course.ageGroup === "under-18" ? <StatusChip label="Under 18" tone="grey" /> : null}
+              <span>{TYPE_NOUN[lead.type]}</span>
               <span aria-hidden="true">·</span>
               <span>{lead.ref}</span>
             </p>
@@ -130,7 +145,7 @@ function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }
             >
               {LEAD_STATUS_VALUES.map((s) => (
                 <option key={s} value={s}>
-                  {LEAD_STATUS_LABEL[s]}
+                  {labels[s]}
                 </option>
               ))}
             </select>
@@ -161,22 +176,32 @@ function DrawerBody({ lead, closeHref }: { lead: LeadDetail; closeHref: string }
             <Row label="Email">{lead.email}</Row>
             <Row label="Received">{formatDateTime(lead.createdAt)}</Row>
             <Row label="Status changed">{formatDateTime(lead.statusChangedAt)}</Row>
-            {lead.workshop ? (
+            {lead.type === "workshop" ? (
               <>
-                <Row label="Role">{lead.workshop.role}</Row>
+                <Row label="Role">{labelFor(ROLE_OPTIONS, lead.workshop.role)}</Row>
                 <Row label="Organization">{lead.workshop.organization}</Row>
                 <Row label="City">{lead.workshop.city}</Row>
                 <Row label="Participants">{String(lead.workshop.participants)}</Row>
-                <Row label="Preferred month">{lead.workshop.preferredMonth ?? ""}</Row>
+                <Row label="Preferred month">{monthLabel(lead.workshop.preferredMonth)}</Row>
               </>
-            ) : null}
-            {lead.course ? (
+            ) : (
               <>
-                <Row label="Course">{lead.course.courseName}</Row>
-                <Row label="Level">{lead.course.level}</Row>
-                <Row label="Age group">{lead.course.ageGroup}</Row>
+                <Row label="Course">
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <span>{lead.course.courseName}</span>
+                    {lead.course.link.kind === "edit" ? (
+                      <Link href={lead.course.link.href} className="inline-flex min-h-11 items-center font-semibold text-royal underline underline-offset-4">
+                        Edit course
+                      </Link>
+                    ) : null}
+                    {lead.course.link.kind === "removed" ? <StatusChip label="Course removed" tone="grey" /> : null}
+                  </span>
+                </Row>
+                <Row label="Category">{lead.course.category ?? ""}</Row>
+                <Row label="Level">{labelFor(LEVEL_OPTIONS, lead.course.level)}</Row>
+                <Row label="Age group">{labelFor(AGE_OPTIONS, lead.course.ageGroup)}</Row>
               </>
-            ) : null}
+            )}
             <Row label="Message">{lead.message}</Row>
             <Row label="Consent">
               {lead.consent.given ? `Given ${formatDateTime(lead.consent.at)} (note ${lead.consent.noteVersion})` : "Not given"}
