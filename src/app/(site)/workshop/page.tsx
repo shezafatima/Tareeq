@@ -7,7 +7,8 @@ import Button from "@/components/ui/Button";
 import Container from "@/components/ui/Container";
 import { getLeadCopy, getPageMeta } from "@/content";
 import { monthOptions } from "@/lib/leads/options";
-import { getWhatsAppUrl } from "@/lib/site";
+import { getSiteSettings } from "@/lib/settings/data";
+import { whatsappUrl } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { title, description } = await getPageMeta("workshop");
@@ -19,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function WorkshopPage() {
   // Rendered per request: each visit gets its own submission key, and the month list follows today's date.
   await connection();
-  const [meta, copy] = await Promise.all([getPageMeta("workshop"), getLeadCopy()]);
+  const [meta, copy, settings] = await Promise.all([getPageMeta("workshop"), getLeadCopy(), getSiteSettings()]);
 
   return (
     <>
@@ -37,7 +38,7 @@ export default async function WorkshopPage() {
           copy={copy}
           months={monthOptions(new Date())}
           submissionKey={crypto.randomUUID()}
-          whatsappHref={getWhatsAppUrl()}
+          whatsappHref={whatsappUrl(settings.whatsappNumber)}
         />
       </BookingDialog>
     </>

@@ -19,31 +19,19 @@ export const tagline = "AI, the practical way.";
 
 export const whatsappMessage = "Hi Tareeq, I'd like to ask about your workshops.";
 
-// The footer is the only place for contact details (read through getFooterContact in src/content).
+// The footer is the only place for contact details. Contact values come from getSiteSettings() (src/lib/settings/data.ts,
+// specs/028-site-settings); these helpers are pure and take them as arguments, so nothing here reads the environment.
 export const footerContactHref = "#footer-contact";
 const footerEmailHref = "#footer-email";
 
-const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** The public contact email, or null when it is missing or invalid. */
-export function getContactEmail(): string | null {
-  const email = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
-  return email && EMAIL_SHAPE.test(email) ? email : null;
-}
-
 /** Where to send someone when WhatsApp is not available: the footer's email link, or its contact block if no email is set. */
-export function getContactFallbackHref(): string {
-  return getContactEmail() ? footerEmailHref : footerContactHref;
+export function contactFallbackHref(email: string | null): string {
+  return email ? footerEmailHref : footerContactHref;
 }
 
-/** Returns the WhatsApp chat link, or null when the number is missing or invalid. */
-export function getWhatsAppUrl(): string | null {
-  return getWhatsAppUrlWithMessage(whatsappMessage);
-}
-
-/** WhatsApp chat link with a prefilled message, or null when the number is missing or invalid. Never put personal data in `message`. */
-export function getWhatsAppUrlWithMessage(message: string): string | null {
-  const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
-  if (!number || !/^\d{8,15}$/.test(number)) return null;
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+/** WhatsApp chat link for an E.164 number with a prefilled message, or null when the number is missing or malformed. Never put personal data in `message`. */
+export function whatsappUrl(e164: string | null, message: string = whatsappMessage): string | null {
+  const digits = e164?.replace(/\D/g, "") ?? "";
+  if (!/^\d{8,15}$/.test(digits)) return null;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }

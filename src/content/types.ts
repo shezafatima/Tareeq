@@ -1,5 +1,6 @@
 // Content shapes. Each one is written like a database row: a stable id, an explicit order,
 // and nothing that belongs to a component. See specs/003-home-core-pages/data-model.md.
+import type { SocialKind } from "../lib/settings/merge.ts";
 
 export type Audience = {
   id: string;
@@ -60,13 +61,17 @@ export type HomeProgramCard = {
 };
 
 export type FooterContactItem = {
-  kind: "whatsapp" | "email" | "youtube" | "linkedin";
+  kind: "whatsapp" | "email" | "phone" | "address";
   label: string;
   value: string;
-  href: string;
+  /** absent for the address, which is plain text */
+  href?: string;
   /** opens in a new tab */
   external: boolean;
 };
+
+/** A social icon in the footer; only links set in Settings appear (specs/028-site-settings research R9). */
+export type FooterSocial = { kind: SocialKind; label: string; href: string };
 
 export type PageSlug = "home" | "our-way" | "programs" | "workshop" | "register";
 

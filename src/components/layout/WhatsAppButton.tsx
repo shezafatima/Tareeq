@@ -1,8 +1,10 @@
-import { getWhatsAppUrl } from "@/lib/site";
+import { getSiteSettings } from "@/lib/settings/data";
+import { whatsappUrl } from "@/lib/site";
 
-// Server component: renders nothing unless NEXT_PUBLIC_WHATSAPP_NUMBER is a valid number (see getWhatsAppUrl).
-export default function WhatsAppButton() {
-  const href = getWhatsAppUrl();
+// Server component: renders nothing unless the site settings (or their fallback) have a WhatsApp number (specs/028-site-settings).
+export default async function WhatsAppButton() {
+  const { whatsappNumber } = await getSiteSettings();
+  const href = whatsappUrl(whatsappNumber);
   if (!href) return null;
 
   return (

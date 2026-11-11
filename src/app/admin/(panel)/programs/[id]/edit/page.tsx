@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import ProgramForm from "@/components/admin/ProgramForm";
+import { getSiteSettings } from "@/lib/settings/data";
 import UnavailableNotice from "@/components/admin/UnavailableNotice";
 import { getProgramById, type AdminProgram } from "@/lib/admin/programs-read";
 import type { ProgramFormValues } from "@/lib/admin/programs-schema";
@@ -30,7 +31,7 @@ function toFormValues(p: AdminProgram): ProgramFormValues {
 export default async function EditProgramPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
-  const loaded = await safeLoad(() => getProgramById(id));
+  const [loaded, { whatsappNumber, email }] = await Promise.all([safeLoad(() => getProgramById(id)), getSiteSettings()]);
 
   if (!loaded.ok) {
     return (
@@ -45,7 +46,7 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
   return (
     <div className="space-y-6">
       <h1 className="font-heading text-2xl font-bold text-midnight">Edit program</h1>
-      <ProgramForm mode="edit" id={loaded.data.id} initial={toFormValues(loaded.data)} />
+      <ProgramForm mode="edit" id={loaded.data.id} initial={toFormValues(loaded.data)} contact={{ whatsappNumber, email }} />
     </div>
   );
 }

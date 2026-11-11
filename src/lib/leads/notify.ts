@@ -7,6 +7,8 @@ import { AGE_OPTIONS, labelFor, LEVEL_OPTIONS, monthLabel, ROLE_OPTIONS } from "
 
 // Owner notification email (specs/006-lead-capture/contracts/notification-email.md).
 // Never throws, never logs content. The subject carries no personal data so lock-screen previews stay private.
+// The recipient comes from the site settings (specs/028-site-settings research R6); LEAD_NOTIFICATION_TO is only its fallback,
+// so it is optional here and the caller passes the address in.
 
 export type NotifyResult = { ok: true; providerId: string } | { ok: false; code: string };
 
@@ -14,7 +16,7 @@ const TIMEOUT_MS = 10_000;
 
 const envSchema = z.object({
   RESEND_API_KEY: z.string().check(z.startsWith("re_")),
-  LEAD_NOTIFICATION_TO: z.string().check(z.regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)),
+  LEAD_NOTIFICATION_TO: z.optional(z.string().check(z.regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))),
   LEAD_EMAIL_FROM: z._default(z.string().check(z.minLength(3)), "Tareeq <onboarding@resend.dev>"),
 });
 
@@ -24,7 +26,7 @@ let resendEnv: z.output<typeof envSchema> | null = null;
 export function getResendEnv(): z.output<typeof envSchema> {
   resendEnv ??= readEnv(envSchema, {
     RESEND_API_KEY: process.env.RESEND_API_KEY?.trim(),
-    LEAD_NOTIFICATION_TO: process.env.LEAD_NOTIFICATION_TO?.trim(),
+    LEAD_NOTIFICATION_TO: process.env.LEAD_NOTIFICATION_TO?.trim() || undefined,
     LEAD_EMAIL_FROM: process.env.LEAD_EMAIL_FROM?.trim() || undefined,
   });
   return resendEnv;
@@ -107,7 +109,8 @@ ${fields.map(([k, v]) => `<tr><td style="${cell};font-weight:bold;white-space:no
   return { subject, text, html };
 }
 
-export async function notifyOwner(lead: LeadDoc): Promise<NotifyResult> {
+/** Emails the owner about a new lead at `to` (the settings notification address, resolved by the caller). */
+export async function notifyOwner(lead: LeadDoc, to: string): Promise<NotifyResult> {
   try {
     const env = getResendEnv();
     const resend = new Resend(env.RESEND_API_KEY);
@@ -119,7 +122,7 @@ export async function notifyOwner(lead: LeadDoc): Promise<NotifyResult> {
     const result = await Promise.race([
       resend.emails.send({
         from: env.LEAD_EMAIL_FROM,
-        to: env.LEAD_NOTIFICATION_TO,
+        to,
         // no email given (workshop requests): the owner replies by phone or WhatsApp instead
         ...(lead.email ? { replyTo: lead.email } : {}),
         subject,

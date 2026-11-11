@@ -5,7 +5,8 @@ import PageHeader from "@/components/sections/PageHeader";
 import Section from "@/components/sections/Section";
 import Card from "@/components/ui/Card";
 import { getCourseFormLabel, getCourseOptions, getLeadCopy, getPageMeta } from "@/content";
-import { getWhatsAppUrl } from "@/lib/site";
+import { getSiteSettings } from "@/lib/settings/data";
+import { whatsappUrl } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { title, description } = await getPageMeta("register");
@@ -17,11 +18,12 @@ type RegisterPageProps = { searchParams: Promise<{ course?: string | string[] }>
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   // Rendered per request so each visit gets its own submission key.
   await connection();
-  const [meta, copy, label, courseOptions] = await Promise.all([
+  const [meta, copy, label, courseOptions, settings] = await Promise.all([
     getPageMeta("register"),
     getLeadCopy(),
     getCourseFormLabel(),
     getCourseOptions(),
+    getSiteSettings(),
   ]);
   // /register?course=<slug> starts with that course selected, but only if it is offered now; anything else is ignored
   const { course } = await searchParams;
@@ -44,7 +46,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
             courseOptions={courseOptions}
             defaultCourseId={defaultCourseId}
             submissionKey={crypto.randomUUID()}
-            whatsappHref={getWhatsAppUrl()}
+            whatsappHref={whatsappUrl(settings.whatsappNumber)}
           />
         </Card>
       </Section>

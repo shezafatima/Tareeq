@@ -9,6 +9,7 @@ import TextareaField from "@/components/ui/TextareaField";
 import { createProgram, deleteProgram, updateProgram } from "@/lib/admin/programs-actions";
 import { parseProgram, slugify, type FieldErrors, type ProgramFormValues } from "@/lib/admin/programs-schema";
 import { AUDIENCES, AUDIENCE_LABELS, CTA_LABELS, CTA_TYPES, STATUSES, STATUS_LABELS } from "@/lib/programs/options";
+import type { ContactDetails } from "@/lib/settings/merge";
 import ConfirmDialog from "./ConfirmDialog";
 import { CurriculumEditor, OutcomesEditor } from "./ListEditor";
 import ProgramPreview from "./ProgramPreview";
@@ -31,7 +32,7 @@ function idFor(key: string): string {
 
 const ORDER = ["title", "slug", "audience", "status", "ctaType", "summary", "description", "outcomes", "curriculum", "facts", "priceText", "coverImageUrl", "order"];
 
-export default function ProgramForm(props: Props & { initial: ProgramFormValues }) {
+export default function ProgramForm(props: Props & { initial: ProgramFormValues; contact: ContactDetails }) {
   const router = useRouter();
   const toast = useToast();
   const fail = useActionFeedback();
@@ -254,7 +255,7 @@ export default function ProgramForm(props: Props & { initial: ProgramFormValues 
         </form>
 
         <div className="hidden lg:sticky lg:top-6 lg:block">
-          <ProgramPreview values={values} />
+          <ProgramPreview values={values} contact={props.contact} />
         </div>
       </div>
 

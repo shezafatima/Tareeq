@@ -1,7 +1,10 @@
+import { InstagramLogo, LinkedinLogo, TiktokLogo, XLogo, YoutubeLogo } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import Reveal from "@/components/ui/Reveal";
 import { getCourseFormLabel, getFooterContact } from "@/content";
+import { getSiteSettings } from "@/lib/settings/data";
+import type { SocialKind } from "@/lib/settings/merge";
 import { footerContactHref, navItems, tagline } from "@/lib/site";
 import Logo from "./Logo";
 
@@ -9,9 +12,15 @@ const link =
   "inline-flex min-h-11 items-center text-white/80 transition-colors duration-[var(--dur-fast)] hover:text-white hover:underline hover:underline-offset-4";
 const heading = "text-sm font-semibold uppercase tracking-[0.18em] text-white/70";
 
-// The only place for contact details. An entry renders only when it exists; nothing is invented.
+const SOCIAL_ICONS = { youtube: YoutubeLogo, linkedin: LinkedinLogo, instagram: InstagramLogo, tiktok: TiktokLogo, x: XLogo } satisfies Record<SocialKind, unknown>;
+
+// The only place for contact details, read from the site settings (specs/028-site-settings). An entry renders only when
+// it is set; nothing is invented.
 export default async function Footer() {
-  const [contactItems, courseFormLabel] = await Promise.all([getFooterContact(), getCourseFormLabel()]);
+  const [{ items: contactItems, socials }, courseFormLabel] = await Promise.all([
+    getSiteSettings().then(getFooterContact),
+    getCourseFormLabel(),
+  ]);
   return (
     <footer className="overflow-clip bg-midnight text-white [&_a:focus-visible]:outline-saffron">
       <Reveal>
@@ -40,7 +49,7 @@ export default async function Footer() {
           </ul>
         </nav>
 
-        {contactItems.length > 0 && (
+        {(contactItems.length > 0 || socials.length > 0) && (
           <section aria-labelledby="footer-contact-title" id={footerContactHref.slice(1)}>
             <h2 id="footer-contact-title" className={heading}>
               Contact
@@ -50,17 +59,41 @@ export default async function Footer() {
               {contactItems.map((item) => (
                 <li key={item.kind} id={item.kind === "email" ? "footer-email" : undefined} className="py-1 text-white/80">
                   <span className="block text-sm text-white/70">{item.label}</span>
-                  <a
-                    href={item.href}
-                    {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className={`${link} [overflow-wrap:anywhere]`}
-                  >
-                    {item.value}
-                    {item.external && <span className="sr-only"> (opens in a new tab)</span>}
-                  </a>
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className={`${link} [overflow-wrap:anywhere]`}
+                    >
+                      {item.value}
+                      {item.external && <span className="sr-only"> (opens in a new tab)</span>}
+                    </a>
+                  ) : (
+                    <span className="block whitespace-pre-line py-2 [overflow-wrap:anywhere]">{item.value}</span>
+                  )}
                 </li>
               ))}
             </ul>
+            {socials.length > 0 && (
+              <ul aria-label="Tareeq on social media" className="mt-1 flex flex-wrap gap-1">
+                {socials.map(({ kind, label, href }) => {
+                  const SocialIcon = SOCIAL_ICONS[kind];
+                  return (
+                    <li key={kind}>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${label} (opens in a new tab)`}
+                        className="inline-flex size-11 items-center justify-center rounded-pill text-white/80 transition-colors duration-[var(--dur-fast)] hover:bg-white/10 hover:text-white"
+                      >
+                        <SocialIcon aria-hidden="true" size={24} />
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
         )}
 

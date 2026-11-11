@@ -1,6 +1,7 @@
 "use client"; // renders from the form's live state, so it re-renders on every keystroke
 
 import ProgramPanel from "@/components/sections/programs/ProgramPanel";
+import type { ContactDetails } from "@/lib/settings/merge";
 import type { ProgramFormValues } from "@/lib/admin/programs-schema";
 import { AUDIENCE_FILTER, type Program } from "@/lib/programs/options";
 
@@ -35,7 +36,7 @@ function toProgram(v: ProgramFormValues): Program {
  * How the program will look on the public Programs page. It is the public ProgramPanel itself, inside the same list
  * markup the page uses (that is what gives it its colours), fed by the form. `inert` keeps its links from being clickable.
  */
-export default function ProgramPreview({ values }: { values: ProgramFormValues }) {
+export default function ProgramPreview({ values, contact }: { values: ProgramFormValues; contact: ContactDetails }) {
   const program = toProgram(values);
   return (
     <section aria-label="Preview of the public Programs page">
@@ -43,7 +44,7 @@ export default function ProgramPreview({ values }: { values: ProgramFormValues }
       <div className="overflow-hidden rounded-2xl ring-1 ring-midnight/10">
         <ul className="program-list !p-0" inert>
           <li data-filter={AUDIENCE_FILTER[program.audience]} data-status={program.status}>
-            <ProgramPanel program={program} />
+            <ProgramPanel program={program} contact={contact} />
           </li>
         </ul>
       </div>
