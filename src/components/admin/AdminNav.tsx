@@ -1,7 +1,7 @@
 "use client"; // needs the current path to place the sliding active indicator
 
 import type { Icon } from "@phosphor-icons/react";
-import { BookOpen, ChalkboardTeacher, GearSix, GraduationCap, Student, Tray } from "@phosphor-icons/react/dist/ssr";
+import { BookOpen, ChalkboardTeacher, GearSix, GraduationCap, SquaresFour, Student, Tray } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LeadType } from "@/lib/admin/leads-params";
@@ -24,6 +24,8 @@ const under = (base: string) => (p: string) => p === base || p.startsWith(`${bas
 
 // specs/026-split-submissions/contracts/routes-and-ui.md "Sidebar"
 const ENTRIES: Entry[] = [
+  // exact match: under("/admin") would also light up on every other admin page (specs/029-admin-dashboard research R11)
+  { kind: "link", href: "/admin", label: "Dashboard", Icon: SquaresFour, isActive: (p) => p === "/admin" },
   { kind: "heading", label: "Submissions", Icon: Tray },
   { kind: "link", href: "/admin/submissions/workshops", label: "Workshops", Icon: ChalkboardTeacher, isActive: under("/admin/submissions/workshops"), badge: "workshop", child: true },
   { kind: "link", href: "/admin/submissions/courses", label: "Course registrations", Icon: Student, isActive: under("/admin/submissions/courses"), badge: "course", child: true },
