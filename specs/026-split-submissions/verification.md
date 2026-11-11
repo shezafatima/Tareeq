@@ -64,10 +64,10 @@ This closes T026, T029, T033, T036 and T038.
 
 The agent has no admin password, so these are open for the owner:
 - T026 / T029: quickstart 2, 4-9 at 390px and 1440px. This includes a real `/register` submission for the snapshot (step 7) and a course delete (step 8).
-- T033: sidebar badges refresh after a status change. If they don't, add `router.refresh()` after a successful action.
+- T033: sidebar badges refresh after a status change. Closed by code check (027 follow-up, 2026-11-11): all three lead actions call `revalidatePath("/admin", "layout")` (`src/lib/admin/leads-actions.ts:21,41,60,75`), and `getNewCounts` in the panel layout isn't cached, so the action response includes fresh badges. No `router.refresh()` needed. One visual look during the owner walkthrough is still worthwhile.
 - T036: Mark contacted, including the failure path and keyboard order.
 - T037 / T038: accessibility, 360px and reduced-motion pass.
-- T039: `db.leads.getIndexes()` shows `{type:1,courseId:1}`. Mongoose `autoIndex` creates it on the first connection after deploy.
+- ~~T039~~: done (027 follow-up, 2026-11-11). A read-only `indexes()` call on the live `leads` collection lists both `{type:1,status:1,createdAt:-1}` and `{type:1,courseId:1}`. Both are declared in `src/lib/leads/model.ts:42-43`.
 - T040: regression (forms, owner email, Programs and Courses admin, login landing).
 
 ## DRAFT copy for owner sign-off (T042)
