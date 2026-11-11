@@ -1909,3 +1909,81 @@ html:not([data-js]) .program-filter {
     transform: none;
   }
 }
+
+/* Admin dashboard motion (specs/029-admin-dashboard). Cards rise in one after another (--i sets the order), chart bars
+   grow from the baseline, and linked cards lift on hover. Only transform and opacity change. All of it is off under
+   reduced motion, which leaves everything in its final state. */
+@keyframes dash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dash-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: none;
+  }
+}
+.dash-rise {
+  animation: dash-rise var(--dur-reveal) var(--ease-soft) both;
+  animation-delay: calc(min(var(--i, 0), 9) * 60ms);
+}
+.dash-lift {
+  transition:
+    transform var(--dur-base) var(--ease-soft),
+    box-shadow var(--dur-base) var(--ease-soft);
+}
+.dash-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-raised);
+}
+.dash-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: dash-grow 700ms var(--ease-soft) both;
+  animation-delay: calc(var(--i, 0) * 35ms + 300ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-rise,
+  .dash-bar {
+    animation: none;
+  }
+  .dash-lift,
+  .dash-lift:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* The founder's note heart (specs/029-admin-dashboard US5): a slow double beat, transform only, off under reduced motion. */
+@keyframes dash-heart {
+  0%,
+  60%,
+  100% {
+    transform: none;
+  }
+  70% {
+    transform: scale(1.12);
+  }
+  80% {
+    transform: scale(1);
+  }
+  90% {
+    transform: scale(1.08);
+  }
+}
+.dash-heart {
+  animation: dash-heart 2.6s var(--ease-soft) 1s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-heart {
+    animation: none;
+  }
+}
