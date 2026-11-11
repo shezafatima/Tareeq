@@ -95,8 +95,19 @@ export type HomeCopy = {
   cta: { line: string; label: string; href: string };
 };
 
-/** A course a visitor can pick on the waitlist form. Read only through getCourseOptions(). */
-export type CourseOption = { id: string; name: string };
+/** A course a visitor can pick on the register form. Read only through getCourseOptions(). */
+export type CourseOption = {
+  /** the course id, or "not-sure" */
+  id: string;
+  /** the course title, or "Not sure yet" */
+  name: string;
+  /** for /register?course=<slug>; absent on "Not sure yet" */
+  slug?: string;
+  /** category name, shown as an option group; absent when ungrouped */
+  group?: string;
+  /** picks the confirmation wording; absent on "Not sure yet" */
+  status?: "open" | "coming-soon";
+};
 
 type ConfirmationCopy = {
   /** confirmation heading */
@@ -109,7 +120,8 @@ type ConfirmationCopy = {
 
 export type LeadCopy = {
   workshop: ConfirmationCopy & { submitLabel: string; bookLabel: string };
-  course: ConfirmationCopy;
+  /** waitlist wording (coming-soon course or "Not sure yet"), plus `open` for a course open for enrolment */
+  course: ConfirmationCopy & { open: ConfirmationCopy };
   consentLabel: string;
   privacyNote: string;
   guardianNote: string;

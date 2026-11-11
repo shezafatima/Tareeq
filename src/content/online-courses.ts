@@ -1,5 +1,5 @@
 // DRAFT: owner to confirm before launch. The fixed "Online courses" card on /programs and the home page.
-// Online learners are served by Courses, a separate future feature, so this is not a stored program.
+// Online learners are served by Courses (/courses), so this is not a stored program.
 // The link target is one constant: onlineCoursesHref in src/lib/site.ts.
 import { onlineCoursesHref } from "../lib/site.ts";
 import type { HomeProgramCard } from "./types.ts";
@@ -14,6 +14,6 @@ export const onlineCoursesCard: HomeProgramCard = {
     { label: "Format", value: "Online, guided" },
     { label: "Duration", value: "A few weeks" },
   ],
-  cta: { kind: "link", label: "Register interest", href: onlineCoursesHref },
+  cta: { kind: "link", label: "Browse courses", href: onlineCoursesHref }, // DRAFT: owner to confirm label (025)
   order: 99,
 };

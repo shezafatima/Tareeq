@@ -12,8 +12,8 @@ export const joinHref = "/workshop?book=1";
 // The mentor section on the home page.
 export const mentorHref = "/#mentor";
 
-// Where the fixed "Online courses" card goes. Change this to "/courses" when the Courses feature ships.
-export const onlineCoursesHref = "/register";
+// Where the fixed "Online courses" card on /programs and the home page goes: the course catalogue (025-courses-catalog).
+export const onlineCoursesHref = "/courses";
 
 export const tagline = "AI, the practical way.";
 

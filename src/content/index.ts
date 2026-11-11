@@ -2,7 +2,7 @@
 // import from ./data. To move content to a database, change this file and ./data only.
 // Programs have already moved: they are read through src/lib/programs/data.ts.
 import { audiences } from "./audiences";
-import { courseList } from "./data/courses";
+import { getOfferedCourseOptions } from "../lib/courses/data";
 import { readFooterContact } from "./data/footer";
 import { homeCopy } from "./data/cta";
 import { howItWorks } from "./how-it-works";
@@ -82,13 +82,20 @@ export async function getCourseFormLabel(): Promise<string> {
   return courseFormLabel;
 }
 
+const NOT_SURE: CourseOption = { id: "not-sure", name: "Not sure yet" };
+
 /**
- * Courses a visitor can pick on the waitlist form, always ending with "Not sure yet".
- * The single source for course options: callers must not depend on where the list comes from
- * (a hardcoded list today, published courses later).
+ * Courses a visitor can pick on the register form: published courses that are open or coming soon, grouped by category,
+ * always ending with "Not sure yet". The single source for course options, read by the form and by submitCourse.
+ * If the courses cannot be read, only "Not sure yet" is offered, so the form keeps working (research R9).
  */
 export async function getCourseOptions(): Promise<CourseOption[]> {
-  return [...courseList, { id: "not-sure", name: "Not sure yet" }];
+  try {
+    return [...(await getOfferedCourseOptions()), NOT_SURE];
+  } catch (err) {
+    console.error(`[courses] options read failed: ${err instanceof Error ? err.name : "UnknownError"}`);
+    return [NOT_SURE];
+  }
 }
 
 export async function getHowItWorks(): Promise<HowItWorksContent> {

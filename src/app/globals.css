@@ -1876,3 +1876,36 @@ html:not([data-js]) .program-filter {
 .admin-skeleton {
   animation: admin-pulse 1.4s ease-in-out infinite;
 }
+
+/* ---- Courses (specs/025-courses-catalog): one card shared by /courses and the admin preview ---- */
+.course-card {
+  box-shadow: var(--shadow-card-rest);
+  transition:
+    transform var(--dur-fast, 200ms) var(--ease-soft, ease),
+    box-shadow var(--dur-fast, 200ms) var(--ease-soft, ease);
+}
+.course-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card-raised);
+}
+/* coming soon: quieter surface and no lift, text keeps AA contrast */
+.course-card[data-status="coming-soon"] {
+  background: color-mix(in srgb, var(--color-soft) 55%, white);
+  box-shadow: none;
+  outline: 1px dashed color-mix(in srgb, var(--color-midnight) 25%, transparent);
+  outline-offset: -1px;
+}
+.course-card[data-status="coming-soon"]:hover {
+  transform: none;
+  box-shadow: none;
+}
+.course-card[data-status="coming-soon"] .course-card-cover {
+  opacity: 0.7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .course-card,
+  .course-card:hover {
+    transition: none;
+    transform: none;
+  }
+}

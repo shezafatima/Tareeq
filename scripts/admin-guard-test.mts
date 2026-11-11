@@ -31,6 +31,16 @@ for (const op of MODEL_OPS) (mongoose.Model as unknown as Record<string, unknown
 const { sessionResolver, ADMIN_WRAPPED } = await import("../src/lib/admin/session.ts");
 sessionResolver.current = async () => false; // nobody is signed in
 
+// Every admin action that must exist and be refused. A renamed or moved action file fails here instead of silently
+// dropping out of the check (specs/025-courses-catalog research R13).
+const REQUIRED_ACTIONS = new Set([
+  "setLeadStatus", "saveLeadNotes", "deleteLead",
+  "createProgram", "updateProgram", "setProgramPublished", "deleteProgram",
+  "createCategory", "updateCategory", "setCategoryOrder", "deleteCategory",
+  "createCourse", "updateCourse", "setCoursePublished", "setCourseFeatured", "deleteCourse",
+]);
+const seen = new Set<string>();
+
 const adminDir = join(root, "src", "lib", "admin");
 const actionFiles = readdirSync(adminDir).filter((f) => f.endsWith("-actions.ts"));
 let actionCount = 0;
@@ -43,11 +53,12 @@ for (const file of actionFiles) {
       continue;
     }
     actionCount++;
+    seen.add(name);
     if (!(fn as unknown as Record<symbol, unknown>)[ADMIN_WRAPPED]) {
       fail(`${label} is not wrapped by withAdmin()`);
       continue;
     }
-    for (const args of [[], [{}], [{ id: "000000000000000000000000", status: "closed", notes: "x", published: true }], ["x", {}]]) {
+    for (const args of [[], [{}], [{ id: "000000000000000000000000", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", featured: true, order: 1, values: {} }], ["x", {}]]) {
       touched.length = 0;
       let result: unknown;
       try {
@@ -61,6 +72,9 @@ for (const file of actionFiles) {
       if (touched.length) fail(`${label} touched the database with no session: ${touched.join(", ")}`);
     }
   }
+}
+for (const name of REQUIRED_ACTIONS) {
+  if (!seen.has(name)) fail(`required admin action ${name} was not found in src/lib/admin/*-actions.ts`);
 }
 console.log(`A. Server Actions: ${actionFiles.length} file(s), ${actionCount} action(s) checked`);
 

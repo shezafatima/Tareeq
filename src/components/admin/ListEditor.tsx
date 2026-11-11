@@ -67,25 +67,34 @@ export function OutcomesEditor({
   );
 }
 
-/** Curriculum: steps with a title and a description. Row errors come keyed `curriculum.<index>.title` and `.description`. */
+/**
+ * Curriculum: steps with a title and a description. Row errors come keyed `<errorKey>.<index>.title` and `.description`.
+ * Courses reuse it for their syllabus with their own legend, hint and error key; the defaults are the program's.
+ */
 export function CurriculumEditor({
   items,
   onChange,
   errors,
+  legend = "Curriculum",
+  hint = "The steps of the program, in order.",
+  errorKey = "curriculum",
 }: {
   items: Step[];
   onChange: (items: Step[]) => void;
   errors: Record<string, string>;
+  legend?: string;
+  hint?: string;
+  errorKey?: string;
 }) {
   const set = (i: number, patch: Partial<Step>) => onChange(items.map((s, j) => (j === i ? { ...s, ...patch } : s)));
   return (
     <fieldset className="min-w-0">
-      <legend className="text-sm font-semibold text-midnight">Curriculum</legend>
-      <p className="mt-1 text-sm text-midnight/70">The steps of the program, in order.</p>
+      <legend className="text-sm font-semibold text-midnight">{legend}</legend>
+      <p className="mt-1 text-sm text-midnight/70">{hint}</p>
       <ul className="mt-2 space-y-3">
         {items.map((step, i) => {
-          const titleError = errors[`curriculum.${i}.title`];
-          const descError = errors[`curriculum.${i}.description`];
+          const titleError = errors[`${errorKey}.${i}.title`];
+          const descError = errors[`${errorKey}.${i}.description`];
           return (
             <li key={i} className="rounded-2xl bg-white p-3 ring-1 ring-midnight/10">
               <div className="flex items-start gap-2">

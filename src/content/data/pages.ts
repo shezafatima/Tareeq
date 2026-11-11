@@ -38,9 +38,10 @@ export const pages: PageMeta[] = [
   {
     slug: "register",
     title: courseFormLabel,
-    description: "Leave your details for Tareeq's online AI courses and we'll WhatsApp you when a course opens.",
+    // DRAFT: owner to confirm (025-courses-catalog): the waitlist wording is gone now that real courses can be open
+    description: "Register for a Tareeq online AI course. Leave your details and we'll WhatsApp you with dates and fees.",
     heading: courseFormLabel,
     eyebrow: "Online courses",
-    intro: "Leave your details and we'll WhatsApp you when the course opens, with dates and fees.",
+    intro: "Leave your details and we'll WhatsApp you about your course, with dates and fees.",
   },
 ];
