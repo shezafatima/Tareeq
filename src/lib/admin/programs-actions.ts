@@ -3,6 +3,9 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { connectDb } from "@/lib/db/mongoose";
 import { ProgramModel } from "@/lib/programs/model";
+import { pickImage } from "@/lib/images/schema";
+import type { StoredImage } from "@/lib/images/shared";
+import { deleteReplaced, imageFailure, resolveImageChange, type ImageChange } from "./images-verify";
 import { isObjectId } from "./leads-params";
 import { logAdmin } from "./log";
 import { MESSAGES, parseProgram, type ProgramFormValues, type ProgramInput } from "./programs-schema";
@@ -29,10 +32,14 @@ function refreshPublicSite(...slugs: string[]): void {
   revalidatePath("/admin/programs");
 }
 
-/** The document to store: the form's values, with an empty cover image left out entirely (the model rejects an empty string). */
-function toDocument(data: ProgramInput) {
-  const { coverImageUrl, ...rest } = data;
-  return { ...rest, ...(coverImageUrl ? { coverImageUrl } : {}) };
+/**
+ * The document to store: the form's values with the verified cover. A saved cover replaces the older plain URL; with no
+ * cover, an old URL the owner did not clear is kept. Empty values are left out (the model rejects an empty string).
+ */
+function toDocument(data: ProgramInput, cover: StoredImage | null) {
+  const { coverImageUrl, coverImage, ...rest } = data;
+  void coverImage; // the client's copy is never stored; `cover` is the server-verified one
+  return { ...rest, ...(cover ? { coverImage: cover } : coverImageUrl ? { coverImageUrl } : {}) };
 }
 
 export const createProgram = withAdmin(async (values: ProgramFormValues): Promise<ActionResult<{ id: string }>> => {
@@ -43,7 +50,13 @@ export const createProgram = withAdmin(async (values: ProgramFormValues): Promis
     if (await ProgramModel.exists({ slug: parsed.data.slug })) {
       return { ok: false, code: "conflict", fieldErrors: { slug: MESSAGES.slugTaken } };
     }
-    const created = await ProgramModel.create(toDocument(parsed.data));
+    let change: ImageChange;
+    try {
+      change = await resolveImageChange(null, parsed.data.coverImage ?? null);
+    } catch (err) {
+      return imageFailure(err);
+    }
+    const created = await ProgramModel.create(toDocument(parsed.data, change.image));
     refreshPublicSite(parsed.data.slug);
     logAdmin("program", "ok", created.id);
     return { ok: true, id: created.id };
@@ -60,17 +73,27 @@ export const updateProgram = withAdmin(async (input: { id: string; values: Progr
   if (!parsed.success) return { ok: false, code: "invalid", fieldErrors: parsed.errors };
   try {
     await connectDb();
-    const current = await ProgramModel.findById(id).select("slug").lean<{ slug: string }>();
+    const current = await ProgramModel.findById(id).select("slug coverImage").lean<{ slug: string; coverImage?: unknown }>();
     if (!current) return { ok: false, code: "not_found" };
     if (await ProgramModel.exists({ slug: parsed.data.slug, _id: { $ne: id } })) {
       return { ok: false, code: "conflict", fieldErrors: { slug: MESSAGES.slugTaken } };
     }
-    const doc = toDocument(parsed.data);
+    let change: ImageChange;
+    try {
+      change = await resolveImageChange(pickImage(current.coverImage), parsed.data.coverImage ?? null);
+    } catch (err) {
+      return imageFailure(err);
+    }
+    const doc = toDocument(parsed.data, change.image);
+    const unset: Record<string, 1> = {};
+    if (!("coverImage" in doc)) unset.coverImage = 1;
+    if (!("coverImageUrl" in doc)) unset.coverImageUrl = 1;
     await ProgramModel.updateOne(
       { _id: id },
-      { $set: doc, ...(doc.coverImageUrl ? {} : { $unset: { coverImageUrl: 1 } }) },
+      { $set: doc, ...(Object.keys(unset).length ? { $unset: unset } : {}) },
       { runValidators: true },
     );
+    await deleteReplaced(change);
     refreshPublicSite(parsed.data.slug, current.slug);
     logAdmin("program", "ok", id);
     return { ok: true };
@@ -100,8 +123,10 @@ export const deleteProgram = withAdmin(async (input: { id: string }): Promise<Ac
   if (typeof id !== "string" || !isObjectId(id)) return { ok: false, code: "invalid" };
   try {
     await connectDb();
-    const doc = await ProgramModel.findByIdAndDelete(id, { projection: { slug: 1 } }).lean<{ slug: string }>();
+    const doc = await ProgramModel.findByIdAndDelete(id, { projection: { slug: 1, coverImage: 1 } }).lean<{ slug: string; coverImage?: unknown }>();
     if (!doc) return { ok: false, code: "not_found" };
+    const cover = pickImage(doc.coverImage);
+    if (cover) await deleteReplaced({ image: null, toDelete: cover.publicId });
     refreshPublicSite(doc.slug);
     logAdmin("program", "ok", id);
     return { ok: true };

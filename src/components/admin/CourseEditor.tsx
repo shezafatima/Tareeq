@@ -17,6 +17,7 @@ import {
   LEVELS,
 } from "@/lib/courses/options";
 import ConfirmDialog from "./ConfirmDialog";
+import ImageUploader from "./ImageUploader";
 import CoursePreview from "./CoursePreview";
 import { CurriculumEditor, OutcomesEditor } from "./ListEditor";
 import { useToast } from "./Toast";
@@ -34,12 +35,13 @@ function idFor(key: string): string {
   if (step) return `step-${step[2] === "title" ? "title" : "desc"}-${step[1]}`;
   const outcome = /^outcomes\.(\d+)$/.exec(key);
   if (outcome) return `outcome-${outcome[1]}`;
+  if (key.startsWith("coverImage")) return "field-cover-alt";
   return `field-${key}`;
 }
 
 const ORDER = [
   "title", "slug", "category", "level", "format", "enrollmentStatus", "summary", "description", "outcomes", "syllabus",
-  "durationText", "startDateText", "priceText", "coverImageUrl", "order",
+  "durationText", "startDateText", "priceText", "coverImage", "order",
 ];
 
 export default function CourseEditor(props: Props) {
@@ -227,15 +229,16 @@ export default function CourseEditor(props: Props) {
             help="Shown as written, for example “PKR 5,000” or “Free”."
             onChange={(ev) => set("priceText", ev.target.value)}
           />
-          <Field
-            label="Cover image address"
-            name="coverImageUrl"
-            type="text"
-            inputMode="url"
-            value={values.coverImageUrl}
-            error={e("coverImageUrl")}
-            help="Optional. A web address starting with https:// or a site path starting with /. Without one, the brand pattern shows."
-            onChange={(ev) => set("coverImageUrl", ev.target.value)}
+          <ImageUploader
+            label="Cover image (optional)"
+            id="field-cover"
+            scope="course"
+            value={values.coverImage ?? null}
+            onChange={(img) => set("coverImage", img)}
+            legacyUrl={values.coverImageUrl}
+            onClearLegacy={() => set("coverImageUrl", "")}
+            error={e("coverImage.alt") ?? e("coverImage")}
+            recommended="1600 x 900 px, landscape (16:9). Without one, the brand pattern shows"
           />
           <Field
             label="Display order"

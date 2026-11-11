@@ -1,5 +1,6 @@
 // What pages show for a program, worked out from its stored fields. Pure, so it can be unit tested.
 import type { HomeProgramCard } from "../../content/types.ts";
+import type { StoredImage } from "../images/shared.ts";
 import { joinHref } from "../site.ts";
 import { CTA_LABELS, FILTER_VALUES, STATUS_LABELS, type FilterValue, type Program } from "./options.ts";
 
@@ -66,6 +67,21 @@ export function toHomeCard(program: Program): HomeProgramCard {
 export function isAllowedCover(url: string | undefined): url is string {
   if (!url) return false;
   return (url.startsWith("/") && !url.startsWith("//")) || url.startsWith(CLOUDINARY);
+}
+
+export type ResolvedCover = { src: string; alt: string; width?: number; height?: number; uploaded: boolean };
+
+/**
+ * The cover a program or course shows: the uploaded image if there is one, else the older plain URL if it is allowed,
+ * else null (the brand pattern shows). Decorative covers use an empty alt; `alt` is for the share image.
+ */
+export function resolveCover(item: { coverImage?: StoredImage; coverImageUrl?: string; title?: string }): ResolvedCover | null {
+  if (item.coverImage?.url) {
+    const { url, width, height, alt } = item.coverImage;
+    return { src: url, alt, width, height, uploaded: true };
+  }
+  if (isAllowedCover(item.coverImageUrl)) return { src: item.coverImageUrl, alt: item.title ?? "", uploaded: false };
+  return null;
 }
 
 /** The audience filter in an address's query string. Anything unknown means all. */

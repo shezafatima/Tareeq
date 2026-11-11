@@ -1,6 +1,7 @@
 // Program vocabulary: allowed values, labels and the shape pages receive. Pure, so tests and client code can import it.
+import type { StoredImage } from "../images/shared.ts";
 
-export const AUDIENCES = ["teachers", "school-students", "college", "corporate"] as const;
+export const AUDIENCES =["teachers", "school-students", "college", "corporate"] as const;
 export const STATUSES = ["booking-now", "register-interest", "coming-soon"] as const;
 export const CTA_TYPES = ["workshop-modal", "register", "whatsapp"] as const;
 // "online" shows the fixed Online courses card: online learners are served by Courses, not by a stored program
@@ -31,6 +32,8 @@ export type Program = {
   facts: ProgramFactsData;
   priceText: string;
   coverImageUrl?: string;
+  /** the uploaded cover; wins over coverImageUrl */
+  coverImage?: StoredImage;
   order: number;
   published: boolean;
   createdAt: string;

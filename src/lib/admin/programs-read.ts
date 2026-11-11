@@ -2,6 +2,7 @@ import "server-only";
 import { connectDb } from "@/lib/db/mongoose";
 import { ProgramModel } from "@/lib/programs/model";
 import type { Program } from "@/lib/programs/options";
+import { pickImage } from "@/lib/images/schema";
 import { isObjectId } from "./leads-params";
 
 // Admin reads of programs. Deliberately NOT cached (unlike the public readers in src/lib/programs/data.ts), so the owner
@@ -31,6 +32,7 @@ function toAdminProgram(doc: Stored): AdminProgram {
     },
     priceText: doc.priceText ?? "",
     ...(doc.coverImageUrl ? { coverImageUrl: doc.coverImageUrl } : {}),
+    ...(pickImage(doc.coverImage) ? { coverImage: pickImage(doc.coverImage) } : {}),
     order: doc.order,
     published: doc.published,
     createdAt: new Date(doc.createdAt).toISOString(),

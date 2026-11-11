@@ -1,15 +1,16 @@
 import ProgramCover from "@/components/sections/programs/ProgramCover";
 import Container from "@/components/ui/Container";
 import { LEVEL_LABELS, type Course } from "@/lib/courses/options";
-import { isAllowedCover } from "@/lib/programs/view";
+import { resolveCover } from "@/lib/programs/view";
 import CourseStatusChip from "./CourseStatusChip";
 
 /** Top of a course page: category, level, status, title and summary over the cover or brand pattern. Holds the only h1. */
 export default function CourseHeader({ course }: { course: Course }) {
+  const cover = resolveCover(course);
   return (
     <header className="relative isolate overflow-hidden bg-midnight text-white">
-      <ProgramCover url={course.coverImageUrl} sizes="100vw" priority className="absolute inset-0 -z-10" />
-      {isAllowedCover(course.coverImageUrl) && <div aria-hidden="true" className="absolute inset-0 -z-10 bg-midnight/70" />}
+      <ProgramCover cover={cover} sizes="100vw" priority className="absolute inset-0 -z-10" />
+      {cover && <div aria-hidden="true" className="absolute inset-0 -z-10 bg-midnight/70" />}
       <Container className="flex min-h-[22rem] flex-col justify-end gap-5 pb-10 pt-16 lg:min-h-[30rem] lg:pb-16">
         <div className="page-enter flex flex-wrap items-center gap-3">
           {course.category && (

@@ -1,5 +1,6 @@
 // Course vocabulary: allowed values, labels and the shapes pages receive. Pure, so tests and client code can import it.
 // See specs/025-courses-catalog/data-model.md.
+import type { StoredImage } from "../images/shared.ts";
 export { SLUG_MAX, SLUG_PATTERN } from "../programs/options.ts";
 
 export const LEVELS = ["beginner", "intermediate", "advanced"] as const;
@@ -52,6 +53,8 @@ export type Course = {
   priceText: string;
   enrollmentStatus: EnrollmentStatus;
   coverImageUrl?: string;
+  /** the uploaded cover; wins over coverImageUrl */
+  coverImage?: StoredImage;
   featured: boolean;
   order: number;
   published: boolean;
@@ -62,7 +65,7 @@ export type Course = {
 /** What CourseCard draws. Shared by /courses and the admin live preview. */
 export type CourseCardData = Pick<
   Course,
-  "title" | "slug" | "category" | "level" | "format" | "durationText" | "enrollmentStatus" | "priceText" | "coverImageUrl" | "summary"
+  "title" | "slug" | "category" | "level" | "format" | "durationText" | "enrollmentStatus" | "priceText" | "coverImageUrl" | "coverImage" | "summary"
 >;
 
 export const isLevel = (v: unknown): v is Level => typeof v === "string" && (LEVELS as readonly string[]).includes(v);

@@ -1,5 +1,6 @@
 import "server-only";
 import mongoose, { Schema, type Model } from "mongoose";
+import { storedImageSchema } from "@/lib/images/schema";
 import { ENROLLMENT_STATUSES, FORMATS, LEVELS, SLUG_MAX, SLUG_PATTERN } from "./options";
 
 // Course categories and courses (specs/025-courses-catalog/data-model.md). New courses stay hidden until `published` is set.
@@ -52,6 +53,8 @@ const courseSchema = new Schema(
         message: "coverImageUrl must start with https:// or be a site-relative path",
       },
     },
+    // the uploaded cover (specs/030-image-upload). coverImageUrl above is the older plain URL, still read when this is empty.
+    coverImage: { type: storedImageSchema },
     featured: { type: Boolean, required: true, default: false },
     order: { type: Number, required: true, default: 0 },
     published: { type: Boolean, required: true, default: false },

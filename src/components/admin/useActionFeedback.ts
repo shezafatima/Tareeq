@@ -36,6 +36,12 @@ export function useActionFeedback() {
           toast.error(`This category still has ${n} course${n === 1 ? "" : "s"}. Move them to another category or delete them first.`);
           break;
         }
+        case "image_rejected":
+          toast.error(failure.message ?? "The image could not be accepted. Upload it again.");
+          break;
+        case "not_configured":
+          toast.error("Image uploads are not set up yet.");
+          break;
         default:
           toast.error("Please check the highlighted fields and try again.");
       }

@@ -18,7 +18,7 @@ const fail = (msg: string) => failures.push(msg);
 const touched: string[] = [];
 const trip = (name: string) => () => {
   touched.push(name);
-  throw new Error(`database touched: ${name}`);
+  throw new Error(`blocked call touched: ${name}`);
 };
 const MODEL_OPS = [
   "find", "findOne", "findById", "findOneAndUpdate", "findByIdAndUpdate", "findOneAndDelete", "findByIdAndDelete",
@@ -26,6 +26,17 @@ const MODEL_OPS = [
 ] as const;
 for (const op of MODEL_OPS) (mongoose.Model as unknown as Record<string, unknown>)[op] = trip(`Model.${op}`);
 (mongoose as unknown as Record<string, unknown>).connect = trip("mongoose.connect");
+
+// ...and so is any Cloudinary call: with credentials present, a denied call must still never sign, look up or delete an image
+// (specs/030-image-upload FR-016, research R10)
+process.env.CLOUDINARY_CLOUD_NAME = "guard-test";
+process.env.CLOUDINARY_API_KEY = "guard-test";
+process.env.CLOUDINARY_API_SECRET = "guard-test";
+const { v2: cloudinary } = await import("cloudinary");
+(cloudinary.utils as unknown as Record<string, unknown>).api_sign_request = trip("cloudinary.sign");
+(cloudinary.api as unknown as Record<string, unknown>).resource = trip("cloudinary.resource");
+(cloudinary.uploader as unknown as Record<string, unknown>).destroy = trip("cloudinary.destroy");
+(cloudinary.uploader as unknown as Record<string, unknown>).upload = trip("cloudinary.upload");
 
 // ---- A. Server Actions
 const { sessionResolver, ADMIN_WRAPPED } = await import("../src/lib/admin/session.ts");
@@ -39,6 +50,7 @@ const REQUIRED_ACTIONS = new Set([
   "createCategory", "updateCategory", "setCategoryOrder", "deleteCategory",
   "createCourse", "updateCourse", "setCoursePublished", "setCourseFeatured", "deleteCourse",
   "saveSettings", // specs/028-site-settings FR-012
+  "signUpload", "saveSiteImages", // specs/030-image-upload FR-016
 ]);
 const seen = new Set<string>();
 
@@ -59,7 +71,7 @@ for (const file of actionFiles) {
       fail(`${label} is not wrapped by withAdmin()`);
       continue;
     }
-    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}]]) {
+    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}], [{ scope: "site" }], [{ founderPhoto: null }]]) {
       touched.length = 0;
       let result: unknown;
       try {
