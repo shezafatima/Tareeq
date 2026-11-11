@@ -40,6 +40,7 @@ const leadSchema = new Schema(
 
 leadSchema.index({ createdAt: -1 });
 leadSchema.index({ type: 1, status: 1, createdAt: -1 });
+leadSchema.index({ type: 1, courseId: 1 }); // course filter and live category fallback (specs/026-split-submissions R14)
 leadSchema.index({ status: 1, createdAt: -1 });
 leadSchema.index({ "notification.state": 1, createdAt: -1 });
 leadSchema.index({ email: 1 });
@@ -62,6 +63,11 @@ const courseSchema = new Schema({
   courseName: { type: String, required: true },
   level: { type: String, enum: LEVEL_VALUES, required: true },
   ageGroup: { type: String, enum: AGE_VALUES, required: true },
+  // Category snapshot set by the server on save (specs/026-split-submissions/data-model.md "Snapshot states").
+  // No defaults on purpose: absent = saved before 026 (admin falls back to the live course), null = saved with no
+  // category, string = the course's category at sign-up.
+  categoryId: { type: String },
+  categoryName: { type: String },
 });
 
 type LeadFields = InferSchemaType<typeof leadSchema>;

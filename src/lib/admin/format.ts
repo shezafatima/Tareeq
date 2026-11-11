@@ -6,4 +6,3 @@ const dateOnly = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZon
 export const formatDateTime = (iso: string | null | undefined): string => (iso ? dateTime.format(new Date(iso)) : "—");
 export const formatDate = (iso: string | null | undefined): string => (iso ? dateOnly.format(new Date(iso)) : "—");
 
-export const TYPE_LABEL = { workshop: "Workshop request", course: "Course sign-up" } as const;

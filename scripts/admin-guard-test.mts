@@ -58,7 +58,7 @@ for (const file of actionFiles) {
       fail(`${label} is not wrapped by withAdmin()`);
       continue;
     }
-    for (const args of [[], [{}], [{ id: "000000000000000000000000", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", featured: true, order: 1, values: {} }], ["x", {}]]) {
+    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}]]) {
       touched.length = 0;
       let result: unknown;
       try {
@@ -105,6 +105,100 @@ if (!process.argv.includes("--no-http")) {
   } catch (err) {
     fail(`could not reach ${base} for part C (${err instanceof Error ? err.message : "error"}); start the dev server or pass --no-http`);
   }
+}
+
+// ---- D. Wrong-type checks (specs/026-split-submissions FR-023, research R5)
+// Signed in, with an in-memory store instead of MongoDB. A shared lead action called with the other view's type must
+// answer not_found and write nothing. The right type must write once, with `type` in the filter. Its result is not
+// asserted: revalidatePath needs a Next request and throws here, which the action reports as "unavailable" after the write.
+{
+  type Rec = { _id: string; type: string; status: string; adminNotes: string };
+  const COURSE_ID = "c0000000000000000000000c";
+  const WORKSHOP_ID = "a0000000000000000000000a";
+  const original: Rec[] = [
+    { _id: COURSE_ID, type: "course", status: "new", adminNotes: "" },
+    { _id: WORKSHOP_ID, type: "workshop", status: "new", adminNotes: "" },
+  ];
+  let store: Rec[] = [];
+  const writes: { op: string; filter: Record<string, unknown> }[] = [];
+  const matches = (f: Record<string, unknown>) => (r: Rec) => String(f?._id) === r._id && f?.type === r.type;
+
+  const M = mongoose.Model as unknown as Record<string, unknown>;
+  M.findOne = (filter: Record<string, unknown>) => {
+    const chain = {
+      select: () => chain,
+      lean: async () => {
+        const hit = store.find(matches(filter));
+        return hit ? { ...hit } : null;
+      },
+    };
+    return chain;
+  };
+  M.updateOne = async (filter: Record<string, unknown>, update: { $set?: Partial<Rec> }) => {
+    const hit = store.find(matches(filter));
+    if (!hit) return { matchedCount: 0, modifiedCount: 0 };
+    writes.push({ op: "updateOne", filter });
+    Object.assign(hit, update.$set ?? {});
+    return { matchedCount: 1, modifiedCount: 1 };
+  };
+  M.deleteOne = async (filter: Record<string, unknown>) => {
+    const before = store.length;
+    store = store.filter((r) => !matches(filter)(r));
+    if (store.length === before) return { deletedCount: 0 };
+    writes.push({ op: "deleteOne", filter });
+    return { deletedCount: 1 };
+  };
+  process.env.MONGODB_URI ??= "mongodb://guard-test-stub";
+  (mongoose as unknown as Record<string, unknown>).connect = async () => mongoose;
+  sessionResolver.current = async () => true;
+
+  const actions = (await import(pathToFileURL(join(adminDir, "leads-actions.ts")).href)) as Record<
+    string,
+    (input: Record<string, unknown>) => Promise<{ ok: boolean; code?: string }>
+  >;
+  const calls: [string, Record<string, unknown>][] = [
+    ["setLeadStatus", { status: "closed" }],
+    ["saveLeadNotes", { notes: "x" }],
+    ["deleteLead", {}],
+  ];
+  let passed = 0;
+  for (const [name, extra] of calls) {
+    for (const [id, wrongType, rightType] of [
+      [COURSE_ID, "workshop", "course"],
+      [WORKSHOP_ID, "course", "workshop"],
+    ] as const) {
+      const label = `D. ${name} on a ${rightType} record`;
+      store = original.map((r) => ({ ...r }));
+      writes.length = 0;
+      let result: { ok: boolean; code?: string };
+      try {
+        result = await actions[name]({ id, type: wrongType, ...extra });
+      } catch (err) {
+        fail(`${label} with type "${wrongType}" threw: ${err instanceof Error ? err.message : "error"}`);
+        continue;
+      }
+      if (result?.ok !== false || result?.code !== "not_found") {
+        fail(`${label} with type "${wrongType}" did not return not_found (got ${JSON.stringify(result)})`);
+      } else if (writes.length) {
+        fail(`${label} with type "${wrongType}" wrote to the store`);
+      } else if (JSON.stringify(store) !== JSON.stringify(original)) {
+        fail(`${label} with type "${wrongType}" changed a record`);
+      } else passed++;
+
+      // positive control: the right type reaches the record
+      store = original.map((r) => ({ ...r }));
+      writes.length = 0;
+      try {
+        await actions[name]({ id, type: rightType, ...extra });
+      } catch {
+        // revalidatePath outside Next; the write is what matters here
+      }
+      if (writes.length !== 1 || writes[0].filter.type !== rightType) {
+        fail(`${label} with the right type "${rightType}" did not write exactly once with type in the filter`);
+      } else passed++;
+    }
+  }
+  console.log(`D. Wrong-type checks: ${passed} of ${calls.length * 4} passed`);
 }
 
 if (failures.length) {

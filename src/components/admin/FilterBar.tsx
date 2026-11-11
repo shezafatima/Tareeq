@@ -4,25 +4,34 @@ import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { leadsHref, type LeadParams } from "@/lib/admin/leads-params";
+import { leadsHref, type LeadParamsFor, type LeadType } from "@/lib/admin/leads-params";
 import { controlBase, controlBorder } from "@/components/ui/FieldFrame";
 import { cn } from "@/lib/utils";
 
-const TYPE_OPTIONS = [
-  { value: "", label: "All types" },
-  { value: "workshop", label: "Workshop requests" },
-  { value: "course", label: "Course sign-ups" },
-];
-const STATUS_OPTIONS = [
-  { value: "", label: "All statuses" },
-  { value: "new", label: "New" },
-  { value: "contacted", label: "Contacted" },
-  { value: "booked", label: "Booked" },
-  { value: "closed", label: "Closed" },
-];
+export type FilterSelect = {
+  /** the URL parameter this select writes, e.g. "status" or "category" */
+  name: string;
+  label: string;
+  /** the first option, meaning "no filter", e.g. "All statuses" */
+  allLabel: string;
+  options: { value: string; label: string }[];
+};
 
-/** Type, status and search. They live in the address, so a refresh keeps the view. Changing any of them returns to page 1. */
-export default function FilterBar({ params }: { params: LeadParams }) {
+/**
+ * Search plus one select per filter of this view (specs/026-split-submissions/contracts/routes-and-ui.md). They live in
+ * the address, so a refresh or a shared link keeps the view. Changing any of them returns to page 1 and closes the drawer.
+ */
+export default function FilterBar<T extends LeadType>({
+  type,
+  params,
+  selects,
+  searchLabel,
+}: {
+  type: T;
+  params: LeadParamsFor<T>;
+  selects: FilterSelect[];
+  searchLabel: string;
+}) {
   const router = useRouter();
   const [q, setQ] = useState(params.q);
   const latest = useRef(params);
@@ -34,22 +43,23 @@ export default function FilterBar({ params }: { params: LeadParams }) {
   useEffect(() => {
     if (q.trim() === latest.current.q) return;
     const timer = window.setTimeout(() => {
-      router.replace(leadsHref({ ...latest.current, q: q.trim(), page: 1, lead: null }), { scroll: false });
+      router.replace(leadsHref(type, { ...latest.current, q: q.trim(), page: 1, lead: null }), { scroll: false });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [q, router]);
+  }, [q, router, type]);
 
-  const go = (next: Partial<LeadParams>) =>
-    router.replace(leadsHref({ ...params, q: q.trim(), ...next, page: 1, lead: null }), { scroll: false });
+  const values = params as unknown as Record<string, string | null>;
+  const go = (name: string, value: string) =>
+    router.replace(leadsHref(type, { ...params, q: q.trim(), [name]: value || null, page: 1, lead: null }), { scroll: false });
 
-  const filtered = Boolean(params.type || params.status || params.q);
+  const filtered = Boolean(params.q) || selects.some((s) => Boolean(values[s.name]));
   const select = cn(controlBase, controlBorder(), "mt-0 pl-3 pr-8");
 
   return (
-    <form role="search" onSubmit={(e) => e.preventDefault()} className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+    <form role="search" onSubmit={(e) => e.preventDefault()} className="space-y-3">
       <div>
         <label htmlFor="lead-search" className="sr-only">
-          Search by name, phone, email or organization
+          {searchLabel}
         </label>
         <div className="relative">
           <MagnifyingGlass aria-hidden="true" size={20} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-midnight/60" />
@@ -59,49 +69,37 @@ export default function FilterBar({ params }: { params: LeadParams }) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             maxLength={100}
-            placeholder="Search submissions"
+            placeholder={searchLabel}
             className={cn(controlBase, controlBorder(), "mt-0 pl-11")}
           />
         </div>
       </div>
-      <div>
-        <label htmlFor="lead-type" className="sr-only">
-          Type
-        </label>
-        <select
-          id="lead-type"
-          value={params.type ?? ""}
-          onChange={(e) => go({ type: (e.target.value || null) as LeadParams["type"] })}
-          className={select}
-        >
-          {TYPE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label htmlFor="lead-status" className="sr-only">
-          Status
-        </label>
-        <select
-          id="lead-status"
-          value={params.status ?? ""}
-          onChange={(e) => go({ status: (e.target.value || null) as LeadParams["status"] })}
-          className={select}
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+      <div className={cn("grid gap-3 sm:grid-cols-2 lg:grid-cols-3", selects.length > 3 && "xl:grid-cols-5")}>
+        {selects.map((s) => (
+          <div key={s.name} className="min-w-0">
+            <label htmlFor={`lead-filter-${s.name}`} className="sr-only">
+              {s.label}
+            </label>
+            <select
+              id={`lead-filter-${s.name}`}
+              value={values[s.name] ?? ""}
+              onChange={(e) => go(s.name, e.target.value)}
+              className={cn(select, "w-full truncate")}
+            >
+              <option value="">{s.allLabel}</option>
+              {s.options.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
       </div>
       {filtered ? (
-        <p className="sm:col-span-3">
+        <p>
           <Link
-            href="/admin"
+            href={leadsHref(type, {})}
             onClick={() => setQ("")}
             className="inline-flex min-h-11 items-center text-sm font-semibold text-royal underline underline-offset-4"
           >

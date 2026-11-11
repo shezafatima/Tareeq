@@ -1,6 +1,6 @@
 import { CaretLeft, CaretRight } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import { leadsHref, type LeadParams } from "@/lib/admin/leads-params";
+import { leadsHref, type LeadParamsFor, type LeadType } from "@/lib/admin/leads-params";
 import { cn } from "@/lib/utils";
 
 const btn =
@@ -8,22 +8,27 @@ const btn =
 const off = "pointer-events-none opacity-40";
 
 /** Previous / next with "Page X of Y", keeping the current filters. 25 per page. */
-export default function Pagination({
+export default function Pagination<T extends LeadType>({
+  type,
   page,
   pages,
   total,
   params,
+  noun,
 }: {
+  type: T;
   page: number;
   pages: number;
   total: number;
-  params: LeadParams;
+  params: LeadParamsFor<T>;
+  /** singular and plural, e.g. ["request", "requests"] */
+  noun: readonly [string, string];
 }) {
-  const to = (p: number) => leadsHref({ ...params, page: p, lead: null });
+  const to = (p: number) => leadsHref(type, { ...params, page: p, lead: null });
   return (
     <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-midnight/80">
-        Page {page} of {pages} · {total} {total === 1 ? "submission" : "submissions"}
+        Page {page} of {pages} · {total} {total === 1 ? noun[0] : noun[1]}
       </p>
       <div className="flex gap-2">
         <Link
