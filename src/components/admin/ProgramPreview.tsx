@@ -25,6 +25,7 @@ function toProgram(v: ProgramFormValues): Program {
     },
     priceText: v.priceText.trim(),
     ...(v.coverImageUrl.trim() ? { coverImageUrl: v.coverImageUrl.trim() } : {}),
+    ...(v.coverImage ? { coverImage: v.coverImage } : {}),
     order: Number.isFinite(order) ? order : 0,
     published: v.published,
     createdAt: "",

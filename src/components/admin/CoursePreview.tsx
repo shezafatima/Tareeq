@@ -20,6 +20,7 @@ function toCardData(v: CourseFormValues, categories: Category[]): CourseCardData
     priceText: v.priceText,
     summary: v.summary.trim() || "A short summary of the course appears here.",
     ...(cover ? { coverImageUrl: cover } : {}),
+    ...(v.coverImage ? { coverImage: v.coverImage } : {}),
   };
 }
 

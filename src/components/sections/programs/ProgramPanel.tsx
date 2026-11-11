@@ -3,7 +3,7 @@ import Link from "next/link";
 import Container from "@/components/ui/Container";
 import { AUDIENCE_LABELS, type Program } from "@/lib/programs/options";
 import type { ContactDetails } from "@/lib/settings/merge";
-import { visibleFacts } from "@/lib/programs/view";
+import { resolveCover, visibleFacts } from "@/lib/programs/view";
 import ProgramCover from "./ProgramCover";
 import ProgramCta from "./ProgramCta";
 import ProgramFacts from "./ProgramFacts";
@@ -19,7 +19,7 @@ export default function ProgramPanel({ program, contact }: { program: Program; c
   return (
     <article className="program-panel">
       <ProgramCover
-        url={program.coverImageUrl}
+        cover={resolveCover(program)}
         sizes="(min-width: 1024px) 36vw, 1px"
         className="program-panel__cover"
       />

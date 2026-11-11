@@ -4,13 +4,14 @@ import Section from "@/components/sections/Section";
 import Reveal from "@/components/ui/Reveal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { getMentor } from "@/content";
+import { getSiteImages } from "@/lib/site-images/data";
 
 /**
  * "Meet your mentor" (spec 011). Server component; motion is CSS (Reveal + globals.css). Only real data is shown:
  * socials without a url, facts without a value and a missing quote are left out, never faked.
  */
 export default async function MentorSection() {
-  const m = await getMentor();
+  const [m, images] = await Promise.all([getMentor(), getSiteImages()]);
   const socials = m.socials.flatMap((s) => (s.url?.trim() ? [{ ...s, url: s.url.trim() }] : []));
   const facts = m.facts.filter((f) => f.value?.trim()).slice(0, 3);
   const showFacts = facts.length >= 2;
@@ -25,7 +26,7 @@ export default async function MentorSection() {
       </Reveal>
       <div className="mt-10 grid gap-8 overflow-hidden rounded-card border border-royal/10 bg-white p-5 shadow-[var(--shadow-card-rest)] sm:p-8 lg:grid-cols-[2fr_3fr] lg:items-center lg:gap-12 lg:p-10">
         <Reveal className="mentor-photo">
-          <MentorPhoto photo={m.photo} />
+          <MentorPhoto photo={images.founderPhoto} />
         </Reveal>
         <div className="min-w-0">
           <Reveal index={1}>

@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { connectDb } from "@/lib/db/mongoose";
+import { pickImage } from "@/lib/images/schema";
 import { ProgramModel } from "./model";
 import { SLUG_MAX, SLUG_PATTERN, type Program } from "./options";
 
@@ -30,6 +31,7 @@ function toProgram(doc: StoredProgram): Program {
     },
     priceText: doc.priceText,
     ...(doc.coverImageUrl ? { coverImageUrl: doc.coverImageUrl } : {}),
+    ...(pickImage(doc.coverImage) ? { coverImage: pickImage(doc.coverImage) } : {}),
     order: doc.order,
     published: doc.published,
     createdAt: doc.createdAt.toISOString(),

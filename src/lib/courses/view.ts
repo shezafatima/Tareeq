@@ -62,6 +62,7 @@ export function toCardData(course: Course): CourseCardData {
     priceText: course.priceText,
     summary: course.summary,
     ...(course.coverImageUrl ? { coverImageUrl: course.coverImageUrl } : {}),
+    ...(course.coverImage ? { coverImage: course.coverImage } : {}),
   };
 }
 

@@ -1,5 +1,6 @@
 import "server-only";
 import mongoose, { Schema, type Model } from "mongoose";
+import { storedImageSchema } from "@/lib/images/schema";
 import { AUDIENCES, CTA_TYPES, SLUG_MAX, SLUG_PATTERN, STATUSES } from "./options";
 
 // One document per program (specs/015-programs-pages/data-model.md). Everything here is editable as stored,
@@ -45,6 +46,8 @@ const programSchema = new Schema(
         message: "coverImageUrl must start with https:// or be a site-relative path",
       },
     },
+    // the uploaded cover (specs/030-image-upload). coverImageUrl above is the older plain URL, still read when this is empty.
+    coverImage: { type: storedImageSchema },
     order: { type: Number, required: true, default: 0 },
     published: { type: Boolean, required: true, default: false },
   },

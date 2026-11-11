@@ -10,7 +10,7 @@ import ProgramProse from "@/components/sections/programs/ProgramProse";
 import Container from "@/components/ui/Container";
 import { getCourseBySlug, getPublishedCourseSlugs } from "@/lib/courses/data";
 import { courseFacts } from "@/lib/courses/view";
-import { isAllowedCover } from "@/lib/programs/view";
+import { resolveCover } from "@/lib/programs/view";
 
 // Static, refreshed hourly and by tag. See specs/025-courses-catalog/research.md R3 and R14.
 export const revalidate = 3600;
@@ -26,8 +26,9 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
   const course = await getCourseBySlug(slug);
   if (!course) return {};
 
-  const image = isAllowedCover(course.coverImageUrl)
-    ? { url: course.coverImageUrl, alt: course.title }
+  const cover = resolveCover(course);
+  const image = cover
+    ? { url: cover.src, alt: cover.alt || course.title, ...(cover.width ? { width: cover.width, height: cover.height } : {}) }
     : { url: "/robot.png", width: 408, height: 612, alt: "Tareeq robot assistant" };
   const path = `/courses/${course.slug}`;
 

@@ -1,6 +1,7 @@
 // One rule set for a program, used by the edit form (instant feedback) and the Server Actions (source of truth).
 // Limits mirror the stored model in src/lib/programs/model.ts. Pure: relative imports only, no server code.
 import * as z from "zod/mini";
+import { imageSchema } from "../images/shared.ts";
 import { AUDIENCES, CTA_TYPES, SLUG_MAX, SLUG_PATTERN, STATUSES } from "../programs/options.ts";
 
 export const LIMITS = {
@@ -69,7 +70,10 @@ export const programSchema = z.object({
     location: optional(LIMITS.fact, MESSAGES.fact),
   }),
   priceText: optional(LIMITS.priceText, MESSAGES.priceText),
+  /** the older plain URL: kept only so an old record still shows its image; the form can clear it, never type one */
   coverImageUrl: z.string().check(z.trim(), z.refine(isAllowedCoverUrl, MESSAGES.cover)),
+  /** the uploaded cover (specs/030-image-upload); null = none */
+  coverImage: z.optional(z.nullable(imageSchema)),
   order: z.number().check(z.int(MESSAGES.order), z.gte(-LIMITS.order, MESSAGES.order), z.lte(LIMITS.order, MESSAGES.order)),
   published: z.boolean(),
 });

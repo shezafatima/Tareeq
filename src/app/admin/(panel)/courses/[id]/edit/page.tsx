@@ -25,6 +25,7 @@ function toFormValues(c: AdminCourse): CourseFormValues {
     startDateText: c.startDateText,
     priceText: c.priceText,
     coverImageUrl: c.coverImageUrl ?? "",
+    coverImage: c.coverImage ?? null,
     featured: c.featured,
     order: String(c.order),
     published: c.published,

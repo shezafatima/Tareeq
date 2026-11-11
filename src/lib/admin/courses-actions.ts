@@ -4,6 +4,9 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { connectDb } from "@/lib/db/mongoose";
 import { CourseCategoryModel, CourseModel } from "@/lib/courses/model";
 import { MESSAGES, parseCourse, type CourseFormValues, type CourseInput } from "./courses-schema";
+import { pickImage } from "@/lib/images/schema";
+import type { StoredImage } from "@/lib/images/shared";
+import { deleteReplaced, imageFailure, resolveImageChange, type ImageChange } from "./images-verify";
 import { isObjectId } from "./leads-params";
 import { logAdmin } from "./log";
 import type { ActionResult, Failure } from "./result";
@@ -30,10 +33,14 @@ function refresh(...slugs: string[]): void {
   revalidatePath("/admin/courses");
 }
 
-/** The document to store: an empty cover image is left out entirely (the model rejects an empty string). */
-function toDocument(data: Omit<CourseInput, "slugAuto">) {
-  const { coverImageUrl, ...rest } = data;
-  return { ...rest, ...(coverImageUrl ? { coverImageUrl } : {}) };
+/**
+ * The document to store: the form's values with the verified cover. A saved cover replaces the older plain URL; with no
+ * cover, an old URL the owner did not clear is kept. Empty values are left out (the model rejects an empty string).
+ */
+function toDocument(data: Omit<CourseInput, "slugAuto">, cover: StoredImage | null) {
+  const { coverImageUrl, coverImage, ...rest } = data;
+  void coverImage; // the client's copy is never stored; `cover` is the server-verified one
+  return { ...rest, ...(cover ? { coverImage: cover } : coverImageUrl ? { coverImageUrl } : {}) };
 }
 
 async function freeSlug(base: string): Promise<string> {
@@ -50,6 +57,12 @@ export const createCourse = withAdmin(async (values: CourseFormValues): Promise<
   try {
     await connectDb();
     if (!(await CourseCategoryModel.exists({ _id: data.category }))) return noCategory;
+    let change: ImageChange;
+    try {
+      change = await resolveImageChange(null, data.coverImage ?? null);
+    } catch (err) {
+      return imageFailure(err);
+    }
     // a slug filled in from the title gets the lowest free -N; a typed slug is never changed behind the owner's back (R4)
     for (let attempt = 0; attempt < 2; attempt++) {
       let slug = data.slug;
@@ -58,7 +71,7 @@ export const createCourse = withAdmin(async (values: CourseFormValues): Promise<
         slug = await freeSlug(data.slug);
       }
       try {
-        const created = await CourseModel.create(toDocument({ ...data, slug }));
+        const created = await CourseModel.create(toDocument({ ...data, slug }, change.image));
         refresh(slug);
         logAdmin("course", "ok", created.id);
         return { ok: true, id: created.id, slug };
@@ -82,16 +95,26 @@ export const updateCourse = withAdmin(async (input: { id: string; values: Course
   void slugAuto; // only used on create: a changed slug on update is always treated as typed
   try {
     await connectDb();
-    const current = await CourseModel.findById(id).select("slug").lean<{ slug: string }>();
+    const current = await CourseModel.findById(id).select("slug coverImage").lean<{ slug: string; coverImage?: unknown }>();
     if (!current) return { ok: false, code: "not_found" };
     if (!(await CourseCategoryModel.exists({ _id: data.category }))) return noCategory;
     if (await CourseModel.exists({ slug: data.slug, _id: { $ne: id } })) return slugTaken;
-    const doc = toDocument(data);
+    let change: ImageChange;
+    try {
+      change = await resolveImageChange(pickImage(current.coverImage), data.coverImage ?? null);
+    } catch (err) {
+      return imageFailure(err);
+    }
+    const doc = toDocument(data, change.image);
+    const unset: Record<string, 1> = {};
+    if (!("coverImage" in doc)) unset.coverImage = 1;
+    if (!("coverImageUrl" in doc)) unset.coverImageUrl = 1;
     await CourseModel.updateOne(
       { _id: id },
-      { $set: doc, ...(doc.coverImageUrl ? {} : { $unset: { coverImageUrl: 1 } }) },
+      { $set: doc, ...(Object.keys(unset).length ? { $unset: unset } : {}) },
       { runValidators: true },
     );
+    await deleteReplaced(change);
     refresh(data.slug, current.slug);
     logAdmin("course", "ok", id);
     return { ok: true };
@@ -131,8 +154,10 @@ export const deleteCourse = withAdmin(async (input: { id: string }): Promise<Act
   try {
     await connectDb();
     // course sign-ups keep their title snapshot, so deleting a course never changes what old leads show (FR-029)
-    const doc = await CourseModel.findByIdAndDelete(id, { projection: { slug: 1 } }).lean<{ slug: string }>();
+    const doc = await CourseModel.findByIdAndDelete(id, { projection: { slug: 1, coverImage: 1 } }).lean<{ slug: string; coverImage?: unknown }>();
     if (!doc) return { ok: false, code: "not_found" };
+    const cover = pickImage(doc.coverImage);
+    if (cover) await deleteReplaced({ image: null, toDelete: cover.publicId });
     refresh(doc.slug);
     logAdmin("course", "ok", id);
     return { ok: true };

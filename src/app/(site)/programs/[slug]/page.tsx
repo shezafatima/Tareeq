@@ -9,7 +9,7 @@ import ProgramOutcomes from "@/components/sections/programs/ProgramOutcomes";
 import ProgramProse from "@/components/sections/programs/ProgramProse";
 import Container from "@/components/ui/Container";
 import { getProgramBySlug, getPublishedSlugs } from "@/lib/programs/data";
-import { isAllowedCover, visibleFacts } from "@/lib/programs/view";
+import { resolveCover, visibleFacts } from "@/lib/programs/view";
 import { getSiteSettings } from "@/lib/settings/data";
 
 // Static, refreshed hourly and by tag. See specs/015-programs-pages/research.md R2.
@@ -26,8 +26,9 @@ export async function generateMetadata({ params }: ProgramPageProps): Promise<Me
   const program = await getProgramBySlug(slug);
   if (!program) return {};
 
-  const image = isAllowedCover(program.coverImageUrl)
-    ? { url: program.coverImageUrl, alt: program.title }
+  const cover = resolveCover(program);
+  const image = cover
+    ? { url: cover.src, alt: cover.alt || program.title, ...(cover.width ? { width: cover.width, height: cover.height } : {}) }
     : { url: "/robot.png", width: 408, height: 612, alt: "Tareeq robot assistant" };
   const path = `/programs/${program.slug}`;
 

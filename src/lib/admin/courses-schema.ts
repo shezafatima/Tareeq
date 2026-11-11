@@ -2,6 +2,7 @@
 // (source of truth). Limits mirror src/lib/courses/model.ts. Pure: relative imports only, no server code.
 import * as z from "zod/mini";
 import { ENROLLMENT_STATUSES, FORMATS, LEVELS, SLUG_MAX, SLUG_PATTERN } from "../courses/options.ts";
+import { imageSchema } from "../images/shared.ts";
 import { isAllowedCoverUrl } from "./programs-schema.ts";
 
 export { slugify } from "./programs-schema.ts";
@@ -78,7 +79,10 @@ export const courseSchema = z.object({
   durationText: optional(LIMITS.shortText, MESSAGES.shortText),
   startDateText: optional(LIMITS.shortText, MESSAGES.shortText),
   priceText: optional(LIMITS.priceText, MESSAGES.priceText),
+  /** the older plain URL: kept only so an old record still shows its image; the form can clear it, never type one */
   coverImageUrl: z.string().check(z.trim(), z.refine(isAllowedCoverUrl, MESSAGES.cover)),
+  /** the uploaded cover (specs/030-image-upload); null = none */
+  coverImage: z.optional(z.nullable(imageSchema)),
   featured: z.boolean(),
   order: orderField,
   published: z.boolean(),

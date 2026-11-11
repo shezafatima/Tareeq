@@ -23,6 +23,7 @@ function toFormValues(p: AdminProgram): ProgramFormValues {
     facts: p.facts,
     priceText: p.priceText,
     coverImageUrl: p.coverImageUrl ?? "",
+    coverImage: p.coverImage ?? null,
     order: String(p.order),
     published: p.published,
   };

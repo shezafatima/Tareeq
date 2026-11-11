@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ProgramCover from "@/components/sections/programs/ProgramCover";
 import { FORMAT_LABELS, LEVEL_LABELS, type CourseCardData } from "@/lib/courses/options";
+import { resolveCover } from "@/lib/programs/view";
 import CourseStatusChip from "./CourseStatusChip";
 
 type CourseCardProps = {
@@ -26,7 +27,7 @@ export default function CourseCard({
       data-status={course.enrollmentStatus}
       className="course-card group flex h-full flex-col overflow-hidden rounded-card bg-white text-midnight focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-royal"
     >
-      <ProgramCover url={course.coverImageUrl} sizes={sizes} className="course-card-cover relative aspect-[16/9] w-full" />
+      <ProgramCover cover={resolveCover(course)} sizes={sizes} className="course-card-cover relative aspect-[16/9] w-full" />
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {course.category ? (

@@ -3,6 +3,7 @@ import { connectDb } from "@/lib/db/mongoose";
 import { CourseCategoryModel, CourseModel } from "@/lib/courses/model";
 import { isEnrollmentStatus, type Course, type CourseCategory, type EnrollmentStatus } from "@/lib/courses/options";
 import { sortCourses } from "@/lib/courses/view";
+import { pickImage } from "@/lib/images/schema";
 import { isObjectId } from "./leads-params";
 
 // Admin reads of courses and categories. Deliberately NOT cached (unlike src/lib/courses/data.ts), so the owner always
@@ -63,6 +64,7 @@ function toAdminCourse(doc: StoredCourse, categories: Map<string, CourseCategory
     priceText: doc.priceText ?? "",
     enrollmentStatus: doc.enrollmentStatus,
     ...(doc.coverImageUrl ? { coverImageUrl: doc.coverImageUrl } : {}),
+    ...(pickImage(doc.coverImage) ? { coverImage: pickImage(doc.coverImage) } : {}),
     featured: Boolean(doc.featured),
     order: doc.order,
     published: doc.published,

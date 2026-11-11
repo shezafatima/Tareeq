@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import type { CourseOption } from "@/content/types";
 import { connectDb } from "@/lib/db/mongoose";
 import { CourseCategoryModel, CourseModel } from "./model";
+import { pickImage } from "@/lib/images/schema";
 import { isLevel, SLUG_MAX, SLUG_PATTERN, type Course, type CourseCategory, type Level } from "./options";
 import { isListed, sortCourses, toCourseOptions } from "./view";
 
@@ -49,6 +50,7 @@ function toCourse(doc: StoredCourse, categories: Map<string, CourseCategory>): C
     priceText: doc.priceText ?? "",
     enrollmentStatus: doc.enrollmentStatus,
     ...(doc.coverImageUrl ? { coverImageUrl: doc.coverImageUrl } : {}),
+    ...(pickImage(doc.coverImage) ? { coverImage: pickImage(doc.coverImage) } : {}),
     featured: Boolean(doc.featured),
     order: doc.order,
     published: doc.published,
