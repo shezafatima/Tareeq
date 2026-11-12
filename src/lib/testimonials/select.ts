@@ -1,6 +1,6 @@
 // Pure selection rules (spec 012). Relative imports only so `node --test` can run it.
-import type { ResolvedTestimonial, Testimonial } from "../content/types.ts";
-import { parseYouTubeId } from "./youtube.ts";
+import type { ResolvedTestimonial, Testimonial } from "../../content/types.ts";
+import { parseYouTubeId } from "../youtube.ts";
 
 type Options = {
   /** true outside production */

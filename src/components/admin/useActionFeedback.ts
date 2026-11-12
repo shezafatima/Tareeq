@@ -43,7 +43,7 @@ export function useActionFeedback() {
           toast.error("Image uploads are not set up yet.");
           break;
         default:
-          toast.error("Please check the highlighted fields and try again.");
+          toast.error(failure.message ?? "Please check the highlighted fields and try again.");
       }
       return failure.fieldErrors ?? {};
     },

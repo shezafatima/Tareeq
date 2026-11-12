@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { selectTestimonials } from "../../src/lib/testimonials.ts";
+import { selectTestimonials } from "../../src/lib/testimonials/select.ts";
 import type { Testimonial } from "../../src/content/types.ts";
 
 const make = (over: Partial<Testimonial> = {}): Testimonial => ({

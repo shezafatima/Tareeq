@@ -191,7 +191,7 @@ export type MentorContent = {
   socials: MentorSocial[];
 };
 
-/** One person's video story (spec 012). This shape is the contract the future admin writes to; keep it stable. */
+/** One person's video story (spec 012). The admin (spec 031) writes this shape to the database; keep it stable. */
 export type Testimonial = {
   /** YouTube Shorts, watch or youtu.be link */
   youtubeUrl: string;

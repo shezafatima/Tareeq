@@ -50,6 +50,7 @@ const REQUIRED_ACTIONS = new Set([
   "createCategory", "updateCategory", "setCategoryOrder", "deleteCategory",
   "createCourse", "updateCourse", "setCoursePublished", "setCourseFeatured", "deleteCourse",
   "saveSettings", // specs/028-site-settings FR-012
+  "createTestimonial", "updateTestimonial", "setTestimonialPublished", "deleteTestimonial", // specs/031-admin-testimonials FR-018
   "signUpload", "saveSiteImages", // specs/030-image-upload FR-016
 ]);
 const seen = new Set<string>();

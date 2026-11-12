@@ -7,8 +7,8 @@ import { readFooterContact } from "./data/footer";
 import { homeCopy } from "./data/cta";
 import { howItWorks } from "./how-it-works";
 import { mentor } from "./mentor";
-import { testimonials } from "./testimonials";
-import { selectTestimonials } from "../lib/testimonials";
+import { getPublishedTestimonials } from "../lib/testimonials/data";
+import { selectTestimonials } from "../lib/testimonials/select";
 import { whyTareeq } from "./why-tareeq";
 import { courseFormLabel, leadCopy, PRIVACY_NOTE_VERSION } from "./data/leads";
 import { onlineCoursesCard } from "./online-courses";
@@ -30,6 +30,7 @@ import type {
   PageMeta,
   PageSlug,
   ResolvedTestimonial,
+  Testimonial,
   OurWayContent,
   TrustFact,
 } from "./types";
@@ -121,7 +122,14 @@ export async function getTestimonials(): Promise<ResolvedTestimonial[]> {
   const dev = process.env.NODE_ENV !== "production";
   // the dev-only module is imported behind a constant check so production builds drop it
   const placeholders = dev ? (await import("./testimonials.dev")).placeholders : [];
-  return selectTestimonials(testimonials, {
+  let items: Testimonial[] = [];
+  try {
+    items = await getPublishedTestimonials();
+  } catch (err) {
+    // a missing section is better than a broken home page (specs/031-admin-testimonials research R2)
+    console.error(`[testimonials] read failed: ${err instanceof Error ? err.name : "UnknownError"}`);
+  }
+  return selectTestimonials(items, {
     dev,
     placeholders,
     warn: (index) => console.warn("[testimonials] skipped item with an invalid video link, index", index),

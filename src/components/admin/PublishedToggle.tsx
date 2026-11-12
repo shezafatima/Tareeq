@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { setProgramPublished } from "@/lib/admin/programs-actions";
 import type { ActionResult } from "@/lib/admin/result";
-import { cn } from "@/lib/utils";
+import SwitchButton from "./SwitchButton";
 import { useToast } from "./Toast";
 import { useActionFeedback } from "./useActionFeedback";
 
@@ -13,10 +13,12 @@ type PublishedToggleProps = {
   published: boolean;
   /** the Server Action that saves the switch; programs by default, courses pass setCoursePublished */
   action?: (input: { id: string; published: boolean }) => Promise<ActionResult>;
+  /** when set the switch is locked and this is shown as a tooltip (testimonials without consent) */
+  lockedReason?: string;
 };
 
 /** A switch that publishes or hides a program or course the moment it is flipped. Shown at once, put back if the save fails. */
-export default function PublishedToggle({ id, title, published, action = setProgramPublished }: PublishedToggleProps) {
+export default function PublishedToggle({ id, title, published, action = setProgramPublished, lockedReason }: PublishedToggleProps) {
   const toast = useToast();
   const fail = useActionFeedback();
   const [on, setOn] = useState(published);
@@ -36,27 +38,13 @@ export default function PublishedToggle({ id, title, published, action = setProg
   };
 
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-label={`Published: ${title}`}
+    <SwitchButton
+      on={on}
+      label={`Published: ${title}`}
+      text={on ? "Published" : "Hidden"}
       onClick={flip}
-      disabled={pending}
-      className="inline-flex min-h-11 items-center gap-3 rounded-full pr-2 text-sm font-semibold text-midnight disabled:opacity-70"
-    >
-      <span
-        aria-hidden="true"
-        className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200", on ? "bg-royal" : "bg-midnight/35")}
-      >
-        <span
-          className={cn(
-            "absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow transition-transform duration-200 ease-[var(--ease-soft)]",
-            on && "translate-x-5",
-          )}
-        />
-      </span>
-      {on ? "Published" : "Hidden"}
-    </button>
+      pending={pending}
+      lockedReason={lockedReason}
+    />
   );
 }
