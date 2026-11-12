@@ -45,3 +45,16 @@ test("optimizedUrl adds the transform once and leaves other URLs alone", () => {
   assert.equal(optimizedUrl("/founder.jpeg"), "/founder.jpeg");
   assert.equal(optimizedUrl("https://example.com/a.jpg"), "https://example.com/a.jpg");
 });
+
+// specs/033-admin-blog research R4
+import { publicIdFromUrl } from "../../src/lib/images/shared.ts";
+
+test("publicIdFromUrl reads the id from our delivery URLs and rejects the rest", () => {
+  const base = "https://res.cloudinary.com/demo/image/upload";
+  assert.equal(publicIdFromUrl(`${base}/v123/tareeq/blog/a.jpg`), "tareeq/blog/a");
+  assert.equal(publicIdFromUrl(`${base}/f_auto,q_auto,w_800/v123/tareeq/blog/a.jpg`), "tareeq/blog/a");
+  assert.equal(publicIdFromUrl(`${base}/tareeq/blog/a.png?x=1`), "tareeq/blog/a");
+  assert.equal(publicIdFromUrl(`${base}/v123/other/a.jpg`), null);
+  assert.equal(publicIdFromUrl("https://example.com/image/upload/v1/tareeq/a.jpg"), null);
+  assert.equal(publicIdFromUrl(`${base}/v123/tareeq/blog/a.jpg`, "other"), null);
+});

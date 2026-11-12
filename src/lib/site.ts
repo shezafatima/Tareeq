@@ -2,16 +2,18 @@ export type NavItem = { label: string; href: string };
 
 export const navItems: NavItem[] = [
   { label: "Programs", href: "/programs" },
-  { label: "Courses", href: "/courses" },
   { label: "Our Way", href: "/our-way" },
+  { label: "Courses", href: "/courses" },
 ];
 
-const galleryNavItem: NavItem = { label: "Gallery", href: "/gallery" };
+const blogNavItem: NavItem = { label: "Blog", href: "/blog" };
 
-/** The main navigation. Gallery is listed only once an album is public (specs/032-admin-gallery FR-017); it comes after Courses. */
-export function navItemsFor({ gallery }: { gallery: boolean }): NavItem[] {
-  if (!gallery) return navItems;
-  return [navItems[0], navItems[1], galleryNavItem, ...navItems.slice(2)];
+/**
+ * The main navigation: Programs, Our Way, Courses, then Blog once a post is published (specs/033-admin-blog FR-023).
+ * Gallery is not in the navigation: the Workshop page shows the latest workshop photos and links to /gallery.
+ */
+export function navItemsFor({ blog }: { blog: boolean }): NavItem[] {
+  return blog ? [...navItems, blogNavItem] : [...navItems];
 }
 
 // Where every "Book a workshop" / "Join a workshop" call to action goes: the workshop page with the booking dialog open.

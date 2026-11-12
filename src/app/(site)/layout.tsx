@@ -4,12 +4,13 @@ import Preloader from "@/components/layout/preloader/Preloader";
 import PreloaderScript from "@/components/layout/preloader/PreloaderScript";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import RevealController from "@/components/ui/RevealController";
-import { hasPublicGallerySafe } from "@/lib/gallery/data";
+import { hasPublishedPostsSafe } from "@/lib/blog/data";
 import { navItemsFor } from "@/lib/site";
 
-// Gallery is in the navigation only while an album is public (specs/032-admin-gallery research R9): one cached read, passed down.
+// Blog is in the navigation only while a post is published (specs/033-admin-blog research R17): one cached read, passed down.
+// A failed read just hides the link. The gallery is reached from the Workshop page, not the navigation.
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const items = navItemsFor({ gallery: await hasPublicGallerySafe() });
+  const items = navItemsFor({ blog: await hasPublishedPostsSafe() });
   return (
     <div className="flex min-h-svh flex-col">
       <PreloaderScript />

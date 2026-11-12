@@ -8,7 +8,7 @@ import StatStrip from "@/components/admin/StatStrip";
 import SubmissionsTable, { type Column } from "@/components/admin/SubmissionsTable";
 import UnavailableNotice from "@/components/admin/UnavailableNotice";
 import { statusLabels } from "@/lib/admin/lead-status";
-import { LEAD_STATUS_VALUES, leadsHref, parseLeadParams } from "@/lib/admin/leads-params";
+import { LEAD_FILTER_KEYS, LEAD_STATUS_VALUES, leadsHref, parseLeadParams, SUBMISSIONS_PATH } from "@/lib/admin/leads-params";
 import { getLead, getLeadStats, getWorkshopMonths, listWorkshopLeads, type WorkshopRow } from "@/lib/admin/leads-query";
 import { safeLoad } from "@/lib/admin/safe-load";
 import { requireAdmin } from "@/lib/admin/session";
@@ -67,7 +67,8 @@ export default async function WorkshopSubmissionsPage({ searchParams }: Props) {
       {heading}
       <StatStrip type="workshop" counts={counts} params={params} labels={labels} />
       <FilterBar
-        type="workshop"
+        basePath={SUBMISSIONS_PATH.workshop}
+        keys={LEAD_FILTER_KEYS.workshop}
         params={params}
         searchLabel="Search name, phone, email or organization"
         selects={[

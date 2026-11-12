@@ -5,7 +5,7 @@
 //      { ok:false, code:"unauthorized" } without touching the database (mongoose is replaced with throwing stubs)
 //   B. no Route Handler exists except the allow-listed Auth.js one (a new one must be added here with a 401 assertion)
 //   C. GET /api/auth/session without a cookie returns no user
-import { readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import mongoose from "mongoose";
@@ -55,6 +55,9 @@ const REQUIRED_ACTIONS = new Set([
   // specs/032-admin-gallery FR-025
   "createGalleryAlbum", "updateGalleryAlbum", "setGalleryAlbumPublished", "deleteGalleryAlbum",
   "addGalleryPhoto", "updateGalleryPhoto", "setGalleryPhotoPublished", "setGalleryAlbumCover", "deleteGalleryPhoto",
+  // specs/033-admin-blog FR-028
+  "saveBlogPost", "deleteBlogPost", "renderBlogPreview",
+  "createBlogCategory", "updateBlogCategory", "setBlogCategoryOrder", "deleteBlogCategory",
 ]);
 const seen = new Set<string>();
 
@@ -75,7 +78,7 @@ for (const file of actionFiles) {
       fail(`${label} is not wrapped by withAdmin()`);
       continue;
     }
-    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}], [{ scope: "site" }], [{ founderPhoto: null }], [{ scope: "gallery" }], [{ albumId: "000000000000000000000000", publicId: "tareeq/gallery/x" }], [{ id: "000000000000000000000000", values: { alt: "x", caption: "", order: "1" } }], [{ albumId: "000000000000000000000000", photoId: "000000000000000000000000" }]]) {
+    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}], [{ scope: "site" }], [{ founderPhoto: null }], [{ scope: "gallery" }], [{ albumId: "000000000000000000000000", publicId: "tareeq/gallery/x" }], [{ id: "000000000000000000000000", values: { alt: "x", caption: "", order: "1" } }], [{ albumId: "000000000000000000000000", photoId: "000000000000000000000000" }], [{ id: null, values: { title: "x", slug: "x", status: "published" } }], [{ markdown: "# x", sizes: {} }], [{ scope: "blog" }]]) {
       touched.length = 0;
       let result: unknown;
       try {
@@ -97,6 +100,8 @@ console.log(`A. Server Actions: ${actionFiles.length} file(s), ${actionCount} ac
 
 // ---- B. Route Handlers
 const ALLOWED_ROUTES = new Set(["src/app/api/auth/[...nextauth]/route.ts"]);
+// Public, read-only routes (specs/033-admin-blog research R16): they must answer GET only and import nothing from the admin code.
+const PUBLIC_ROUTES = new Set(["src/app/(site)/blog/rss.xml/route.ts"]);
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry);
@@ -106,8 +111,18 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 const routes = walk(join(root, "src", "app"));
-for (const r of routes) if (!ALLOWED_ROUTES.has(r)) fail(`unexpected Route Handler ${r}: guard it with requireAdmin(), then allow-list it here with a 401 assertion`);
-console.log(`B. Route Handlers: ${routes.length} found, ${routes.filter((r) => ALLOWED_ROUTES.has(r)).length} allow-listed`);
+for (const r of routes) {
+  if (ALLOWED_ROUTES.has(r)) continue;
+  if (PUBLIC_ROUTES.has(r)) {
+    const source = readFileSync(join(root, r), "utf8");
+    const methods = [...source.matchAll(/export\s+(?:async\s+)?(?:function|const)\s+(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\b/g)].map((m) => m[1]);
+    if (methods.length !== 1 || methods[0] !== "GET") fail(`public route ${r} must export GET only (found: ${methods.join(", ") || "none"})`);
+    if (/from\s+["'][^"']*lib\/admin[/"']/.test(source)) fail(`public route ${r} must not import from lib/admin`);
+    continue;
+  }
+  fail(`unexpected Route Handler ${r}: guard it with requireAdmin(), then allow-list it here with a 401 assertion`);
+}
+console.log(`B. Route Handlers: ${routes.length} found, ${routes.filter((r) => ALLOWED_ROUTES.has(r)).length} allow-listed, ${routes.filter((r) => PUBLIC_ROUTES.has(r)).length} public read-only`);
 
 // ---- C. Auth.js session endpoint with no cookie
 if (!process.argv.includes("--no-http")) {

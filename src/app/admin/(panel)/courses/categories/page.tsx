@@ -3,6 +3,7 @@ import Link from "next/link";
 import CategoryManager from "@/components/admin/CategoryManager";
 import EmptyState from "@/components/admin/EmptyState";
 import UnavailableNotice from "@/components/admin/UnavailableNotice";
+import { createCategory, deleteCategory, setCategoryOrder, updateCategory } from "@/lib/admin/course-categories-actions";
 import { listAllCategories } from "@/lib/admin/courses-read";
 import { safeLoad } from "@/lib/admin/safe-load";
 import { requireAdmin } from "@/lib/admin/session";
@@ -30,7 +31,13 @@ export default async function CourseCategoriesPage() {
         <UnavailableNotice />
       ) : (
         <>
-          <CategoryManager categories={loaded.data} />
+          <CategoryManager
+            categories={loaded.data.map((c) => ({ ...c, count: c.courseCount }))}
+            actions={{ create: createCategory, update: updateCategory, setOrder: setCategoryOrder, remove: deleteCategory }}
+            noun={["course", "courses"]}
+            basePath="/courses"
+            withDescription
+          />
           {loaded.data.length === 0 ? (
             <EmptyState icon={FolderSimple} title="No categories yet.">
               Create one to start adding courses.

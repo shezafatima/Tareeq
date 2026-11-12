@@ -4,7 +4,7 @@ import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { leadsHref, type LeadParamsFor, type LeadType } from "@/lib/admin/leads-params";
+import { listHref } from "@/lib/admin/leads-params";
 import { controlBase, controlBorder } from "@/components/ui/FieldFrame";
 import { cn } from "@/lib/utils";
 
@@ -21,14 +21,18 @@ export type FilterSelect = {
  * Search plus one select per filter of this view (specs/026-split-submissions/contracts/routes-and-ui.md). They live in
  * the address, so a refresh or a shared link keeps the view. Changing any of them returns to page 1 and closes the drawer.
  */
-export default function FilterBar<T extends LeadType>({
-  type,
+export default function FilterBar({
+  basePath,
+  keys,
   params,
   selects,
   searchLabel,
 }: {
-  type: T;
-  params: LeadParamsFor<T>;
+  /** the list's address without parameters, e.g. "/admin/blog" */
+  basePath: string;
+  /** the parameters this list puts in its address, in order (see listHref) */
+  keys: readonly string[];
+  params: { q: string } & Record<string, unknown>;
   selects: FilterSelect[];
   searchLabel: string;
 }) {
@@ -43,14 +47,14 @@ export default function FilterBar<T extends LeadType>({
   useEffect(() => {
     if (q.trim() === latest.current.q) return;
     const timer = window.setTimeout(() => {
-      router.replace(leadsHref(type, { ...latest.current, q: q.trim(), page: 1, lead: null }), { scroll: false });
+      router.replace(listHref(basePath, keys, { ...latest.current, q: q.trim(), page: 1, lead: null }), { scroll: false });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [q, router, type]);
+  }, [q, router, basePath, keys]);
 
   const values = params as unknown as Record<string, string | null>;
   const go = (name: string, value: string) =>
-    router.replace(leadsHref(type, { ...params, q: q.trim(), [name]: value || null, page: 1, lead: null }), { scroll: false });
+    router.replace(listHref(basePath, keys, { ...params, q: q.trim(), [name]: value || null, page: 1, lead: null }), { scroll: false });
 
   const filtered = Boolean(params.q) || selects.some((s) => Boolean(values[s.name]));
   const select = cn(controlBase, controlBorder(), "mt-0 pl-3 pr-8");
@@ -99,7 +103,7 @@ export default function FilterBar<T extends LeadType>({
       {filtered ? (
         <p>
           <Link
-            href={leadsHref(type, {})}
+            href={listHref(basePath, keys, {})}
             onClick={() => setQ("")}
             className="inline-flex min-h-11 items-center text-sm font-semibold text-royal underline underline-offset-4"
           >

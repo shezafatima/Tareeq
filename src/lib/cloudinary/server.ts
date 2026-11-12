@@ -5,7 +5,7 @@ import { IMAGE_LIMITS, isImageFolderId, isOurCloudinaryUrl } from "@/lib/images/
 // The only module that touches the Cloudinary SDK or the API secret (specs/030-image-upload research R1-R3, R9).
 // Nothing here is imported by client code.
 
-export const UPLOAD_SCOPES = ["program", "course", "site", "gallery"] as const;
+export const UPLOAD_SCOPES = ["program", "course", "site", "gallery", "blog"] as const;
 export type UploadScope = (typeof UPLOAD_SCOPES)[number];
 
 type Config = { cloudName: string; apiKey: string; apiSecret: string };
@@ -94,5 +94,24 @@ export async function destroyAsset(publicId: string): Promise<void> {
     await client(config).uploader.destroy(publicId, { resource_type: "image", invalidate: true });
   } catch (err) {
     console.error(`[images] destroy failed: ${errorName(err)}`);
+  }
+}
+
+/**
+ * Read-only size lookup for an image already in our store (specs/033-admin-blog research R4). Unlike verifyAsset it never destroys
+ * anything. Null when not configured, outside our folder or not found; any other error (an outage) is rethrown.
+ */
+export async function lookupAssetSize(publicId: string): Promise<{ width: number; height: number } | null> {
+  const config = readConfig();
+  if (!config || !isImageFolderId(publicId)) return null;
+  try {
+    const resource = (await client(config).api.resource(publicId, { resource_type: "image", type: "upload" })) as { width?: number; height?: number };
+    return Number.isInteger(resource.width) && Number.isInteger(resource.height)
+      ? { width: resource.width as number, height: resource.height as number }
+      : null;
+  } catch (err) {
+    const status = (err as { error?: { http_code?: number }; http_code?: number })?.error?.http_code ?? (err as { http_code?: number })?.http_code;
+    if (status === 404) return null;
+    throw err;
   }
 }
