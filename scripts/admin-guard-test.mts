@@ -52,6 +52,9 @@ const REQUIRED_ACTIONS = new Set([
   "saveSettings", // specs/028-site-settings FR-012
   "createTestimonial", "updateTestimonial", "setTestimonialPublished", "deleteTestimonial", // specs/031-admin-testimonials FR-018
   "signUpload", "saveSiteImages", // specs/030-image-upload FR-016
+  // specs/032-admin-gallery FR-025
+  "createGalleryAlbum", "updateGalleryAlbum", "setGalleryAlbumPublished", "deleteGalleryAlbum",
+  "addGalleryPhoto", "updateGalleryPhoto", "setGalleryPhotoPublished", "setGalleryAlbumCover", "deleteGalleryPhoto",
 ]);
 const seen = new Set<string>();
 
@@ -72,7 +75,7 @@ for (const file of actionFiles) {
       fail(`${label} is not wrapped by withAdmin()`);
       continue;
     }
-    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}], [{ scope: "site" }], [{ founderPhoto: null }]]) {
+    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}], [{ scope: "site" }], [{ founderPhoto: null }], [{ scope: "gallery" }], [{ albumId: "000000000000000000000000", publicId: "tareeq/gallery/x" }], [{ id: "000000000000000000000000", values: { alt: "x", caption: "", order: "1" } }], [{ albumId: "000000000000000000000000", photoId: "000000000000000000000000" }]]) {
       touched.length = 0;
       let result: unknown;
       try {

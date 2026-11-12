@@ -1,11 +1,11 @@
-import { navItems } from "@/lib/site";
+import type { NavItem } from "@/lib/site";
 import NavLink from "./NavLink";
 
-export default function DesktopNav() {
+export default function DesktopNav({ items }: { items: NavItem[] }) {
   return (
     <nav aria-label="Main" className="hidden md:block">
       <ul className="flex items-center gap-8">
-        {navItems.map((item) => (
+        {items.map((item) => (
           <li key={item.href}>
             <NavLink
               href={item.href}

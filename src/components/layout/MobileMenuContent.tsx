@@ -1,10 +1,10 @@
 import Button from "@/components/ui/Button";
-import { joinHref, navItems } from "@/lib/site";
+import { joinHref, type NavItem } from "@/lib/site";
 import Logo from "./Logo";
 import NavLink from "./NavLink";
 
 // Static content of the mobile menu. Rendered on the server and passed to MobileNav as children.
-export default function MobileMenuContent() {
+export default function MobileMenuContent({ items }: { items: NavItem[] }) {
   return (
     <>
       <div className="flex h-16 shrink-0 items-center pl-gutter pr-14">
@@ -13,7 +13,7 @@ export default function MobileMenuContent() {
 
       <nav aria-label="Mobile" className="flex-1 px-gutter pt-4">
         <ul className="flex flex-col gap-1">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <li key={item.href}>
               <NavLink
                 href={item.href}

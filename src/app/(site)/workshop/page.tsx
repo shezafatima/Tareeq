@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import BookingDialog from "@/components/forms/BookingDialog";
 import WorkshopForm from "@/components/forms/WorkshopForm";
 import PageHeader from "@/components/sections/PageHeader";
+import WorkshopGallery from "@/components/sections/WorkshopGallery";
 import Button from "@/components/ui/Button";
 import Container from "@/components/ui/Container";
 import { getLeadCopy, getPageMeta } from "@/content";
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 // Minimal workshop page: headline, short intro and the booking button. The booking form opens in a dialog
-// (/workshop?book=1). The full workshop content (curriculum, gallery, videos) is a later feature.
+// (/workshop?book=1). The latest gallery photos show below (specs/032-admin-gallery); curriculum and videos are a later feature.
 export default async function WorkshopPage() {
   // Rendered per request: each visit gets its own submission key, and the month list follows today's date.
   await connection();
@@ -32,6 +33,8 @@ export default async function WorkshopPage() {
           {copy.workshop.bookLabel}
         </Button>
       </Container>
+
+      <WorkshopGallery />
 
       <BookingDialog title={copy.workshop.bookLabel} closeLabel={copy.closeLabel} returnFocusId="book-workshop-trigger">
         <WorkshopForm

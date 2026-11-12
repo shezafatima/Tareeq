@@ -2,7 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { signUpload } from "@/lib/admin/images-actions";
+import { uploadToCloudinary } from "@/lib/images/upload-client";
 import { IMAGE_MESSAGES, optimizedUrl, validateFile, IMAGE_LIMITS, type StoredImage } from "@/lib/images/shared";
+import type { UploadScope } from "@/lib/cloudinary/server";
 import { cn } from "@/lib/utils";
 
 // The one image uploader (specs/030-image-upload contracts/routes-and-ui.md). The file goes straight to Cloudinary with a signature
@@ -10,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   label: string;
-  scope: "program" | "course" | "site";
+  scope: UploadScope;
   value: StoredImage | null;
   onChange: (next: StoredImage | null) => void;
   /** error for the alt text field (shown once there is an image) or for the zone (when there is none) */
@@ -36,12 +38,12 @@ export default function ImageUploader({ label, scope, value, onChange, error, le
   const baseId = id ?? `image-${autoId.replace(/:/g, "")}`;
   const inputRef = useRef<HTMLInputElement>(null);
   const zoneRef = useRef<HTMLButtonElement>(null);
-  const xhrRef = useRef<XMLHttpRequest | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [dragging, setDragging] = useState(false);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
 
-  useEffect(() => () => xhrRef.current?.abort(), []);
+  useEffect(() => () => abortRef.current?.abort(), []);
   useEffect(() => () => { if (localPreview) URL.revokeObjectURL(localPreview); }, [localPreview]);
 
   const uploading = phase.kind === "uploading";
@@ -63,46 +65,24 @@ export default function ImageUploader({ label, scope, value, onChange, error, le
       return fail(signed.code === "not_configured" ? IMAGE_MESSAGES.notConfigured : IMAGE_MESSAGES.uploadFailed);
     }
     const { upload } = signed;
-    const body = new FormData();
-    body.append("file", file);
-    body.append("api_key", upload.apiKey);
-    body.append("timestamp", String(upload.timestamp));
-    body.append("signature", upload.signature);
-    body.append("folder", upload.folder);
-    body.append("allowed_formats", upload.allowedFormats);
-
-    const xhr = new XMLHttpRequest();
-    xhrRef.current = xhr;
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${upload.cloudName}/image/upload`);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) setPhase({ kind: "uploading", percent: Math.round((e.loaded / e.total) * 100), name: file.name });
-    };
-    xhr.onerror = () => {
-      setLocalPreview(null);
-      fail(IMAGE_MESSAGES.uploadFailed);
-    };
-    xhr.onabort = () => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+    try {
+      const asset = await uploadToCloudinary(file, upload, {
+        signal: controller.signal,
+        onProgress: (percent) => setPhase({ kind: "uploading", percent, name: file.name }),
+      });
+      onChange({ url: asset.url, publicId: asset.publicId, width: asset.width, height: asset.height, alt: value?.alt ?? "" });
+      onClearLegacy?.();
       setLocalPreview(null);
       setPhase({ kind: "idle" });
-    };
-    xhr.onload = () => {
-      xhrRef.current = null;
-      try {
-        const res = JSON.parse(xhr.responseText) as { public_id?: string; secure_url?: string; width?: number; height?: number; error?: { message?: string } };
-        if (xhr.status >= 200 && xhr.status < 300 && res.public_id && res.secure_url && res.width && res.height) {
-          onChange({ url: res.secure_url, publicId: res.public_id, width: res.width, height: res.height, alt: value?.alt ?? "" });
-          onClearLegacy?.();
-          setLocalPreview(null);
-          setPhase({ kind: "idle" });
-          return;
-        }
-      } catch {
-        /* fall through to the error below */
-      }
+    } catch (err) {
       setLocalPreview(null);
-      fail(IMAGE_MESSAGES.uploadFailed);
-    };
-    xhr.send(body);
+      if (err instanceof DOMException && err.name === "AbortError") setPhase({ kind: "idle" });
+      else fail(IMAGE_MESSAGES.uploadFailed);
+    } finally {
+      abortRef.current = null;
+    }
   };
 
   const pick = (files: FileList | null) => {
@@ -118,7 +98,7 @@ export default function ImageUploader({ label, scope, value, onChange, error, le
     window.requestAnimationFrame(() => zoneRef.current?.focus());
   };
 
-  const cancel = () => xhrRef.current?.abort();
+  const cancel = () => abortRef.current?.abort();
 
   const zoneError = phase.kind === "error" ? phase.message : !value && !legacyUrl ? error : undefined;
   const altError = value ? error : undefined;
