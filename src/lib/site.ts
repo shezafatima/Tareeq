@@ -6,6 +6,14 @@ export const navItems: NavItem[] = [
   { label: "Our Way", href: "/our-way" },
 ];
 
+const galleryNavItem: NavItem = { label: "Gallery", href: "/gallery" };
+
+/** The main navigation. Gallery is listed only once an album is public (specs/032-admin-gallery FR-017); it comes after Courses. */
+export function navItemsFor({ gallery }: { gallery: boolean }): NavItem[] {
+  if (!gallery) return navItems;
+  return [navItems[0], navItems[1], galleryNavItem, ...navItems.slice(2)];
+}
+
 // Where every "Book a workshop" / "Join a workshop" call to action goes: the workshop page with the booking dialog open.
 export const joinHref = "/workshop?book=1";
 

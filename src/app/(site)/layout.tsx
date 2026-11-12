@@ -4,8 +4,12 @@ import Preloader from "@/components/layout/preloader/Preloader";
 import PreloaderScript from "@/components/layout/preloader/PreloaderScript";
 import WhatsAppButton from "@/components/layout/WhatsAppButton";
 import RevealController from "@/components/ui/RevealController";
+import { hasPublicGallerySafe } from "@/lib/gallery/data";
+import { navItemsFor } from "@/lib/site";
 
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+// Gallery is in the navigation only while an album is public (specs/032-admin-gallery research R9): one cached read, passed down.
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  const items = navItemsFor({ gallery: await hasPublicGallerySafe() });
   return (
     <div className="flex min-h-svh flex-col">
       <PreloaderScript />
@@ -16,11 +20,11 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       >
         Skip to content
       </a>
-      <Header />
+      <Header items={items} />
       <main id="content" className="flex-1">
         {children}
       </main>
-      <Footer />
+      <Footer items={items} />
       <WhatsAppButton />
       <RevealController />
     </div>

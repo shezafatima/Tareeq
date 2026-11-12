@@ -5,7 +5,7 @@ import { IMAGE_LIMITS, isImageFolderId, isOurCloudinaryUrl } from "@/lib/images/
 // The only module that touches the Cloudinary SDK or the API secret (specs/030-image-upload research R1-R3, R9).
 // Nothing here is imported by client code.
 
-export const UPLOAD_SCOPES = ["program", "course", "site"] as const;
+export const UPLOAD_SCOPES = ["program", "course", "site", "gallery"] as const;
 export type UploadScope = (typeof UPLOAD_SCOPES)[number];
 
 type Config = { cloudName: string; apiKey: string; apiSecret: string };

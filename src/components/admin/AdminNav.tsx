@@ -1,7 +1,7 @@
 "use client"; // needs the current path to place the sliding active indicator
 
 import type { Icon } from "@phosphor-icons/react";
-import { BookOpen, ChalkboardTeacher, GearSix, GraduationCap, SquaresFour, Student, Tray, VideoCamera } from "@phosphor-icons/react/dist/ssr";
+import { BookOpen, ChalkboardTeacher, GearSix, GraduationCap, Images, SquaresFour, Student, Tray, VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LeadType } from "@/lib/admin/leads-params";
@@ -32,6 +32,7 @@ const ENTRIES: Entry[] = [
   { kind: "link", href: "/admin/programs", label: "Programs", Icon: BookOpen, isActive: under("/admin/programs") },
   { kind: "link", href: "/admin/courses", label: "Courses", Icon: GraduationCap, isActive: under("/admin/courses") },
   { kind: "link", href: "/admin/testimonials", label: "Testimonials", Icon: VideoCamera, isActive: under("/admin/testimonials") },
+  { kind: "link", href: "/admin/gallery", label: "Gallery", Icon: Images, isActive: under("/admin/gallery") },
   { kind: "link", href: "/admin/settings", label: "Settings", Icon: GearSix, isActive: under("/admin/settings") },
 ];
 

@@ -5,7 +5,7 @@ import Reveal from "@/components/ui/Reveal";
 import { getCourseFormLabel, getFooterContact } from "@/content";
 import { getSiteSettings } from "@/lib/settings/data";
 import type { SocialKind } from "@/lib/settings/merge";
-import { footerContactHref, navItems, tagline } from "@/lib/site";
+import { footerContactHref, tagline, type NavItem } from "@/lib/site";
 import Logo from "./Logo";
 
 const link =
@@ -16,7 +16,7 @@ const SOCIAL_ICONS = { youtube: YoutubeLogo, linkedin: LinkedinLogo, instagram: 
 
 // The only place for contact details, read from the site settings (specs/028-site-settings). An entry renders only when
 // it is set; nothing is invented.
-export default async function Footer() {
+export default async function Footer({ items }: { items: NavItem[] }) {
   const [{ items: contactItems, socials }, courseFormLabel] = await Promise.all([
     getSiteSettings().then(getFooterContact),
     getCourseFormLabel(),
@@ -33,7 +33,7 @@ export default async function Footer() {
         <nav aria-label="Footer">
           <h2 className={heading}>Explore</h2>
           <ul className="mt-1 md:grid md:grid-cols-2 md:gap-x-6">
-            {navItems.map((item) => (
+            {items.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className={link}>
                   {item.label}
