@@ -21,10 +21,24 @@ test("contact fallback goes to the email row when there is an email, else the co
   assert.equal(contactFallbackHref(null), "#footer-contact");
 });
 
-test("navItemsFor lists Gallery third only when a gallery is public", () => {
-  assert.deepEqual(navItemsFor({ gallery: false }), navItems);
-  const withGallery = navItemsFor({ gallery: true });
-  assert.equal(withGallery.length, navItems.length + 1);
-  assert.equal(withGallery[2].href, "/gallery");
-  assert.equal(new Set(withGallery.map((i) => i.href)).size, withGallery.length);
+test("the navigation is Programs, Our Way, Courses", () => {
+  assert.deepEqual(navItemsFor({ blog: false }).map((i) => i.href), ["/programs", "/our-way", "/courses"]);
+  assert.deepEqual(navItemsFor({ blog: false }), navItems);
+});
+
+// specs/033-admin-blog FR-023
+test("Blog comes last, and only once a post is published", () => {
+  const withBlog = navItemsFor({ blog: true });
+  assert.deepEqual(withBlog.map((i) => i.href), ["/programs", "/our-way", "/courses", "/blog"]);
+  assert.deepEqual(withBlog[withBlog.length - 1], { label: "Blog", href: "/blog" });
+});
+
+test("Gallery is not in the navigation: the Workshop page links to it", () => {
+  for (const blog of [false, true]) assert.ok(!navItemsFor({ blog }).some((i) => i.href === "/gallery"));
+});
+
+test("navItemsFor never changes the shared base list", () => {
+  const before = JSON.stringify(navItems);
+  navItemsFor({ blog: true });
+  assert.equal(JSON.stringify(navItems), before);
 });

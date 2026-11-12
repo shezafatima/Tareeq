@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clampPage, escapeRegex, leadsHref, parseLeadParams } from "../../src/lib/admin/leads-params.ts";
+import { clampPage, escapeRegex, leadsHref, listHref, parseLeadParams } from "../../src/lib/admin/leads-params.ts";
 
 // specs/026-split-submissions/contracts/routes-and-ui.md "Query parameters"
 
@@ -77,4 +77,14 @@ test("builds each view's address, leaves defaults out and keeps a fixed key orde
 test("the other view's keys never leak into an address", () => {
   const crafted = { role: "school", course: ID } as unknown as Parameters<typeof leadsHref<"course">>[1];
   assert.equal(leadsHref("course", crafted), `/admin/submissions/courses?course=${ID}`);
+});
+
+// specs/033-admin-blog research R12: the blog posts list shares the address builder
+test("listHref builds any list's address from its own keys, leaving out empty values", () => {
+  const keys = ["status", "category", "q"];
+  assert.equal(listHref("/admin/blog", keys, {}), "/admin/blog");
+  assert.equal(listHref("/admin/blog", keys, { status: "draft", category: null, q: "" }), "/admin/blog?status=draft");
+  assert.equal(listHref("/admin/blog", keys, { q: "kids & code", status: "published", category: CAT }), `/admin/blog?status=published&category=${CAT}&q=kids+%26+code`);
+  assert.equal(listHref("/admin/blog", keys, { other: "ignored", page: 1 }), "/admin/blog");
+  assert.equal(listHref("/admin/blog", keys, { page: 3 }), "/admin/blog?page=3");
 });

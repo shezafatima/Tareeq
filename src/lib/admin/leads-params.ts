@@ -93,24 +93,31 @@ export function clampPage(page: number, total: number): number {
   return Math.min(Math.max(1, page), last);
 }
 
-const KEYS: Record<LeadType, readonly string[]> = {
+/** The filter keys that go in each view's address, in a fixed order. */
+export const LEAD_FILTER_KEYS: Record<LeadType, readonly string[]> = {
   workshop: ["status", "role", "month", "q"],
   course: ["status", "course", "category", "level", "age", "q"],
 };
 
 /**
- * The view's address for the given params, keys in a fixed order and defaults left out so addresses stay short.
- * Only ids, fixed values and the owner's own search text go in.
+ * The address of an admin list for the given params: only the listed keys, in a fixed order, with defaults left out so addresses
+ * stay short. Shared by the submissions views and the blog posts list (specs/033-admin-blog research R12). Only ids, fixed values
+ * and the owner's own search text go in.
  */
-export function leadsHref<T extends LeadType>(type: T, params: Partial<LeadParamsFor<T>>): string {
+export function listHref(basePath: string, keys: readonly string[], params: Record<string, unknown>): string {
   const sp = new URLSearchParams();
-  const values = params as Record<string, unknown>;
-  for (const key of KEYS[type]) {
+  const values = params;
+  for (const key of keys) {
     const v = values[key];
     if (typeof v === "string" && v) sp.set(key, v);
   }
   if (typeof values.page === "number" && values.page > 1) sp.set("page", String(values.page));
   if (typeof values.lead === "string" && values.lead) sp.set("lead", values.lead);
   const qs = sp.toString();
-  return qs ? `${SUBMISSIONS_PATH[type]}?${qs}` : SUBMISSIONS_PATH[type];
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
+/** The submissions view's address for the given params (see listHref). */
+export function leadsHref<T extends LeadType>(type: T, params: Partial<LeadParamsFor<T>>): string {
+  return listHref(SUBMISSIONS_PATH[type], LEAD_FILTER_KEYS[type], params as Record<string, unknown>);
 }

@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import Field from "@/components/ui/Field";
 import TextareaField from "@/components/ui/TextareaField";
-import { createCategory, deleteCategory, setCategoryOrder, updateCategory } from "@/lib/admin/course-categories-actions";
-import type { AdminCategory } from "@/lib/admin/courses-read";
+import type { ActionResult } from "@/lib/admin/result";
 import { LIMITS, parseCategory, slugify, type CategoryFormValues, type FieldErrors } from "@/lib/admin/courses-schema";
 import ConfirmDialog from "./ConfirmDialog";
 import Drawer from "./Drawer";
@@ -17,10 +16,21 @@ const EMPTY: CategoryFormValues = { name: "", slug: "", description: "", order: 
 
 type Editing = { mode: "create" } | { mode: "edit"; id: string };
 
-const plural = (n: number) => `${n} course${n === 1 ? "" : "s"}`;
+/** A category as the manager shows it; `count` is how many courses or posts use it. */
+export type ManagedCategory = { id: string; name: string; slug: string; description: string; order: number; count: number };
+
+/** The four Server Actions of a category set, passed in by the page (courses: specs/025, blog: specs/033-admin-blog research R11). */
+export type CategoryActions = {
+  create: (values: CategoryFormValues) => Promise<ActionResult<{ id: string; slug: string }>>;
+  update: (input: { id: string; values: CategoryFormValues }) => Promise<ActionResult>;
+  setOrder: (input: { id: string; order: number }) => Promise<ActionResult>;
+  remove: (input: { id: string }) => Promise<ActionResult>;
+};
+
+const countText = (n: number, noun: readonly [string, string]) => `${n} ${n === 1 ? noun[0] : noun[1]}`;
 
 /** One row's display-order box: saves on blur or Enter, puts the old number back if the save fails. */
-function OrderInput({ category }: { category: AdminCategory }) {
+function OrderInput({ category, setOrder }: { category: ManagedCategory; setOrder: CategoryActions["setOrder"] }) {
   const router = useRouter();
   const toast = useToast();
   const fail = useActionFeedback();
@@ -36,7 +46,7 @@ function OrderInput({ category }: { category: AdminCategory }) {
       return;
     }
     start(async () => {
-      const result = await setCategoryOrder({ id: category.id, order });
+      const result = await setOrder({ id: category.id, order });
       if (result.ok) {
         toast.success(`Order saved for “${category.name}”`);
         router.refresh();
@@ -71,7 +81,21 @@ function OrderInput({ category }: { category: AdminCategory }) {
 }
 
 /** The categories list with create/edit (in a drawer), inline display order and a guarded delete. */
-export default function CategoryManager({ categories }: { categories: AdminCategory[] }) {
+export default function CategoryManager({
+  categories,
+  actions,
+  noun,
+  basePath,
+  withDescription,
+}: {
+  categories: ManagedCategory[];
+  actions: CategoryActions;
+  /** singular and plural of what a category holds, e.g. ["course", "courses"] */
+  noun: readonly [string, string];
+  /** the public list a category filters, e.g. "/courses" */
+  basePath: string;
+  withDescription: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const fail = useActionFeedback();
@@ -80,7 +104,7 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
   const [errors, setErrors] = useState<FieldErrors>({});
   const [slugTouched, setSlugTouched] = useState(false);
   const [saving, startSaving] = useTransition();
-  const [toDelete, setToDelete] = useState<AdminCategory | null>(null);
+  const [toDelete, setToDelete] = useState<ManagedCategory | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const set = <K extends keyof CategoryFormValues>(key: K, value: CategoryFormValues[K]) =>
@@ -93,7 +117,7 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
     setEditing({ mode: "create" });
   };
 
-  const openEdit = (c: AdminCategory) => {
+  const openEdit = (c: ManagedCategory) => {
     setValues({ name: c.name, slug: c.slug, description: c.description, order: String(c.order) });
     setErrors({});
     setSlugTouched(true); // an existing address never changes by itself
@@ -114,7 +138,7 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
     setErrors({});
     startSaving(async () => {
       const result =
-        editing.mode === "create" ? await createCategory(payload) : await updateCategory({ id: editing.id, values: payload });
+        editing.mode === "create" ? await actions.create(payload) : await actions.update({ id: editing.id, values: payload });
       if (result.ok) {
         const suffixed = editing.mode === "create" && "slug" in result && result.slug !== values.slug;
         toast.success(
@@ -135,7 +159,7 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
   const confirmDelete = async () => {
     if (!toDelete) return;
     setDeleting(true);
-    const result = await deleteCategory({ id: toDelete.id });
+    const result = await actions.remove({ id: toDelete.id });
     setDeleting(false);
     setToDelete(null);
     if (result.ok) {
@@ -166,11 +190,11 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
               <div className="min-w-0">
                 <p className="font-heading font-semibold text-midnight">{c.name}</p>
                 <p className="break-all text-sm text-midnight/70">
-                  /{c.slug} · {plural(c.courseCount)}
+                  /{c.slug} · {countText(c.count, noun)}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <OrderInput key={`${c.id}-${c.order}`} category={c} />
+                <OrderInput key={`${c.id}-${c.order}`} category={c} setOrder={actions.setOrder} />
                 <button
                   type="button"
                   onClick={() => openEdit(c)}
@@ -213,21 +237,23 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
             required
             value={values.slug}
             error={errors.slug}
-            help={`Used in /courses?category=${values.slug || "…"}. Changing it later breaks old filter links.`}
+            help={`Used in ${basePath}?category=${values.slug || "…"}. Changing it later breaks old filter links.`}
             onChange={(ev) => {
               setSlugTouched(true);
               set("slug", ev.target.value);
             }}
           />
-          <TextareaField
-            label="Description (optional)"
-            name="description"
-            rows={3}
-            limit={LIMITS.categoryDescription}
-            value={values.description}
-            error={errors.description}
-            onChange={(ev) => set("description", ev.target.value)}
-          />
+          {withDescription ? (
+            <TextareaField
+              label="Description (optional)"
+              name="description"
+              rows={3}
+              limit={LIMITS.categoryDescription}
+              value={values.description}
+              error={errors.description}
+              onChange={(ev) => set("description", ev.target.value)}
+            />
+          ) : null}
           <Field
             label="Display order"
             name="order"
@@ -262,8 +288,8 @@ export default function CategoryManager({ categories }: { categories: AdminCateg
         open={toDelete !== null}
         title="Delete this category?"
         body={
-          toDelete && toDelete.courseCount > 0
-            ? `“${toDelete.name}” still has ${plural(toDelete.courseCount)}, so it can't be deleted yet. Move them to another category or delete them first.`
+          toDelete && toDelete.count > 0
+            ? `“${toDelete.name}” still has ${countText(toDelete.count, noun)}, so it can't be deleted yet. Move them to another category or delete them first.`
             : `“${toDelete?.name ?? "This category"}” will be removed for good. This can't be undone.`
         }
         confirmLabel="Delete"

@@ -33,7 +33,8 @@ export function useActionFeedback() {
           break;
         case "in_use": {
           const n = failure.count ?? 0;
-          toast.error(`This category still has ${n} course${n === 1 ? "" : "s"}. Move them to another category or delete them first.`);
+          // an action that knows what depends on the record says so itself (blog categories: posts)
+          toast.error(failure.message ?? `This category still has ${n} course${n === 1 ? "" : "s"}. Move them to another category or delete them first.`);
           break;
         }
         case "image_rejected":

@@ -1,4 +1,5 @@
 import Hero from "@/components/Hero";
+import BlogPreview from "@/components/sections/BlogPreview";
 import FinalCta from "@/components/sections/FinalCta";
 import HeroExtras from "@/components/sections/HeroExtras";
 import HowItWorks from "@/components/sections/how-it-works/HowItWorks";
@@ -8,7 +9,7 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import WhoItsFor from "@/components/sections/WhoItsFor";
 import WhyTareeq from "@/components/sections/WhyTareeq";
 
-// Static, refreshed hourly and by tag because the Programs section reads the database (specs/015-programs-pages/research.md R2).
+// Static, refreshed hourly and by tag because the Programs and Blog sections read the database (specs/015-programs-pages/research.md R2).
 export const revalidate = 3600;
 
 export default function Home() {
@@ -22,6 +23,7 @@ export default function Home() {
       <WhoItsFor />
       <MentorSection />
       <TestimonialsSection />
+      <BlogPreview />
       <FinalCta />
     </>
   );

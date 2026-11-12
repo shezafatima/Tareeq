@@ -8,7 +8,7 @@ import StatStrip from "@/components/admin/StatStrip";
 import SubmissionsTable, { type Column } from "@/components/admin/SubmissionsTable";
 import UnavailableNotice from "@/components/admin/UnavailableNotice";
 import { statusLabels } from "@/lib/admin/lead-status";
-import { LEAD_STATUS_VALUES, leadsHref, parseLeadParams } from "@/lib/admin/leads-params";
+import { LEAD_FILTER_KEYS, LEAD_STATUS_VALUES, leadsHref, parseLeadParams, SUBMISSIONS_PATH } from "@/lib/admin/leads-params";
 import { getCourseLeadLookup, getLead, getLeadStats, listCourseLeads, type CourseRow } from "@/lib/admin/leads-query";
 import { safeLoad } from "@/lib/admin/safe-load";
 import { requireAdmin } from "@/lib/admin/session";
@@ -67,7 +67,8 @@ export default async function CourseSubmissionsPage({ searchParams }: Props) {
       {heading}
       <StatStrip type="course" counts={counts} params={params} labels={labels} />
       <FilterBar
-        type="course"
+        basePath={SUBMISSIONS_PATH.course}
+        keys={LEAD_FILTER_KEYS.course}
         params={params}
         searchLabel="Search name, phone or email"
         selects={[

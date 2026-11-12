@@ -3,7 +3,8 @@
 import { marked } from "marked";
 import sanitizeHtml from "sanitize-html";
 
-const OPTIONS: sanitizeHtml.IOptions = {
+// exported so the blog can widen the same allowlist (specs/033-admin-blog research R2); program output does not change
+export const BASE_SANITIZE: sanitizeHtml.IOptions = {
   allowedTags: ["h2", "h3", "h4", "p", "ul", "ol", "li", "strong", "em", "a", "blockquote", "code", "pre", "br", "hr"],
   allowedAttributes: { a: ["href", "title", "rel"] },
   allowedSchemes: ["http", "https", "mailto"],
@@ -16,5 +17,5 @@ const OPTIONS: sanitizeHtml.IOptions = {
 };
 
 export function renderMarkdown(markdown: string): string {
-  return sanitizeHtml(marked.parse(markdown, { async: false, gfm: true }), OPTIONS);
+  return sanitizeHtml(marked.parse(markdown, { async: false, gfm: true }), BASE_SANITIZE);
 }

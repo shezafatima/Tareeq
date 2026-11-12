@@ -62,3 +62,19 @@ export function optimizedUrl(url: string, width?: number): string {
   const transform = ["f_auto", "q_auto", ...(width ? [`w_${Math.round(width)}`] : [])].join(",");
   return `${url.slice(0, at + marker.length)}${transform}/${rest}`;
 }
+
+/**
+ * The Cloudinary public id behind one of our delivery URLs (specs/033-admin-blog research R4), or null when the URL is not an
+ * image of our cloud under tareeq/. Skips a transformation segment and the version, and drops the file extension.
+ */
+export function publicIdFromUrl(url: string, cloudName?: string): string | null {
+  if (!isOurCloudinaryUrl(url, cloudName)) return null;
+  const marker = "/image/upload/";
+  const at = url.indexOf(marker);
+  if (at < 0) return null;
+  const parts = url.slice(at + marker.length).split("?")[0].split("#")[0].split("/");
+  while (parts.length > 1 && !/^v\d+$/.test(parts[0]) && parts[0] !== IMAGE_LIMITS.folderRoot) parts.shift();
+  if (/^v\d+$/.test(parts[0])) parts.shift();
+  const id = parts.join("/").replace(/\.[a-z0-9]+$/i, "");
+  return id.startsWith(`${IMAGE_LIMITS.folderRoot}/`) && !id.includes("..") ? id : null;
+}
