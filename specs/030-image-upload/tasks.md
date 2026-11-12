@@ -44,7 +44,7 @@ User stories (from spec.md): **US1** cover images for programs and courses (P1),
 - [X] T017 [P] [US1] Update `src/components/admin/ProgramPreview.tsx` and `src/components/admin/CoursePreview.tsx` to preview the new image (or legacy URL).
 - [X] T018 [US1] Update `src/components/sections/programs/ProgramCover.tsx` to take `coverImage` and `legacyUrl`, prefer the stored image, use `optimizedUrl` and an `onError` hide (via `SafeImage` or a small variant) so the brand pattern underneath shows; keep `aria-hidden` and `priority` behavior. Update its callers in `ProgramPanel.tsx`, `CourseCard.tsx`, `CourseHeader.tsx`, `ProgramHeader.tsx`.
 - [X] T019 [P] [US1] Update the share image in `src/app/(site)/programs/[slug]/page.tsx` and `src/app/(site)/courses/[slug]/page.tsx` to use `coverImage` (optimized URL, stored width and height, stored alt), then the legacy URL, then the existing `/robot.png`.
-- [ ] T020 [US1] Verify US1 in the browser: quickstart steps 3, 4 and 5 at 360px and 1440px, keyboard only, and with reduced motion.
+- [x] T020 [US1] Verify US1 in the browser: quickstart steps 3, 4 and 5 at 360px and 1440px, keyboard only, and with reduced motion.
 
 **Checkpoint**: US1 works alone.
 
@@ -62,7 +62,7 @@ User stories (from spec.md): **US1** cover images for programs and courses (P1),
 - [X] T025 [US2] Create `src/components/admin/SiteImagesForm.tsx` (`"use client"`, reason: form state and the save action): one card per registry slot with label, recommended size, current preview with a "Default" chip, `ImageUploader` (scope `site`), "Use default" action, Save using `useActionFeedback`, `Toast` and `useUnsavedChanges`, matching `SettingsForm.tsx`.
 - [X] T026 [US2] Create `src/app/admin/(panel)/settings/images/page.tsx`: `requireAdmin()`, `safeLoad(readStoredSiteImages)`, `UnavailableNotice` on failure, `metadata` title "Site images"; add a "Site images" link to `src/app/admin/(panel)/settings/page.tsx`.
 - [X] T027 [US2] Make the mentor photo editable: in `src/content/index.ts`, merge `getSiteImages().founderPhoto` into the mentor content's `photo`; update `src/components/sections/MentorPhoto.tsx` to render through `SafeImage` with `/founder.jpeg` as the fallback and the stored alt. Do not change the `.mentor-glow` styling or the 4:5 frame. Keep `src/content/mentor.ts` as the default source.
-- [ ] T028 [US2] Verify US2 in the browser: quickstart steps 2 and 6 at 360px and 1440px; confirm the home page picks up a new photo on the next load and returns to `/founder.jpeg` after "Use default".
+- [x] T028 [US2] Verify US2 in the browser: quickstart steps 2 and 6 at 360px and 1440px; confirm the home page picks up a new photo on the next load and returns to `/founder.jpeg` after "Use default".
 
 **Checkpoint**: US1 and US2 both work.
 
@@ -75,7 +75,7 @@ User stories (from spec.md): **US1** cover images for programs and courses (P1),
 
 - [X] T029 [US3] Extend `scripts/admin-guard-test.mts`: add `signUpload` and `saveSiteImages` to `REQUIRED_ACTIONS`; stub the `cloudinary` module (throwing on any call) before importing the actions so the test fails if signing, the Admin API or destroy is reached without a session; assert each new action returns `{ok:false, code:"unauthorized"}`; update the header comment to cite spec 030 FR-016.
 - [X] T030 [US3] Confirm the existing program and course actions (create, update, delete) still report unauthorized under the same test with the new `coverImage` argument shape, and that no Route Handler was added (test part B).
-- [ ] T031 [US3] Manual server-verification check: with a valid session, send a save whose `publicId` points to a non-image, an oversized file, a wrong folder and a nonexistent id (use a short `tsx` script or the browser devtools); each must return `image_rejected` and leave the record unchanged.
+- [x] T031 [US3] Manual server-verification check: with a valid session, send a save whose `publicId` points to a non-image, an oversized file, a wrong folder and a nonexistent id (use a short `tsx` script or the browser devtools); each must return `image_rejected` and leave the record unchanged.
 
 ---
 
@@ -84,8 +84,8 @@ User stories (from spec.md): **US1** cover images for programs and courses (P1),
 - [X] T032 [P] Confirm the secret never reaches the client: search the built output and `src/components` for `CLOUDINARY_API_SECRET` and for any import of `cloudinary` outside `src/lib/cloudinary/server.ts` and `src/lib/admin/*`.
 - [X] T033 [P] Confirm the excluded images are unchanged: `git diff` shows no change to `Hero.tsx`, `RobotEyes.tsx`, `Preloader.tsx`, `Logo.tsx`, how-it-works components or `public/`.
 - [X] T034 Run `npm run lint`, `npx tsc --noEmit`, `npm run test:unit`, `npm run test:admin-guard` and `npm run build`; fix anything they report.
-- [ ] T035 Run the whole `quickstart.md` at 360px and 1440px, keyboard only, with reduced motion on; spot-check Lighthouse (mobile) on the home page for no regression in Performance, Accessibility and SEO.
-- [ ] T036 Write `specs/030-image-upload/verification.md` with the results of T020, T028, T031, T034 and T035, then follow the one-feature-per-branch rule: commit, merge to main, delete the branch.
+- [x] T035 Run the whole `quickstart.md` at 360px and 1440px, keyboard only, with reduced motion on; spot-check Lighthouse (mobile) on the home page for no regression in Performance, Accessibility and SEO.
+- [x] T036 Write `specs/030-image-upload/verification.md` with the results of T020, T028, T031, T034 and T035, then follow the one-feature-per-branch rule: commit, merge to main, delete the branch.
 
 ---
 
