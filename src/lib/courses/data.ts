@@ -4,6 +4,7 @@ import type { CourseOption } from "@/content/types";
 import { connectDb } from "@/lib/db/mongoose";
 import { CourseCategoryModel, CourseModel } from "./model";
 import { pickImage } from "@/lib/images/schema";
+import { plainPricing } from "@/lib/pricing/rules";
 import { isLevel, SLUG_MAX, SLUG_PATTERN, type Course, type CourseCategory, type Level } from "./options";
 import { isListed, sortCourses, toCourseOptions } from "./view";
 
@@ -48,6 +49,7 @@ function toCourse(doc: StoredCourse, categories: Map<string, CourseCategory>): C
     durationText: doc.durationText ?? "",
     startDateText: doc.startDateText ?? "",
     priceText: doc.priceText ?? "",
+    ...(plainPricing(doc.pricing) ? { pricing: plainPricing(doc.pricing) } : {}),
     enrollmentStatus: doc.enrollmentStatus,
     ...(doc.coverImageUrl ? { coverImageUrl: doc.coverImageUrl } : {}),
     ...(pickImage(doc.coverImage) ? { coverImage: pickImage(doc.coverImage) } : {}),

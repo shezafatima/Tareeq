@@ -38,9 +38,10 @@ function refresh(...slugs: string[]): void {
  * cover, an old URL the owner did not clear is kept. Empty values are left out (the model rejects an empty string).
  */
 function toDocument(data: Omit<CourseInput, "slugAuto">, cover: StoredImage | null) {
-  const { coverImageUrl, coverImage, ...rest } = data;
+  const { coverImageUrl, coverImage, pricing, ...rest } = data;
   void coverImage; // the client's copy is never stored; `cover` is the server-verified one
-  return { ...rest, ...(cover ? { coverImage: cover } : coverImageUrl ? { coverImageUrl } : {}) };
+  // "Not set" leaves pricing out, so a create stores none and an update removes it (the price text then shows)
+  return { ...rest, ...(pricing ? { pricing } : {}), ...(cover ? { coverImage: cover } : coverImageUrl ? { coverImageUrl } : {}) };
 }
 
 async function freeSlug(base: string): Promise<string> {
@@ -109,6 +110,7 @@ export const updateCourse = withAdmin(async (input: { id: string; values: Course
     const unset: Record<string, 1> = {};
     if (!("coverImage" in doc)) unset.coverImage = 1;
     if (!("coverImageUrl" in doc)) unset.coverImageUrl = 1;
+    if (!("pricing" in doc)) unset.pricing = 1;
     await CourseModel.updateOne(
       { _id: id },
       { $set: doc, ...(Object.keys(unset).length ? { $unset: unset } : {}) },

@@ -7,6 +7,7 @@ import {
   slugify,
   type ProgramFormValues,
 } from "../../src/lib/admin/programs-schema.ts";
+import { EMPTY_PRICING } from "../../src/lib/pricing/rules.ts";
 
 const valid = (): ProgramFormValues => ({
   title: "Teachers workshop",
@@ -20,6 +21,7 @@ const valid = (): ProgramFormValues => ({
   curriculum: [{ title: "Prompting", description: "The basics" }],
   facts: { format: "In person", duration: "1 day", groupSize: "20", location: "Lahore" },
   priceText: "On request",
+  pricing: EMPTY_PRICING,
   coverImageUrl: "",
   order: "2",
   published: true,
@@ -29,6 +31,31 @@ const errorsOf = (v: ProgramFormValues) => {
   const r = parseProgram(v);
   return r.success ? {} : r.errors;
 };
+
+test("pricing is checked with the program (specs/034)", () => {
+  const ok = parseProgram({ ...valid(), pricing: { ...EMPTY_PRICING, mode: "contact" } });
+  assert.equal(ok.success, true);
+  if (ok.success) assert.deepEqual(ok.data.pricing, { mode: "contact" });
+
+  const notSet = parseProgram(valid());
+  assert.equal(notSet.success, true);
+  if (notSet.success) assert.equal(notSet.data.pricing, null);
+
+  assert.ok(errorsOf({ ...valid(), pricing: { ...EMPTY_PRICING, mode: "show", amount: "-1" } })["pricing.amount"]);
+  assert.ok(
+    errorsOf({ ...valid(), pricing: { ...EMPTY_PRICING, mode: "show", amount: "5000", originalAmount: "4000" } })["pricing.originalAmount"],
+  );
+  const both = errorsOf({ ...valid(), title: " ", pricing: { ...EMPTY_PRICING, mode: "show" } });
+  assert.ok(both.title && both["pricing.amount"]);
+});
+
+test("a request with no pricing at all is treated as not set", () => {
+  const { pricing, ...rest } = valid();
+  void pricing;
+  const r = parseProgram(rest as unknown as ProgramFormValues);
+  assert.equal(r.success, true);
+  if (r.success) assert.equal(r.data.pricing, null);
+});
 
 test("a complete program passes and order becomes a number", () => {
   const r = parseProgram(valid());

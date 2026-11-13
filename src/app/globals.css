@@ -37,6 +37,58 @@
   }
 }
 
+/*
+ * Announcement bar (specs/034-pricing-certificate-announcement research R9–R11). The bar sits in normal flow above the sticky
+ * header, so they never overlap. Its height is --announce-h: 0 with no bar, a fixed height per breakpoint with one (so there is
+ * nothing to measure and no layout shift). The hero subtracts it to keep fitting one screen. The pre-paint script sets
+ * data-announce="off" on <html> to remove a dismissed or out-of-window bar before first paint.
+ */
+:root {
+  --announce-h: 0px;
+}
+[data-announce="on"] {
+  --announce-h: 3.25rem; /* 2 lines of 13px text on a phone */
+}
+[data-announce="compact"] {
+  --announce-h: 2.75rem; /* a short message stays on one line */
+}
+@media (min-width: 1024px) {
+  [data-announce="on"] {
+    --announce-h: 2.75rem;
+  }
+}
+html[data-announce="off"] [data-announce] {
+  --announce-h: 0px;
+}
+html[data-announce="off"] .announcement-bar {
+  display: none;
+}
+.announcement-bar {
+  height: var(--announce-h);
+  overflow: hidden;
+}
+.announcement-bar[data-style="saffron"] {
+  background: var(--color-saffron);
+  color: var(--color-midnight); /* dark text on saffron, about 8:1 */
+}
+.announcement-bar[data-style="navy"] {
+  background: var(--color-midnight);
+  color: white; /* about 17:1 */
+}
+.announcement-bar :focus-visible {
+  outline-color: currentColor;
+}
+.announcement-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.announcement-close {
+  transition: background-color var(--dur-base);
+}
+.announcement-close:hover {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
 html {
   scroll-behavior: smooth;
   /* keyboard focus and in-page links stop below the sticky header, never under it (WCAG 2.2 focus not obscured) */
@@ -2093,5 +2145,41 @@ html:not([data-js]) .program-filter {
 @media (prefers-reduced-motion: reduce) {
   .dash-heart {
     animation: none;
+  }
+}
+
+/*
+ * Certificate section (specs/034-pricing-certificate-announcement research R13). The certificate sits in a frame tilted a few
+ * degrees with a soft royal and saffron glow behind it; hover or focus straightens it. Transform only, and static (no tilt, no
+ * transition) under reduced motion. The glow is decorative and kept inside the section's own padded box.
+ */
+.certificate-frame {
+  position: relative;
+  isolation: isolate;
+  transform: rotate(-3deg);
+  transition: transform var(--dur-base) var(--ease-soft);
+}
+.certificate-frame::before {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  z-index: -1;
+  border-radius: 2rem;
+  background:
+    radial-gradient(60% 60% at 28% 28%, color-mix(in srgb, var(--color-royal) 40%, transparent), transparent 72%),
+    radial-gradient(52% 52% at 76% 76%, color-mix(in srgb, var(--color-saffron) 48%, transparent), transparent 72%);
+  filter: blur(28px);
+  opacity: 0.6;
+}
+.certificate-frame:hover,
+.certificate-frame:focus-within {
+  transform: rotate(0deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .certificate-frame,
+  .certificate-frame:hover,
+  .certificate-frame:focus-within {
+    transform: none;
+    transition: none;
   }
 }

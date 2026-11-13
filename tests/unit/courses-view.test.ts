@@ -72,6 +72,13 @@ test("courseFacts lists only facts with a value", () => {
   );
 });
 
+test("courseFacts leaves the old price text out when structured pricing is set (specs/034)", () => {
+  assert.deepEqual(
+    courseFacts(course({ startDateText: "1 Dec", priceText: "Old text", pricing: { mode: "free" } })).map((f) => f.label),
+    ["Format", "Duration", "Starts", "Level"],
+  );
+});
+
 test("toCourseOptions groups by category order, puts uncategorised last and leaves closed out", () => {
   const options = toCourseOptions(
     [

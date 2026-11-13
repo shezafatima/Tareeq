@@ -25,9 +25,23 @@ export default async function SettingsAdminPage() {
         <p className="max-w-2xl text-sm text-midnight/70">
           Contact details shown across the site. Changes appear on the next page load.
         </p>
-        <Link href="/admin/settings/images" className="inline-flex min-h-11 items-center text-sm font-semibold text-royal hover:underline">
-          Site images →
-        </Link>
+        <div className="flex flex-wrap gap-x-6">
+          <Link href="/admin/settings/images" className="inline-flex min-h-11 items-center text-sm font-semibold text-royal hover:underline">
+            Site images →
+          </Link>
+          <Link
+            href="/admin/settings/certificate"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-royal hover:underline"
+          >
+            Certificate section →
+          </Link>
+          <Link
+            href="/admin/settings/announcement"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-royal hover:underline"
+          >
+            Announcement bar →
+          </Link>
+        </div>
       </div>
       {loaded.ok ? (
         <SettingsForm initial={toFormValues(mergeSettings(loaded.data, fallback))} hasFallback={fallbackFlags(fallback)} />

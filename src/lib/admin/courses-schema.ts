@@ -3,6 +3,7 @@
 import * as z from "zod/mini";
 import { ENROLLMENT_STATUSES, FORMATS, LEVELS, SLUG_MAX, SLUG_PATTERN } from "../courses/options.ts";
 import { imageSchema } from "../images/shared.ts";
+import { EMPTY_PRICING, parsePricing, type Pricing, type PricingFormValues } from "../pricing/rules.ts";
 import { isAllowedCoverUrl } from "./programs-schema.ts";
 
 export { slugify } from "./programs-schema.ts";
@@ -88,10 +89,15 @@ export const courseSchema = z.object({
   published: z.boolean(),
 });
 
-export type CourseInput = z.output<typeof courseSchema>;
+/** `pricing` is checked by parsePricing (specs/034); null = "Not set", so the stored pricing is removed and the price text shows. */
+export type CourseInput = z.output<typeof courseSchema> & { pricing: Pricing | null };
 
 /** The course form's values as typed: `order` is the text in the box; `slugAuto` is true while the slug follows the title. */
-export type CourseFormValues = Omit<CourseInput, "order" | "slugAuto"> & { order: string; slugAuto?: boolean };
+export type CourseFormValues = Omit<CourseInput, "order" | "slugAuto" | "pricing"> & {
+  order: string;
+  slugAuto?: boolean;
+  pricing: PricingFormValues;
+};
 
 export const categorySchema = z.object({
   name: required(LIMITS.categoryName, MESSAGES.categoryName),
@@ -136,8 +142,15 @@ export type CategoryParseResult = { success: true; data: CategoryInput } | { suc
 export function parseCourse(raw: CourseFormValues): CourseParseResult {
   if (!raw || typeof raw !== "object") return { success: false, errors: { title: MESSAGES.title } };
   const cleaned = dropEmptyRows(raw);
-  const result = z.safeParse(courseSchema, { ...cleaned, order: orderNumber(cleaned.order) });
-  return result.success ? { success: true, data: result.data } : { success: false, errors: toFieldErrors(result.error) };
+  const { pricing: pricingValues, ...fields } = cleaned;
+  const result = z.safeParse(courseSchema, { ...fields, order: orderNumber(cleaned.order) });
+  const pricing = parsePricing(pricingValues ?? EMPTY_PRICING);
+  const errors = {
+    ...(result.success ? {} : toFieldErrors(result.error)),
+    ...(pricing.success ? {} : pricing.errors),
+  };
+  if (!result.success || !pricing.success || Object.keys(errors).length > 0) return { success: false, errors };
+  return { success: true, data: { ...result.data, pricing: pricing.data } };
 }
 
 /** Checks category form values. Never throws. */

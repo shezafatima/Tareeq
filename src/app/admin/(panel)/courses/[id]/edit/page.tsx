@@ -3,6 +3,7 @@ import CourseEditor from "@/components/admin/CourseEditor";
 import UnavailableNotice from "@/components/admin/UnavailableNotice";
 import { getCourseById, listAllCategories, type AdminCourse } from "@/lib/admin/courses-read";
 import type { CourseFormValues } from "@/lib/admin/courses-schema";
+import { toPricingFormValues } from "@/lib/pricing/rules";
 import { safeLoad } from "@/lib/admin/safe-load";
 import { requireAdmin } from "@/lib/admin/session";
 
@@ -24,6 +25,7 @@ function toFormValues(c: AdminCourse): CourseFormValues {
     durationText: c.durationText,
     startDateText: c.startDateText,
     priceText: c.priceText,
+    pricing: toPricingFormValues(c.pricing),
     coverImageUrl: c.coverImageUrl ?? "",
     coverImage: c.coverImage ?? null,
     featured: c.featured,

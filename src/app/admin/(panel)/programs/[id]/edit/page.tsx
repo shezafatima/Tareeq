@@ -4,6 +4,7 @@ import { getSiteSettings } from "@/lib/settings/data";
 import UnavailableNotice from "@/components/admin/UnavailableNotice";
 import { getProgramById, type AdminProgram } from "@/lib/admin/programs-read";
 import type { ProgramFormValues } from "@/lib/admin/programs-schema";
+import { toPricingFormValues } from "@/lib/pricing/rules";
 import { safeLoad } from "@/lib/admin/safe-load";
 import { requireAdmin } from "@/lib/admin/session";
 
@@ -22,6 +23,7 @@ function toFormValues(p: AdminProgram): ProgramFormValues {
     curriculum: p.curriculum,
     facts: p.facts,
     priceText: p.priceText,
+    pricing: toPricingFormValues(p.pricing),
     coverImageUrl: p.coverImageUrl ?? "",
     coverImage: p.coverImage ?? null,
     order: String(p.order),

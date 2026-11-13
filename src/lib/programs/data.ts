@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { connectDb } from "@/lib/db/mongoose";
 import { pickImage } from "@/lib/images/schema";
+import { plainPricing } from "@/lib/pricing/rules";
 import { ProgramModel } from "./model";
 import { SLUG_MAX, SLUG_PATTERN, type Program } from "./options";
 
@@ -30,6 +31,7 @@ function toProgram(doc: StoredProgram): Program {
       location: doc.facts.location,
     },
     priceText: doc.priceText,
+    ...(plainPricing(doc.pricing) ? { pricing: plainPricing(doc.pricing) } : {}),
     ...(doc.coverImageUrl ? { coverImageUrl: doc.coverImageUrl } : {}),
     ...(pickImage(doc.coverImage) ? { coverImage: pickImage(doc.coverImage) } : {}),
     order: doc.order,

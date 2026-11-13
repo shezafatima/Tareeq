@@ -1,6 +1,8 @@
 import Link from "next/link";
 import ProgramCover from "@/components/sections/programs/ProgramCover";
+import PriceBlock from "@/components/ui/PriceBlock";
 import { FORMAT_LABELS, LEVEL_LABELS, type CourseCardData } from "@/lib/courses/options";
+import { resolvePrice } from "@/lib/pricing/rules";
 import { resolveCover } from "@/lib/programs/view";
 import CourseStatusChip from "./CourseStatusChip";
 
@@ -21,6 +23,7 @@ export default function CourseCard({
   sizes = "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
 }: CourseCardProps) {
   const meta = [LEVEL_LABELS[course.level], FORMAT_LABELS[course.format], course.durationText.trim()].filter(Boolean);
+  const price = resolvePrice(course.pricing, course.priceText);
   return (
     <Link
       href={`/courses/${course.slug}`}
@@ -42,9 +45,7 @@ export default function CourseCard({
         </Heading>
         {course.summary ? <p className="line-clamp-2 text-base text-midnight/80">{course.summary}</p> : null}
         <p className="mt-auto pt-1 text-sm text-midnight/75">{meta.join(" · ")}</p>
-        {course.priceText.trim() ? (
-          <p className="border-t border-midnight/10 pt-3 font-heading text-base font-bold text-midnight">{course.priceText}</p>
-        ) : null}
+        {price.kind !== "none" ? <PriceBlock price={price} size="sm" className="border-t border-midnight/10 pt-3" /> : null}
       </div>
     </Link>
   );

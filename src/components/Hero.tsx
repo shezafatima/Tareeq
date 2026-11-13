@@ -381,7 +381,7 @@ function HeroVisual({ reduce }: { reduce: boolean }) {
     `${pos} rounded-xl outline-offset-4 ${active === id ? "z-30" : "z-10"}`;
 
   return (
-    <div className="relative mx-auto aspect-[10/11] w-full max-w-[600px] lg:ml-auto lg:mr-0 lg:w-[min(100%,calc((100svh_-_var(--header-h)_-_3rem)*0.909),600px)]">
+    <div className="relative mx-auto aspect-[10/11] w-full max-w-[600px] lg:ml-auto lg:mr-0 lg:w-[min(100%,calc((100svh_-_var(--header-h)_-_var(--announce-h,0px)_-_3rem)*0.909),600px)]">
       {/* 1. soft glow circle */}
       <Layer
         {...common}
@@ -548,7 +548,7 @@ export default function Hero() {
       <section
         key={String(reduce)}
         aria-labelledby="hero-title"
-        className="mx-auto grid max-w-7xl items-center gap-10 px-5 pb-16 pt-10 sm:px-8 lg:h-[calc(100svh-var(--header-h))] lg:grid-cols-[1.05fr_1fr] lg:gap-6 lg:py-6"
+        className="mx-auto grid max-w-7xl items-center gap-10 px-5 pb-16 pt-10 sm:px-8 lg:h-[calc(100svh-var(--header-h)-var(--announce-h,0px))] lg:grid-cols-[1.05fr_1fr] lg:gap-6 lg:py-6"
       >
         <div className="max-w-xl">
           <motion.p {...item(0)} className="text-sm font-semibold uppercase tracking-[0.22em] text-royal">

@@ -1,6 +1,7 @@
 import "server-only";
 import mongoose, { Schema, type Model } from "mongoose";
 import { storedImageSchema } from "@/lib/images/schema";
+import { pricingSchema } from "@/lib/pricing/schema";
 import { ENROLLMENT_STATUSES, FORMATS, LEVELS, SLUG_MAX, SLUG_PATTERN } from "./options";
 
 // Course categories and courses (specs/025-courses-catalog/data-model.md). New courses stay hidden until `published` is set.
@@ -44,6 +45,8 @@ const courseSchema = new Schema(
     durationText: shortText,
     startDateText: shortText,
     priceText: shortText,
+    // structured price (specs/034-pricing-certificate-announcement); absent = show priceText as before
+    pricing: { type: pricingSchema },
     enrollmentStatus: { type: String, enum: ENROLLMENT_STATUSES, required: true, default: "coming-soon" },
     coverImageUrl: {
       type: String,

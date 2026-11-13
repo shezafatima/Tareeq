@@ -3,6 +3,7 @@ import { connectDb } from "@/lib/db/mongoose";
 import { ProgramModel } from "@/lib/programs/model";
 import type { Program } from "@/lib/programs/options";
 import { pickImage } from "@/lib/images/schema";
+import { plainPricing } from "@/lib/pricing/rules";
 import { isObjectId } from "./leads-params";
 
 // Admin reads of programs. Deliberately NOT cached (unlike the public readers in src/lib/programs/data.ts), so the owner
@@ -31,6 +32,7 @@ function toAdminProgram(doc: Stored): AdminProgram {
       location: doc.facts?.location ?? "",
     },
     priceText: doc.priceText ?? "",
+    ...(plainPricing(doc.pricing) ? { pricing: plainPricing(doc.pricing) } : {}),
     ...(doc.coverImageUrl ? { coverImageUrl: doc.coverImageUrl } : {}),
     ...(pickImage(doc.coverImage) ? { coverImage: pickImage(doc.coverImage) } : {}),
     order: doc.order,

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" width="1200" height="850" role="img" aria-labelledby="t d">
+  <title id="t">Sample Tareeq certificate of completion</title>
+  <desc id="d">A placeholder certificate with the Tareeq name, empty lines for a participant and a program, and a Sample ribbon.</desc>
+  <defs>
+    <clipPath id="page"><rect width="1200" height="850" rx="28"/></clipPath>
+  </defs>
+  <g clip-path="url(#page)">
+    <rect width="1200" height="850" fill="#FAF7F2"/>
+    <rect x="28" y="28" width="1144" height="794" rx="16" fill="none" stroke="#0D1B3D" stroke-width="8"/>
+    <rect x="52" y="52" width="1096" height="746" rx="8" fill="none" stroke="#1E3A8A" stroke-width="2"/>
+
+    <!-- the logo's chevron motif -->
+    <g transform="translate(540 92) scale(1.8)" fill="none" stroke="#1E3A8A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 4l14 16L6 36M30 4l14 16-14 16"/>
+    </g>
+    <text x="600" y="206" text-anchor="middle" font-family="Sora, Inter, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="9" fill="#0D1B3D">TAREEQ</text>
+
+    <text x="600" y="296" text-anchor="middle" font-family="Sora, Inter, Arial, sans-serif" font-size="66" font-weight="700" fill="#0D1B3D">Certificate of Completion</text>
+    <rect x="520" y="322" width="160" height="6" rx="3" fill="#F2A93B"/>
+
+    <text x="600" y="400" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="26" fill="#0D1B3D" fill-opacity="0.75">This certifies that</text>
+    <text x="600" y="476" text-anchor="middle" font-family="Sora, Inter, Arial, sans-serif" font-size="44" font-weight="600" fill="#0D1B3D" fill-opacity="0.4">Participant name</text>
+    <rect x="260" y="496" width="680" height="3" fill="#0D1B3D" fill-opacity="0.35"/>
+
+    <text x="600" y="560" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="26" fill="#0D1B3D" fill-opacity="0.75">has completed</text>
+    <text x="600" y="636" text-anchor="middle" font-family="Sora, Inter, Arial, sans-serif" font-size="40" font-weight="600" fill="#0D1B3D" fill-opacity="0.4">Program name</text>
+    <rect x="260" y="656" width="680" height="3" fill="#0D1B3D" fill-opacity="0.35"/>
+
+    <rect x="140" y="738" width="260" height="3" fill="#0D1B3D" fill-opacity="0.35"/>
+    <text x="270" y="768" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="20" fill="#0D1B3D" fill-opacity="0.7">Date</text>
+    <text x="1060" y="768" text-anchor="end" font-family="Inter, Arial, sans-serif" font-size="20" fill="#0D1B3D" fill-opacity="0.7">Tareeq certificate of completion</text>
+
+    <!-- the Sample ribbon, across the top-right corner -->
+    <g transform="translate(1200 0) rotate(45)">
+      <rect x="-230" y="96" width="460" height="68" fill="#F2A93B"/>
+      <text x="0" y="141" text-anchor="middle" font-family="Sora, Inter, Arial, sans-serif" font-size="32" font-weight="700" letter-spacing="6" fill="#0D1B3D">SAMPLE</text>
+    </g>
+  </g>
+</svg>

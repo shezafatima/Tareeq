@@ -3,10 +3,13 @@
 import ProgramPanel from "@/components/sections/programs/ProgramPanel";
 import type { ContactDetails } from "@/lib/settings/merge";
 import type { ProgramFormValues } from "@/lib/admin/programs-schema";
+import { parsePricingLoose } from "@/lib/pricing/rules";
 import { AUDIENCE_FILTER, type Program } from "@/lib/programs/options";
 
 function toProgram(v: ProgramFormValues): Program {
   const order = Number(v.order);
+  // what is valid so far, so the price block follows the Pricing fields as they are typed
+  const pricing = parsePricingLoose(v.pricing);
   return {
     title: v.title.trim() || "Program title",
     slug: v.slug.trim() || "program-slug",
@@ -24,6 +27,7 @@ function toProgram(v: ProgramFormValues): Program {
       location: v.facts.location.trim(),
     },
     priceText: v.priceText.trim(),
+    ...(pricing ? { pricing } : {}),
     ...(v.coverImageUrl.trim() ? { coverImageUrl: v.coverImageUrl.trim() } : {}),
     ...(v.coverImage ? { coverImage: v.coverImage } : {}),
     order: Number.isFinite(order) ? order : 0,

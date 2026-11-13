@@ -3,12 +3,15 @@
 import CourseCard from "@/components/sections/courses/CourseCard";
 import type { CourseFormValues } from "@/lib/admin/courses-schema";
 import type { CourseCardData } from "@/lib/courses/options";
+import { parsePricingLoose } from "@/lib/pricing/rules";
 
 type Category = { id: string; name: string; slug: string };
 
 function toCardData(v: CourseFormValues, categories: Category[]): CourseCardData {
   const category = categories.find((c) => c.id === v.category);
   const cover = v.coverImageUrl.trim();
+  // what is valid so far, so the price block follows the Pricing fields as they are typed
+  const pricing = parsePricingLoose(v.pricing);
   return {
     title: v.title.trim() || "Course title",
     slug: v.slug.trim() || "course-slug",
@@ -18,6 +21,7 @@ function toCardData(v: CourseFormValues, categories: Category[]): CourseCardData
     durationText: v.durationText,
     enrollmentStatus: v.enrollmentStatus,
     priceText: v.priceText,
+    ...(pricing ? { pricing } : {}),
     summary: v.summary.trim() || "A short summary of the course appears here.",
     ...(cover ? { coverImageUrl: cover } : {}),
     ...(v.coverImage ? { coverImage: v.coverImage } : {}),

@@ -1,3 +1,5 @@
+import PriceBlock from "@/components/ui/PriceBlock";
+import { resolvePrice } from "@/lib/pricing/rules";
 import type { Program } from "@/lib/programs/options";
 import { visibleFacts } from "@/lib/programs/view";
 import type { ContactDetails } from "@/lib/settings/merge";
@@ -8,12 +10,7 @@ import ProgramFacts from "./ProgramFacts";
 export default function BookingCard({ program, contact }: { program: Program; contact: ContactDetails }) {
   return (
     <aside aria-label="Book this program" className="program-booking-card rounded-card bg-white p-6 shadow-card-raised">
-      {program.priceText && (
-        <div>
-          <p className="text-sm text-midnight/75">Price</p>
-          <p className="font-heading text-2xl font-bold text-midnight">{program.priceText}</p>
-        </div>
-      )}
+      <PriceBlock price={resolvePrice(program.pricing, program.priceText)} size="lg" label="Price" />
       <ProgramFacts facts={visibleFacts(program)} variant="list" className="mt-5 border-t border-royal/10 pt-5" />
       <div className="mt-6">
         <ProgramCta program={program} contact={contact} contactFallback className="w-full" />

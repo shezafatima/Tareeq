@@ -7,6 +7,7 @@ import {
   type CategoryFormValues,
   type CourseFormValues,
 } from "../../src/lib/admin/courses-schema.ts";
+import { EMPTY_PRICING } from "../../src/lib/pricing/rules.ts";
 
 const valid = (): CourseFormValues => ({
   title: "Intro to AI",
@@ -23,6 +24,7 @@ const valid = (): CourseFormValues => ({
   durationText: "4 weeks",
   startDateText: "",
   priceText: "PKR 5,000",
+  pricing: EMPTY_PRICING,
   coverImageUrl: "",
   featured: false,
   order: "3",
@@ -33,6 +35,35 @@ const errorsOf = (v: CourseFormValues) => {
   const r = parseCourse(v);
   return r.success ? {} : r.errors;
 };
+
+test("pricing is checked with the course (specs/034)", () => {
+  const ok = parseCourse({ ...valid(), pricing: { ...EMPTY_PRICING, mode: "show", amount: "5000", originalAmount: "7000" } });
+  assert.equal(ok.success, true);
+  if (ok.success) assert.deepEqual(ok.data.pricing, { mode: "show", amount: 5000, originalAmount: 7000 });
+
+  const notSet = parseCourse(valid());
+  assert.equal(notSet.success, true);
+  if (notSet.success) assert.equal(notSet.data.pricing, null);
+
+  assert.ok(errorsOf({ ...valid(), pricing: { ...EMPTY_PRICING, mode: "show", amount: "0" } })["pricing.amount"]);
+  assert.ok(
+    errorsOf({ ...valid(), pricing: { ...EMPTY_PRICING, mode: "show", amount: "5000", originalAmount: "5000" } })["pricing.originalAmount"],
+  );
+});
+
+test("pricing errors are reported together with other field errors", () => {
+  const errors = errorsOf({ ...valid(), title: "  ", pricing: { ...EMPTY_PRICING, mode: "show", amount: "" } });
+  assert.ok(errors.title);
+  assert.ok(errors["pricing.amount"]);
+});
+
+test("a request with no pricing at all is treated as not set", () => {
+  const { pricing, ...rest } = valid();
+  void pricing;
+  const r = parseCourse(rest as unknown as CourseFormValues);
+  assert.equal(r.success, true);
+  if (r.success) assert.equal(r.data.pricing, null);
+});
 
 test("a complete course parses and order text becomes a number", () => {
   const r = parseCourse(valid());

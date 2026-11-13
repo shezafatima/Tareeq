@@ -20,6 +20,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import ImageUploader from "./ImageUploader";
 import CoursePreview from "./CoursePreview";
 import { CurriculumEditor, OutcomesEditor } from "./ListEditor";
+import PricingFields from "./PricingFields";
 import { useToast } from "./Toast";
 import { useActionFeedback } from "./useActionFeedback";
 
@@ -41,7 +42,7 @@ function idFor(key: string): string {
 
 const ORDER = [
   "title", "slug", "category", "level", "format", "enrollmentStatus", "summary", "description", "outcomes", "syllabus",
-  "durationText", "startDateText", "priceText", "coverImage", "order",
+  "durationText", "startDateText", "priceText", "pricing", "coverImage", "order",
 ];
 
 export default function CourseEditor(props: Props) {
@@ -222,13 +223,14 @@ export default function CourseEditor(props: Props) {
             />
           </div>
           <Field
-            label="Price text"
+            label="Price text (used when pricing is not set)"
             name="priceText"
             value={values.priceText}
             error={e("priceText")}
             help="Shown as written, for example “PKR 5,000” or “Free”."
             onChange={(ev) => set("priceText", ev.target.value)}
           />
+          <PricingFields value={values.pricing} onChange={(next) => set("pricing", next)} errors={errors} />
           <ImageUploader
             label="Cover image (optional)"
             id="field-cover"

@@ -1,6 +1,7 @@
 import "server-only";
 import mongoose, { Schema, type Model } from "mongoose";
 import { storedImageSchema } from "@/lib/images/schema";
+import { pricingSchema } from "@/lib/pricing/schema";
 import { AUDIENCES, CTA_TYPES, SLUG_MAX, SLUG_PATTERN, STATUSES } from "./options";
 
 // One document per program (specs/015-programs-pages/data-model.md). Everything here is editable as stored,
@@ -38,6 +39,8 @@ const programSchema = new Schema(
       default: () => ({}),
     },
     priceText: { type: String, default: "", trim: true, maxlength: 120 },
+    // structured price (specs/034-pricing-certificate-announcement); absent = show priceText as before
+    pricing: { type: pricingSchema },
     coverImageUrl: {
       type: String,
       trim: true,

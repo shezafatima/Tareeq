@@ -13,6 +13,7 @@ import type { ContactDetails } from "@/lib/settings/merge";
 import ConfirmDialog from "./ConfirmDialog";
 import ImageUploader from "./ImageUploader";
 import { CurriculumEditor, OutcomesEditor } from "./ListEditor";
+import PricingFields from "./PricingFields";
 import ProgramPreview from "./ProgramPreview";
 import { useToast } from "./Toast";
 import { useActionFeedback } from "./useActionFeedback";
@@ -32,7 +33,7 @@ function idFor(key: string): string {
   return `field-${key}`;
 }
 
-const ORDER = ["title", "slug", "audience", "status", "ctaType", "summary", "description", "outcomes", "curriculum", "facts", "priceText", "coverImage", "order"];
+const ORDER = ["title", "slug", "audience", "status", "ctaType", "summary", "description", "outcomes", "curriculum", "facts", "priceText", "pricing", "coverImage", "order"];
 
 export default function ProgramForm(props: Props & { initial: ProgramFormValues; contact: ContactDetails }) {
   const router = useRouter();
@@ -192,13 +193,14 @@ export default function ProgramForm(props: Props & { initial: ProgramFormValues;
           </fieldset>
 
           <Field
-            label="Price text"
+            label="Price text (used when pricing is not set)"
             name="priceText"
             value={values.priceText}
             error={e("priceText")}
             help="Shown as written, for example “On request”."
             onChange={(ev) => set("priceText", ev.target.value)}
           />
+          <PricingFields value={values.pricing} onChange={(next) => set("pricing", next)} errors={errors} />
           <ImageUploader
             label="Cover image (optional)"
             id="field-cover"

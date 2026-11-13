@@ -1,5 +1,6 @@
 // Program vocabulary: allowed values, labels and the shape pages receive. Pure, so tests and client code can import it.
 import type { StoredImage } from "../images/shared.ts";
+import type { Pricing } from "../pricing/rules.ts";
 
 export const AUDIENCES =["teachers", "school-students", "college", "corporate"] as const;
 export const STATUSES = ["booking-now", "register-interest", "coming-soon"] as const;
@@ -31,6 +32,8 @@ export type Program = {
   curriculum: CurriculumStep[];
   facts: ProgramFactsData;
   priceText: string;
+  /** structured price (specs/034); when absent the page shows priceText exactly as before */
+  pricing?: Pricing;
   coverImageUrl?: string;
   /** the uploaded cover; wins over coverImageUrl */
   coverImage?: StoredImage;

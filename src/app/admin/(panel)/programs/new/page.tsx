@@ -2,6 +2,7 @@ import ProgramForm from "@/components/admin/ProgramForm";
 import { requireAdmin } from "@/lib/admin/session";
 import { getSiteSettings } from "@/lib/settings/data";
 import type { ProgramFormValues } from "@/lib/admin/programs-schema";
+import { EMPTY_PRICING } from "@/lib/pricing/rules";
 
 export const metadata = { title: "New program" };
 
@@ -17,6 +18,7 @@ const EMPTY: ProgramFormValues = {
   curriculum: [],
   facts: { format: "", duration: "", groupSize: "", location: "" },
   priceText: "",
+  pricing: EMPTY_PRICING,
   coverImageUrl: "",
   order: "0",
   published: false,

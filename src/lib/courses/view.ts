@@ -39,13 +39,14 @@ export function parseCourseFilters(search: string, categorySlugs: readonly strin
 
 /** Facts that have a value, in display order. */
 export function courseFacts(
-  course: Pick<Course, "format" | "durationText" | "startDateText" | "priceText" | "level">,
+  course: Pick<Course, "format" | "durationText" | "startDateText" | "priceText" | "level"> & Partial<Pick<Course, "pricing">>,
 ): { label: string; value: string }[] {
   return [
     { label: "Format", value: FORMAT_LABELS[course.format] ?? "" },
     { label: "Duration", value: course.durationText },
     { label: "Starts", value: course.startDateText },
-    { label: "Price", value: course.priceText },
+    // with structured pricing the price is shown by PriceBlock (specs/034), so the old text is not repeated here
+    { label: "Price", value: course.pricing ? "" : course.priceText },
     { label: "Level", value: LEVEL_LABELS[course.level] ?? "" },
   ].filter((f) => f.value.trim() !== "");
 }
@@ -60,6 +61,7 @@ export function toCardData(course: Course): CourseCardData {
     durationText: course.durationText,
     enrollmentStatus: course.enrollmentStatus,
     priceText: course.priceText,
+    ...(course.pricing ? { pricing: course.pricing } : {}),
     summary: course.summary,
     ...(course.coverImageUrl ? { coverImageUrl: course.coverImageUrl } : {}),
     ...(course.coverImage ? { coverImage: course.coverImage } : {}),

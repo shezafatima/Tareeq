@@ -58,6 +58,7 @@ const REQUIRED_ACTIONS = new Set([
   // specs/033-admin-blog FR-028
   "saveBlogPost", "deleteBlogPost", "renderBlogPreview",
   "createBlogCategory", "updateBlogCategory", "setBlogCategoryOrder", "deleteBlogCategory",
+  "saveAnnouncement", "saveCertificate", // specs/034-pricing-certificate-announcement FR-027 (program and course actions above now carry pricing)
 ]);
 const seen = new Set<string>();
 
@@ -78,7 +79,7 @@ for (const file of actionFiles) {
       fail(`${label} is not wrapped by withAdmin()`);
       continue;
     }
-    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}], [{ scope: "site" }], [{ founderPhoto: null }], [{ scope: "gallery" }], [{ albumId: "000000000000000000000000", publicId: "tareeq/gallery/x" }], [{ id: "000000000000000000000000", values: { alt: "x", caption: "", order: "1" } }], [{ albumId: "000000000000000000000000", photoId: "000000000000000000000000" }], [{ id: null, values: { title: "x", slug: "x", status: "published" } }], [{ markdown: "# x", sizes: {} }], [{ scope: "blog" }]]) {
+    for (const args of [[], [{}], [{ id: "000000000000000000000000", type: "workshop", status: "closed", notes: "x", published: true }], [{ id: "000000000000000000000000", type: "course", featured: true, order: 1, values: {} }], ["x", {}], [{ scope: "site" }], [{ founderPhoto: null }], [{ scope: "gallery" }], [{ albumId: "000000000000000000000000", publicId: "tareeq/gallery/x" }], [{ id: "000000000000000000000000", values: { alt: "x", caption: "", order: "1" } }], [{ albumId: "000000000000000000000000", photoId: "000000000000000000000000" }], [{ id: null, values: { title: "x", slug: "x", status: "published" } }], [{ markdown: "# x", sizes: {} }], [{ scope: "blog" }], [{ enabled: true, text: "x", linkLabel: "", linkUrl: "", style: "saffron", startsAt: "", endsAt: "", dismissible: true }], [{ enabled: true, heading: "x", text: "x", bullets: ["x"], image: { url: "https://res.cloudinary.com/demo/image/upload/tareeq/site/x.png", publicId: "tareeq/site/x", width: 10, height: 10, alt: "x" } }]]) {
       touched.length = 0;
       let result: unknown;
       try {

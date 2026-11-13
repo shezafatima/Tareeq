@@ -1,6 +1,8 @@
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import Container from "@/components/ui/Container";
+import PriceBlock from "@/components/ui/PriceBlock";
+import { resolvePrice } from "@/lib/pricing/rules";
 import { AUDIENCE_LABELS, type Program } from "@/lib/programs/options";
 import type { ContactDetails } from "@/lib/settings/merge";
 import { resolveCover, visibleFacts } from "@/lib/programs/view";
@@ -36,6 +38,9 @@ export default function ProgramPanel({ program, contact }: { program: Program; c
           </div>
           <h2 className="program-panel__title font-heading font-bold text-[var(--panel-fg)]">{program.title}</h2>
           <ProgramFacts facts={visibleFacts(program)} limit={3} className="text-[var(--panel-muted)]" />
+          {/* New with specs/034: only structured pricing shows here, so a program without it looks exactly as before.
+              The panel sets the text colour (dark panels are midnight), so the price inherits it. */}
+          <PriceBlock price={resolvePrice(program.pricing, "")} size="md" tone="inherit" className="text-[var(--panel-fg)]" />
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <ProgramCta
               program={program}

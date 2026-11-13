@@ -5,6 +5,7 @@ import EmptyState from "@/components/admin/EmptyState";
 import UnavailableNotice from "@/components/admin/UnavailableNotice";
 import { listAllCategories } from "@/lib/admin/courses-read";
 import type { CourseFormValues } from "@/lib/admin/courses-schema";
+import { EMPTY_PRICING } from "@/lib/pricing/rules";
 import { safeLoad } from "@/lib/admin/safe-load";
 import { requireAdmin } from "@/lib/admin/session";
 
@@ -24,6 +25,7 @@ const empty = (category: string): CourseFormValues => ({
   durationText: "",
   startDateText: "",
   priceText: "",
+  pricing: EMPTY_PRICING,
   coverImageUrl: "",
   featured: false,
   order: "0",

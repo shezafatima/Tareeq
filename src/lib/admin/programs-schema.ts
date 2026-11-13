@@ -2,6 +2,7 @@
 // Limits mirror the stored model in src/lib/programs/model.ts. Pure: relative imports only, no server code.
 import * as z from "zod/mini";
 import { imageSchema } from "../images/shared.ts";
+import { EMPTY_PRICING, parsePricing, type Pricing, type PricingFormValues } from "../pricing/rules.ts";
 import { AUDIENCES, CTA_TYPES, SLUG_MAX, SLUG_PATTERN, STATUSES } from "../programs/options.ts";
 
 export const LIMITS = {
@@ -78,10 +79,11 @@ export const programSchema = z.object({
   published: z.boolean(),
 });
 
-export type ProgramInput = z.output<typeof programSchema>;
+/** `pricing` is checked by parsePricing (specs/034); null = "Not set", so the stored pricing is removed and the price text shows. */
+export type ProgramInput = z.output<typeof programSchema> & { pricing: Pricing | null };
 
-/** The form's values as typed: every text field a string, `order` as the text in the box. */
-export type ProgramFormValues = Omit<ProgramInput, "order"> & { order: string };
+/** The form's values as typed: every text field a string, `order` as the text in the box, `pricing` as typed in its fields. */
+export type ProgramFormValues = Omit<ProgramInput, "order" | "pricing"> & { order: string; pricing: PricingFormValues };
 
 export type FieldErrors = Record<string, string>;
 
@@ -121,6 +123,13 @@ export type ParseResult = { success: true; data: ProgramInput } | { success: fal
 export function parseProgram(raw: ProgramFormValues): ParseResult {
   const cleaned = dropEmptyRows(raw);
   const orderText = typeof cleaned.order === "string" ? cleaned.order.trim() : "";
-  const result = z.safeParse(programSchema, { ...cleaned, order: orderText === "" ? NaN : Number(orderText) });
-  return result.success ? { success: true, data: result.data } : { success: false, errors: toFieldErrors(result.error) };
+  const { pricing: pricingValues, ...fields } = cleaned;
+  const result = z.safeParse(programSchema, { ...fields, order: orderText === "" ? NaN : Number(orderText) });
+  const pricing = parsePricing(pricingValues ?? EMPTY_PRICING);
+  const errors = {
+    ...(result.success ? {} : toFieldErrors(result.error)),
+    ...(pricing.success ? {} : pricing.errors),
+  };
+  if (!result.success || !pricing.success || Object.keys(errors).length > 0) return { success: false, errors };
+  return { success: true, data: { ...result.data, pricing: pricing.data } };
 }

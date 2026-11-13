@@ -1,3 +1,5 @@
+import PriceBlock from "@/components/ui/PriceBlock";
+import { resolvePrice } from "@/lib/pricing/rules";
 import type { Program } from "@/lib/programs/options";
 import type { ContactDetails } from "@/lib/settings/merge";
 import ProgramCta from "./ProgramCta";
@@ -12,12 +14,7 @@ export default function MobileCtaBar({ program, contact }: { program: Program; c
       data-program-cta-bar=""
       className="program-cta-bar fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-midnight/10 bg-white px-gutter lg:hidden"
     >
-      {program.priceText && (
-        <div className="min-w-0">
-          <p className="text-xs text-midnight/75">Price</p>
-          <p className="font-heading font-bold leading-tight text-midnight">{program.priceText}</p>
-        </div>
-      )}
+      <PriceBlock price={resolvePrice(program.pricing, program.priceText)} size="md" label="Price" className="min-w-0" />
       <ProgramCta program={program} contact={contact} contactFallback className="ml-auto shrink-0" />
     </div>
   );

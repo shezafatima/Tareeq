@@ -1,4 +1,6 @@
+import PriceBlock from "@/components/ui/PriceBlock";
 import type { Course } from "@/lib/courses/options";
+import { resolvePrice } from "@/lib/pricing/rules";
 import CourseCta from "./CourseCta";
 
 /**
@@ -11,12 +13,7 @@ export default function CourseMobileCtaBar({ course }: { course: Course }) {
       data-program-cta-bar=""
       className="program-cta-bar fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-midnight/10 bg-white px-gutter lg:hidden"
     >
-      {course.priceText && (
-        <div className="min-w-0">
-          <p className="text-xs text-midnight/75">Price</p>
-          <p className="truncate font-heading font-bold leading-tight text-midnight">{course.priceText}</p>
-        </div>
-      )}
+      <PriceBlock price={resolvePrice(course.pricing, course.priceText)} size="md" label="Price" truncate className="min-w-0" />
       <CourseCta course={course} className="ml-auto shrink-0" />
     </div>
   );
